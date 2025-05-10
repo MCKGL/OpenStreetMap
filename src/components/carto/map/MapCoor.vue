@@ -129,7 +129,7 @@ function addLegend() {
       <div class="legend-content">
         <h4>Légende</h4>
         <div><span class="legend-icon default"></span> Coordonnée</div>
-        <div><span class="legend-icon ok"></span> Coordonnée OK</div>
+        <div><span class="legend-icon ok"></span> Coordonnée en jaune</div>
       </div>
     `;
     const btn = c.querySelector<HTMLButtonElement>('.legend-toggle')!;

@@ -45,7 +45,7 @@ watch(
         </thead>
         <tbody>
         <tr v-for="coor in props.coors" :key="coor.id">
-          <td>{{ coor.id }}</td>
+          <router-link :to="`/coor_detail_${coor.id}`"><td>{{ coor.id }}</td></router-link>
           <td>{{ coor.lat }}</td>
           <td>{{ coor.lng }}</td>
           <td>

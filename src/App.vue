@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import SwitchListeMap from "@/components/carto/SwitchListeMap.vue";
 </script>
 
 <template>
-  <SwitchListeMap/>
+  <nav>
+    <router-link to="/">Home</router-link> |
+    <router-link to="/carto">Carto</router-link>
+  </nav>
+  <router-view />
 </template>
 
-<style scoped>
 
+<style scoped>
 </style>
