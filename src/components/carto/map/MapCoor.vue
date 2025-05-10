@@ -79,8 +79,6 @@ function initMap() {
  */
 function addMarkers() {
   markers.clearLayers();
-  // markerRefs est une map mémoire entre les IDS de coordonnées et leurs marqueurs Leaflet correspondants
-  markerRefs
   for (const coord of props.coors) {
     const iconClass = coord.ok ? 'marker-ok' : '';
     const marker = L.marker([coord.lat, coord.lng], {
@@ -121,7 +119,11 @@ function openSelectedPopup(id?: number) {
  * addLegend va ajouter la légende à la carte
  */
 function addLegend() {
-  const legend = L.control({ position: 'bottomright' });
+  // const legend = L.control({ position: 'bottomright' });
+  const legend = (L.control as unknown as (options: L.ControlOptions) => L.Control)({
+    position: 'bottomright'
+  });
+
   legend.onAdd = () => {
     const c = L.DomUtil.create('div', 'legend-container');
     c.innerHTML = `
@@ -143,7 +145,9 @@ function addLegend() {
  * addRecenterButton va ajouter le bouton de recentrage sur l'Île-de-France
  */
 function addRecenterButton() {
-  const ctrl = L.control({ position: 'topright' });
+  const ctrl = (L.control as unknown as (options: L.ControlOptions) => L.Control)({
+    position: 'topright'
+  });
   ctrl.onAdd = () => {
     const btn = L.DomUtil.create('button', 'recenter-btn');
     btn.title = 'Recentrer sur Île-de-France';
