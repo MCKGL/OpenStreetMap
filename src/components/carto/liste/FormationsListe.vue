@@ -1,0 +1,93 @@
+<script setup lang="ts">
+import { ref, computed } from "vue";
+import { useRouter } from "vue-router";
+import { StructureModel } from '@/models/Structure.model.ts';
+import type { FormationModel } from "@/models/Formation.model.ts";
+
+const props = defineProps<{
+  structures: StructureModel[];
+}>();
+
+const router = useRouter();
+
+const isOpen = ref(true);
+
+type FormationWithStructure = {
+  formation: FormationModel;
+  structure: StructureModel;
+};
+
+const allFormations = computed<FormationWithStructure[]>(() =>
+  props.structures.flatMap(structure =>
+    (structure.formations || []).map(formation => ({
+      formation,
+      structure
+    }))
+  )
+);
+
+function navigateTo(item: FormationWithStructure) {
+  router.push({
+    query: {
+      type: 'formation',
+      slug: item.formation.slug
+    }
+  });
+}
+
+function toggleList() {
+  isOpen.value = !isOpen.value;
+}
+</script>
+
+<template>
+  <div class="list-header">
+    <h2>Liste des Formations</h2>
+    <button class="toggle-btn" @click="toggleList" :aria-label="isOpen ? 'Fermer la liste' : 'Ouvrir la liste'">
+      {{ isOpen ? '«' : '»' }}
+    </button>
+  </div>
+  <ul v-show="isOpen">
+    <li
+      v-for="item in allFormations"
+      :key="item.formation.id"
+      @click="navigateTo(item)"
+    >
+      {{ item.formation.nom }} – <em>{{ item.structure.nom }}</em>
+    </li>
+  </ul>
+</template>
+
+<style scoped>
+.list-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.toggle-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.toggle-btn:focus {
+  outline: 2px solid #007acc;
+}
+
+li {
+  list-style: inside;
+  padding: 5px;
+  cursor: pointer;
+}
+
+li:hover {
+  background-color: #f0f0f0;
+}
+
+em {
+  color: gray;
+}
+</style>
