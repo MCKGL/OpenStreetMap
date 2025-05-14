@@ -32,7 +32,7 @@ const allFormations = computed<FormationWithStructure[]>(() => {
   ) || [];
 
   return raw.filter(item => {
-    if (props.filters?.includes('formationDisponible') && !item.formation.placeDisponible) return false;
+    if (props.filters?.includes('placeDisponible') && !item.formation.placeDisponible) return false;
     if (props.filters?.includes('gardeEnfant') && !item.formation.gardeEnfants) return false;
     return true;
   });

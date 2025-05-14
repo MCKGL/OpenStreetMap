@@ -27,7 +27,7 @@ watch(
     });
 
     const emittedFilters: string[] = [];
-    if (newOnlyWithPlaces) emittedFilters.push('formationDisponible');
+    if (newOnlyWithPlaces) emittedFilters.push('placeDisponible');
     if (newChildcare) emittedFilters.push('gardeEnfant');
 
     emit('update:filters', emittedFilters);
