@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import {ref, computed, watch, nextTick} from "vue";
 import {useRoute, useRouter} from "vue-router";
 import { StructureModel } from '@/models/Structure.model.ts';
 import type { FormationModel } from "@/models/Formation.model.ts";
@@ -7,6 +7,7 @@ import type { FormationModel } from "@/models/Formation.model.ts";
 const props = defineProps<{
   structures: StructureModel[];
   filters?: string[];
+  objFocus?: { type: string; slug: string };
 }>();
 const router = useRouter();
 const route = useRoute();
@@ -30,7 +31,6 @@ const allFormations = computed<FormationWithStructure[]>(() =>
   })
 );
 
-
 function navigateTo(item: FormationWithStructure) {
   router.push({
     query: {
@@ -44,6 +44,19 @@ function navigateTo(item: FormationWithStructure) {
 function toggleList() {
   isOpen.value = !isOpen.value;
 }
+
+watch(() => props.objFocus, async () => {
+  await nextTick();
+
+  if (props.objFocus?.type === 'formation') {
+    const el = document.getElementById(`formation-${props.objFocus.slug}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      console.warn(`Formation "${props.objFocus.slug}" non visible dans la liste (peut-être filtrée).`);
+    }
+  }
+});
 </script>
 
 <template>
@@ -58,6 +71,8 @@ function toggleList() {
       v-for="item in allFormations"
       :key="item.formation.id"
       @click="navigateTo(item)"
+      :id="`formation-${item.formation.slug}`"
+      :class="{ highlighted: props.objFocus?.type === 'formation' && props.objFocus?.slug === item.formation.slug }"
     >
       {{ item.formation.nom }} – <em>{{ item.structure.nom }}</em>
     </li>
@@ -95,5 +110,10 @@ li:hover {
 
 em {
   color: gray;
+}
+
+.highlighted {
+  background-color: #e0f7fa;
+  font-weight: bold;
 }
 </style>

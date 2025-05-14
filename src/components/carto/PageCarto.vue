@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import MapCarto from "@/components/carto/map/MapCarto.vue";
-import {computed, onMounted, ref } from "vue";
+import {computed, onMounted, ref, watch} from "vue";
 import {StructureModel} from "@/models/Structure.model.ts";
 import {PermanenceModel} from "@/models/Permanence.model.ts";
 import {getPermanences, getStructures} from "@/services/Structure.service.ts";
@@ -30,7 +30,7 @@ const objFocus = computed<Focus | undefined>(() => {
 
   if (rawType === 'structure' || rawType === 'permanence' || rawType === 'formation') {
     if (typeof rawSlug === 'string') {
-      return { type: rawType, slug: rawSlug };
+      return {type: rawType, slug: rawSlug};
     }
   }
   return undefined;
@@ -43,12 +43,33 @@ const togglePanel = async () => {
 };
 
 function resetFocus() {
-  const newQuery = { ...route.query };
+  const newQuery = {...route.query};
   delete newQuery.slug;
   delete newQuery.type;
-  router.replace({ query: newQuery });
+  router.replace({query: newQuery});
 }
 
+function onFocusFromMap({type, slug}: { type: string; slug: string }) {
+  router.push({
+    query: {
+      ...route.query,
+      type,
+      slug
+    }
+  });
+  isOpen.value = true;
+}
+
+function handleFiltersUpdate(newFilters: string[]) {
+  filters.value = newFilters;
+
+  if (route.query.slug || route.query.type) {
+    const newQuery = {...route.query, filters: newFilters};
+    delete newQuery.slug;
+    delete newQuery.type;
+    router.replace({query: newQuery});
+  }
+}
 
 onMounted(async () => {
   try {
@@ -60,6 +81,22 @@ onMounted(async () => {
     loading.value = false;
   }
 });
+
+watch(objFocus, (focus) => {
+  if (!focus) return;
+
+  const found =
+    (focus.type === 'permanence' && permanences.value.some(p => p.slug === focus.slug)) ||
+    (focus.type === 'structure' && structures.value.some(s => s.slug === focus.slug)) ||
+    (focus.type === 'formation' && structures.value.some(s =>
+      s.formations.some(f => f.slug === focus.slug)
+    ));
+
+  if (!found) {
+    resetFocus();
+  }
+});
+
 </script>
 
 <template>
@@ -68,17 +105,16 @@ onMounted(async () => {
   </div>
 
   <div v-else>
-    <FiltreContainer @update:filters="filters = $event" />
-
+    <FiltreContainer @update:filters="handleFiltersUpdate"/>
     <div class="carto-view">
       <div class="list-panel" :class="{ closed: !isOpen }">
         <button class="toggle-btn" @click="togglePanel">
           {{ isOpen ? '«' : '»' }}
         </button>
         <div v-if="isOpen" class="list-content">
-          <FormationsListe :structures="structures" :filters="filters" />
-          <StructuresListe :structures="structures" />
-          <PermancencesListe :permanences="permanences" />
+          <FormationsListe :structures="structures" :filters="filters" :objFocus="objFocus"/>
+          <StructuresListe :structures="structures" :objFocus="objFocus"/>
+          <PermancencesListe :permanences="permanences" :objFocus="objFocus"/>
         </div>
       </div>
 
@@ -89,7 +125,9 @@ onMounted(async () => {
           :permanences="permanences"
           :objFocus="objFocus"
           :filters="filters"
-          @reset-focus="resetFocus"/>
+          @reset-focus="resetFocus"
+          @focus-from-map="onFocusFromMap"
+        />
       </div>
     </div>
   </div>

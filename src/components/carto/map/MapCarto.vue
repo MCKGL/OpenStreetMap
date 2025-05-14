@@ -19,6 +19,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'reset-focus'): void;
+  (e: 'focus-from-map', payload: { type: 'structure' | 'permanence' | 'formation'; slug: string }): void;
 }>();
 
 type FormationWithStructure = {
@@ -115,6 +116,12 @@ function addMarkers() {
             iconSize: [41, 41], iconAnchor: [22, 0], className: 'marker-structure'
           })
         }).bindPopup(`<strong>${s.nom}</strong><br>${a.ville} (${a.codePostal})`);
+        m.on('click', () => {
+          emit('focus-from-map', {
+            type: 'structure',
+            slug: s.slug
+          });
+        });
         markers.addLayer(m);
         markerRefs[key] = m;
       }
@@ -131,6 +138,12 @@ function addMarkers() {
             iconSize: [41, 41], iconAnchor: [22, 0], className: 'marker-permanence'
           })
         }).bindPopup(`<strong>${p.nom}</strong><br>${a.ville} (${a.codePostal})`);
+        m.on('click', () => {
+          emit('focus-from-map', {
+            type: 'permanence',
+            slug: p.slug
+          });
+        });
         markers.addLayer(m);
         markerRefs[key] = m;
       }
@@ -167,6 +180,12 @@ function addMarkers() {
           className: 'marker-formation'
         })
       }).bindPopup(container);
+      m.on('click', () => {
+        emit('focus-from-map', {
+          type: 'formation',
+          slug: item.formation.slug
+        });
+      });
       markers.addLayer(m);
       markerRefs[key] = m;
     }

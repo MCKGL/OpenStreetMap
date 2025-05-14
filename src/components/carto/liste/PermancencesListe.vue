@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import {nextTick, ref, watch} from "vue";
 import {useRoute, useRouter} from "vue-router";
 import { PermanenceModel } from '@/models/Permanence.model.ts';
 
 const props = defineProps<{
   permanences: PermanenceModel[];
+  objFocus?: { type: string; slug: string };
 }>();
 const router = useRouter();
 const route = useRoute();
@@ -23,6 +24,18 @@ function navigateTo(permanence: PermanenceModel) {
 function toggleList() {
   isOpen.value = !isOpen.value;
 }
+
+watch(() => props.objFocus, async () => {
+  await nextTick();
+  if (props.objFocus?.type === 'permanence') {
+    const el = document.getElementById(`permanence-${props.objFocus.slug}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      console.warn(`Permanence "${props.objFocus.slug}" non visible dans la liste (peut-être filtrée).`);
+    }
+  }
+});
 </script>
 
 <template>
@@ -41,6 +54,8 @@ function toggleList() {
       v-for="permanence in props.permanences"
       :key="permanence.id"
       @click="navigateTo(permanence)"
+      :id="`permanence-${permanence.slug}`"
+      :class="{ highlighted: props.objFocus?.type === 'permanence' && props.objFocus?.slug === permanence.slug }"
     >
       {{ permanence.nom }}
     </li>
@@ -74,5 +89,10 @@ li {
 
 li:hover {
   background-color: #f0f0f0;
+}
+
+.highlighted {
+  background-color: #e0f7fa;
+  font-weight: bold;
 }
 </style>

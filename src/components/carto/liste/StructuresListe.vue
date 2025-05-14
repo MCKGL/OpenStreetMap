@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import {nextTick, ref, watch} from 'vue';
 import { StructureModel } from '@/models/Structure.model.ts';
 import {useRoute, useRouter} from 'vue-router';
 
 const props = defineProps<{
   structures: StructureModel[];
+  objFocus?: { type: string; slug: string };
 }>();
 const router = useRouter();
 const route = useRoute();
@@ -23,6 +24,18 @@ function navigateTo(structure: StructureModel) {
     }
   });
 }
+
+watch(() => props.objFocus, async () => {
+  await nextTick();
+  if (props.objFocus?.type === 'structure') {
+    const el = document.getElementById(`structure-${props.objFocus.slug}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      console.warn(`Stucture "${props.objFocus.slug}" non visible dans la liste (peut-être filtrée).`);
+    }
+  }
+});
 </script>
 
 <template>
@@ -37,6 +50,8 @@ function navigateTo(structure: StructureModel) {
       v-for="structure in props.structures"
       :key="structure.id"
       @click="navigateTo(structure)"
+      :id="`structure-${structure.slug}`"
+      :class="{ highlighted: props.objFocus?.type === 'structure' && props.objFocus?.slug === structure.slug }"
     >
       {{ structure.nom }}
     </li>
@@ -73,5 +88,10 @@ function navigateTo(structure: StructureModel) {
 
 .structures-list li:hover {
   background-color: #f0f0f0;
+}
+
+.highlighted {
+  background-color: #e0f7fa;
+  font-weight: bold;
 }
 </style>
