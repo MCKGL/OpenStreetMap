@@ -115,11 +115,17 @@ function addMarkers() {
 
   if (props.structures) {
     for (const s of props.structures) {
-      const totalFormations = s.formations?.length ?? 0;
-      const hasAny = totalFormations > 0;
-      const hasAvailable = hasAny && s.formations!.some(f => f.placeDisponible);
+      const formations = s.formations || [];
+      const hasSharedAddress = formations.some(f =>
+        f.adresses.some(fa =>
+          s.adresses.some(sa =>
+            sa.latitude === fa.latitude && sa.longitude === fa.longitude
+          )
+        )
+      );
+      const hasAvailable = formations.some(f => f.placeDisponible);
       let iconUrl = '/icones/marker_blue.png';
-      if (hasAny) {
+      if (hasSharedAddress) {
         iconUrl = hasAvailable
           ? '/icones/marker_yellow.png'
           : '/icones/marker_gray.png';
