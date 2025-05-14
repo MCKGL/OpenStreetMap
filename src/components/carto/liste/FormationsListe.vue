@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { useRouter } from "vue-router";
+import {useRoute, useRouter} from "vue-router";
 import { StructureModel } from '@/models/Structure.model.ts';
 import type { FormationModel } from "@/models/Formation.model.ts";
 
 const props = defineProps<{
   structures: StructureModel[];
+  filters?: string[];
 }>();
-
 const router = useRouter();
-
+const route = useRoute();
 const isOpen = ref(true);
 
 type FormationWithStructure = {
@@ -23,12 +23,18 @@ const allFormations = computed<FormationWithStructure[]>(() =>
       formation,
       structure
     }))
-  )
+  ).filter(item => {
+    if (props.filters?.includes('formationDisponible') && !item.formation.placeDisponible) return false;
+    if (props.filters?.includes('gardeEnfant') && !item.formation.gardeEnfants) return false;
+    return true;
+  })
 );
+
 
 function navigateTo(item: FormationWithStructure) {
   router.push({
     query: {
+      ...route.query,
       type: 'formation',
       slug: item.formation.slug
     }

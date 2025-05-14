@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { StructureModel } from '@/models/Structure.model.ts';
-import { useRouter } from 'vue-router';
+import {useRoute, useRouter} from 'vue-router';
 
 const props = defineProps<{
   structures: StructureModel[];
 }>();
 const router = useRouter();
-
+const route = useRoute();
 const isOpen = ref(true);
 
 function toggleList() {
@@ -17,6 +17,7 @@ function toggleList() {
 function navigateTo(structure: StructureModel) {
   router.push({
     query: {
+      ...route.query,
       type: 'structure',
       slug: structure.slug
     }

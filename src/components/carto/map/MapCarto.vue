@@ -14,6 +14,7 @@ const props = defineProps<{
   structures?: StructureModel[];
   permanences?: PermanenceModel[];
   objFocus?: { type: 'structure' | 'permanence' | 'formation'; slug: string };
+  filters?: string[];
 }>();
 
 const emit = defineEmits<{
@@ -25,13 +26,18 @@ type FormationWithStructure = {
   structure: StructureModel;
 };
 const allFormations = computed<FormationWithStructure[]>(() => {
-  return props.structures?.flatMap(structure =>
-    (structure.formations || []).map(frm => ({formation: frm, structure}))
+  const raw = props.structures?.flatMap(structure =>
+    (structure.formations || []).map(frm => ({ formation: frm, structure }))
   ) || [];
+
+  return raw.filter(item => {
+    if (props.filters?.includes('formationDisponible') && !item.formation.placeDisponible) return false;
+    if (props.filters?.includes('gardeEnfant') && !item.formation.gardeEnfants) return false;
+    return true;
+  });
 });
 
 const mapContainer = ref<HTMLElement | null>(null);
-console.log(props.objFocus);
 let map: L.Map;
 let markers: L.MarkerClusterGroup;
 const markerRefs: Record<string, L.Marker> = {};
@@ -236,13 +242,11 @@ onMounted(() => {
 });
 
 watch(() => props.objFocus, () => {
-  console.log('objFocus changed:', props.objFocus);
   openSelectedPopup();
 });
 
-// Watch pour le filtre à TODO
 watch(
-  () => [props.structures, props.permanences],
+  () => [props.structures, props.permanences, props.filters],
   () => {
     markers.clearLayers();
     addMarkers();

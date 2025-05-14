@@ -1,18 +1,19 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { useRouter } from "vue-router";
+import {useRoute, useRouter} from "vue-router";
 import { PermanenceModel } from '@/models/Permanence.model.ts';
 
 const props = defineProps<{
   permanences: PermanenceModel[];
 }>();
 const router = useRouter();
-
+const route = useRoute();
 const isOpen = ref(true);
 
 function navigateTo(permanence: PermanenceModel) {
   router.push({
     query: {
+      ...route.query,
       type: 'permanence',
       slug: permanence.slug
     }

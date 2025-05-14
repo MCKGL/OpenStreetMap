@@ -10,6 +10,11 @@ import {useRoute, useRouter} from "vue-router";
 import FormationsListe from "@/components/carto/liste/FormationsListe.vue";
 import FiltreContainer from "@/components/carto/filtre/FiltreContainer.vue";
 
+interface Focus {
+  type: 'structure' | 'permanence' | 'formation';
+  slug: string;
+}
+
 const structures = ref<StructureModel[]>([]);
 const permanences = ref<PermanenceModel[]>([]);
 const loading = ref(true);
@@ -18,11 +23,6 @@ const mapRef = ref();
 const route = useRoute();
 const router = useRouter();
 const filters = ref<string[]>([]);
-
-interface Focus {
-  type: 'structure' | 'permanence' | 'formation';
-  slug: string;
-}
 
 const objFocus = computed<Focus | undefined>(() => {
   const rawType = route.query.type as string | undefined;
@@ -43,15 +43,17 @@ const togglePanel = async () => {
 };
 
 function resetFocus() {
-  router.replace({query: {}});
+  const newQuery = { ...route.query };
+  delete newQuery.slug;
+  delete newQuery.type;
+  router.replace({ query: newQuery });
 }
+
 
 onMounted(async () => {
   try {
     structures.value = await getStructures();
     permanences.value = await getPermanences();
-    console.log(structures.value);
-    console.log(permanences.value);
   } catch (err: unknown) {
     console.error('Erreur lors du chargement des données :', err);
   } finally {
@@ -74,7 +76,7 @@ onMounted(async () => {
           {{ isOpen ? '«' : '»' }}
         </button>
         <div v-if="isOpen" class="list-content">
-          <FormationsListe :structures="structures" />
+          <FormationsListe :structures="structures" :filters="filters" />
           <StructuresListe :structures="structures" />
           <PermancencesListe :permanences="permanences" />
         </div>
@@ -86,6 +88,7 @@ onMounted(async () => {
           :structures="structures"
           :permanences="permanences"
           :objFocus="objFocus"
+          :filters="filters"
           @reset-focus="resetFocus"/>
       </div>
     </div>
