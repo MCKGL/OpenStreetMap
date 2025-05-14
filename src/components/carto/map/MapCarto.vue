@@ -31,10 +31,17 @@ const formationsNotOnStructure = computed<FormationWithStructure[]>(() => {
     (structure.formations || []).map(frm => ({ formation: frm, structure }))
   ) || [];
 
-  return raw.filter(item => {
-    if (props.filters?.includes('placeDisponible') && !item.formation.placeDisponible) return false;
-    if (props.filters?.includes('gardeEnfant') && !item.formation.gardeEnfants) return false;
-    return true;
+  return raw.filter(({ formation, structure }) => {
+    if (props.filters?.includes('placeDisponible') && !formation.placeDisponible) return false;
+    if (props.filters?.includes('gardeEnfant') && !formation.gardeEnfants) return false;
+
+    const hasCommonAddress = formation.adresses.some(fAddr =>
+      structure.adresses.some(sAddr =>
+        sAddr.latitude === fAddr.latitude && sAddr.longitude === fAddr.longitude
+      )
+    );
+
+    return !hasCommonAddress;
   });
 });
 
@@ -108,11 +115,21 @@ function addMarkers() {
 
   if (props.structures) {
     for (const s of props.structures) {
+      const totalFormations = s.formations?.length ?? 0;
+      const hasAny = totalFormations > 0;
+      const hasAvailable = hasAny && s.formations!.some(f => f.placeDisponible);
+      let iconUrl = '/icones/marker_blue.png';
+      if (hasAny) {
+        iconUrl = hasAvailable
+          ? '/icones/marker_yellow.png'
+          : '/icones/marker_gray.png';
+      }
+
       for (const a of s.adresses) {
         const key = `structure-${s.slug}-${a.latitude}-${a.longitude}`;
         const m = L.marker([a.latitude, a.longitude], {
           icon: L.icon({
-            iconUrl: '/icones/marker_blue.png',
+            iconUrl,
             iconSize: [41, 41], iconAnchor: [22, 0], className: 'marker-structure'
           })
         }).bindPopup(`<strong>${s.nom}</strong><br>${a.ville} (${a.codePostal})`);
@@ -194,20 +211,43 @@ function addMarkers() {
 
 function openSelectedPopup() {
   if (!props.objFocus) return;
-  const {type, slug} = props.objFocus;
-  const prefix = type;
+
+  const { type, slug } = props.objFocus;
+  let markerType = type;
+  let markerSlug = slug;
+
+  if (type === 'formation') {
+    const assoc = props.structures
+      ?.flatMap(s => s.formations.map(f => ({ structure: s, formation: f })))
+      .find(x => x.formation.slug === slug);
+
+    if (assoc) {
+      const { formation, structure } = assoc;
+      const shared = formation.adresses.some(fa =>
+        structure.adresses.some(sa =>
+          sa.latitude === fa.latitude && sa.longitude === fa.longitude
+        )
+      );
+      if (shared) {
+        markerType = 'structure';
+        markerSlug = structure.slug;
+      }
+    }
+  }
+
   const key = Object.keys(markerRefs)
-    .find(k => k.startsWith(`${prefix}-${slug}-`));
+    .find(k => k.startsWith(`${markerType}-${markerSlug}-`));
   if (!key) return;
 
-  const marker = markerRefs[key];
-  markers.zoomToShowLayer(marker, () => {
+  const m = markerRefs[key];
+  markers.zoomToShowLayer(m, () => {
     setTimeout(() => {
-      map.setView(marker.getLatLng(), Math.max(map.getZoom(), 16), {animate: true});
-      marker.openPopup();
+      map.setView(m.getLatLng(), Math.max(map.getZoom(), 16), { animate: true });
+      m.openPopup();
     }, 100);
   });
 }
+
 
 function addLegend() {
   const legend = (L.control as unknown as (options: L.ControlOptions) => L.Control)({

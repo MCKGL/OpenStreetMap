@@ -17,7 +17,6 @@ type FormationWithStructure = {
   formation: FormationModel;
   structure: StructureModel;
 };
-
 const allFormations = computed<FormationWithStructure[]>(() =>
   props.structures.flatMap(structure =>
     (structure.formations || []).map(formation => ({
