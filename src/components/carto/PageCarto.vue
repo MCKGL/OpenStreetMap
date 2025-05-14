@@ -60,17 +60,6 @@ function onFocusFromMap({type, slug}: { type: string; slug: string }) {
   isOpen.value = true;
 }
 
-function handleFiltersUpdate(newFilters: string[]) {
-  filters.value = newFilters;
-
-  if (route.query.slug || route.query.type) {
-    const newQuery = {...route.query, filters: newFilters};
-    delete newQuery.slug;
-    delete newQuery.type;
-    router.replace({query: newQuery});
-  }
-}
-
 onMounted(async () => {
   try {
     structures.value = await getStructures();
@@ -105,7 +94,7 @@ watch(objFocus, (focus) => {
   </div>
 
   <div v-else>
-    <FiltreContainer @update:filters="handleFiltersUpdate"/>
+    <FiltreContainer @update:filters="filters = $event"/>
     <div class="carto-view">
       <div class="list-panel" :class="{ closed: !isOpen }">
         <button class="toggle-btn" @click="togglePanel">

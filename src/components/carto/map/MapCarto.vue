@@ -26,7 +26,7 @@ type FormationWithStructure = {
   formation: FormationModel;
   structure: StructureModel;
 };
-const allFormations = computed<FormationWithStructure[]>(() => {
+const formationsNotOnStructure = computed<FormationWithStructure[]>(() => {
   const raw = props.structures?.flatMap(structure =>
     (structure.formations || []).map(frm => ({ formation: frm, structure }))
   ) || [];
@@ -150,7 +150,7 @@ function addMarkers() {
     }
   }
 
-  for (const item of allFormations.value) {
+  for (const item of formationsNotOnStructure.value) {
     for (const addr of item.formation.adresses) {
       const key = `formation-${item.formation.slug}-${addr.latitude}-${addr.longitude}`;
 
