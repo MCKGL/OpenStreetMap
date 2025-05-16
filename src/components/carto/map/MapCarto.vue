@@ -123,22 +123,73 @@ function addMarkers() {
           )
         )
       );
-      const hasAvailable = formations.some(f => f.placeDisponible);
       let iconUrl = '/icones/marker_blue.png';
       if (hasSharedAddress) {
-        iconUrl = hasAvailable
+        const hasAvailableAtSharedAddress = formations.some(f =>
+          f.placeDisponible &&
+          f.adresses.some(fa =>
+            s.adresses.some(sa =>
+              sa.latitude === fa.latitude && sa.longitude === fa.longitude
+            )
+          )
+        );
+        iconUrl = hasAvailableAtSharedAddress
           ? '/icones/marker_yellow.png'
           : '/icones/marker_gray.png';
       }
 
       for (const a of s.adresses) {
         const key = `structure-${s.slug}-${a.latitude}-${a.longitude}`;
+        const formationsAtThisAddress = (s.formations || []).filter(f =>
+          f.adresses.some(fa => fa.latitude === a.latitude && fa.longitude === a.longitude)
+        );
+        const container = document.createElement('div');
+        const nomStructure = document.createElement('strong');
+        nomStructure.textContent = s.nom;
+        container.appendChild(nomStructure);
+        if (formationsAtThisAddress.length) {
+          const label = document.createElement('div');
+          label.textContent = 'Formations de cette structure à cette adresse :';
+          label.style.marginTop = '8px';
+          container.appendChild(label);
+          const list = document.createElement('ul');
+          list.style.paddingLeft = '16px';
+          for (const f of formationsAtThisAddress) {
+            const li = document.createElement('li');
+            const link = document.createElement('button');
+            link.type = 'button';
+            link.textContent = f.nom;
+            link.style.background = 'none';
+            link.style.border = 'none';
+            link.style.color = '#007BFF';
+            link.style.cursor = 'pointer';
+            link.style.padding = '0';
+            link.onclick = () => {
+              emit('focus-from-map', {
+                type: 'formation',
+                slug: f.slug
+              });
+            };
+            li.appendChild(link);
+            list.appendChild(li);
+          }
+          container.appendChild(list);
+        }
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = 'Voir la structure';
+        btn.style.marginTop = '10px';
+        btn.style.display = 'block';
+        btn.onclick = () => {
+          router.push(`/${s.slug}`);
+        };
+        container.appendChild(btn);
         const m = L.marker([a.latitude, a.longitude], {
           icon: L.icon({
             iconUrl,
             iconSize: [41, 41], iconAnchor: [22, 0], className: 'marker-structure'
           })
-        }).bindPopup(`<strong>${s.nom}</strong><br>${a.ville} (${a.codePostal})`);
+        }).bindPopup(container);
         m.on('click', () => {
           emit('focus-from-map', {
             type: 'structure',
