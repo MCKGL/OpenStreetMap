@@ -73,7 +73,7 @@ watch(() => props.objFocus, async () => {
       :id="`formation-${item.formation.slug}`"
       :class="{ highlighted: props.objFocus?.type === 'formation' && props.objFocus?.slug === item.formation.slug }"
     >
-      {{ item.formation.nom }} – <em>{{ item.structure.nom }}</em>
+      {{ item.formation.nom }} - {{ item.formation.placeDisponible ? "Places disponibles" : "Pas de places disponibles" }} – <em>{{ item.structure.nom }}</em>
     </li>
   </ul>
 </template>

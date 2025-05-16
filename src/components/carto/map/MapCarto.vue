@@ -159,18 +159,25 @@ function addMarkers() {
             const li = document.createElement('li');
             const link = document.createElement('button');
             link.type = 'button';
-            link.textContent = f.nom;
+            link.textContent = `${f.nom}${f.placeDisponible ? ' (places disponibles)' : ' (pas de places disponibles)'}`;
             link.style.background = 'none';
             link.style.border = 'none';
-            link.style.color = '#007BFF';
-            link.style.cursor = 'pointer';
             link.style.padding = '0';
-            link.onclick = () => {
-              emit('focus-from-map', {
-                type: 'formation',
-                slug: f.slug
-              });
-            };
+            link.style.margin = '4px 0';
+            if (f.placeDisponible) {
+              link.style.color = '#007BFF';
+              link.style.cursor = 'pointer';
+              link.onclick = () => {
+                emit('focus-from-map', {
+                  type: 'formation',
+                  slug: f.slug
+                });
+              };
+            } else {
+              link.style.color = 'gray';
+              link.style.cursor = 'default';
+              link.disabled = true;
+            }
             li.appendChild(link);
             list.appendChild(li);
           }
@@ -250,9 +257,30 @@ function addMarkers() {
 
     const container = document.createElement('div');
 
+    const header = document.createElement('div');
+    header.style.display = 'flex';
+    header.style.alignItems = 'center';
+
     const nomStructure = document.createElement('strong');
     nomStructure.textContent = structure.nom;
-    container.appendChild(nomStructure);
+    header.appendChild(nomStructure);
+
+    const focusIcon = document.createElement('img');
+    focusIcon.src = '/icones/focus-icon.svg';
+    focusIcon.alt = 'Focus sur la structure';
+    focusIcon.style.width = '16px';
+    focusIcon.style.height = '16px';
+    focusIcon.style.cursor = 'pointer';
+    focusIcon.style.marginLeft = '8px';
+    focusIcon.onclick = () => {
+      emit('focus-from-map', {
+        type: 'structure',
+        slug: structure.slug
+      });
+    };
+    header.appendChild(focusIcon);
+
+    container.appendChild(header);
 
     const label = document.createElement('div');
     label.textContent = 'Formations à cette adresse :';
@@ -266,15 +294,24 @@ function addMarkers() {
       const li = document.createElement('li');
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.textContent = f.nom;
+      btn.textContent = `${f.nom}${f.placeDisponible ? ' (places disponibles)' : ' (pas de places disponibles)'}`;
       btn.style.background = 'none';
       btn.style.border = 'none';
-      btn.style.color = '#007BFF';
-      btn.style.cursor = 'pointer';
       btn.style.padding = '0';
-      btn.onclick = () => {
-        emit('focus-from-map', { type: 'formation', slug: f.slug });
-      };
+      btn.style.margin = '4px 0';
+
+      if (f.placeDisponible) {
+        btn.style.color = '#007BFF';
+        btn.style.cursor = 'pointer';
+        btn.onclick = () => {
+          emit('focus-from-map', { type: 'formation', slug: f.slug });
+        };
+      } else {
+        btn.style.color = 'gray';
+        btn.style.cursor = 'default';
+        btn.disabled = true;
+      }
+
       li.appendChild(btn);
       list.appendChild(li);
     }
