@@ -16,6 +16,7 @@ const props = defineProps<{
   objFocus?: { type: 'structure' | 'permanence' | 'formation'; slug: string };
   filters?: string[];
 }>();
+const isGroup = ref(false);
 
 const emit = defineEmits<{
   (e: 'reset-focus'): void;
@@ -224,50 +225,100 @@ function addMarkers() {
     }
   }
 
+  const groupedFormations = new Map<string, {
+    structure: StructureModel,
+    adresse: { latitude: number, longitude: number, ville: string, codePostal: string },
+    formations: FormationModel[]
+  }>();
+
   for (const item of formationsNotOnStructure.value) {
     for (const addr of item.formation.adresses) {
-      const key = `formation-${item.formation.slug}-${addr.latitude}-${addr.longitude}`;
+      const key = `${item.structure.slug}-${addr.latitude}-${addr.longitude}`;
+      if (!groupedFormations.has(key)) {
+        groupedFormations.set(key, {
+          structure: item.structure,
+          adresse: addr,
+          formations: []
+        });
+      }
+      groupedFormations.get(key)!.formations.push(item.formation);
+    }
+  }
 
-      const container = document.createElement('div');
-      container.innerHTML = `
-      <strong>${item.formation.nom}</strong><br/>
-      <em>${item.structure.nom}</em><br/>
-      ${addr.ville} (${addr.codePostal})<br/>
-    `;
+  for (const [key, { structure, adresse, formations }] of groupedFormations.entries()) {
+    const hasPlace = formations.some(f => f.placeDisponible);
 
+    const container = document.createElement('div');
+
+    const nomStructure = document.createElement('strong');
+    nomStructure.textContent = structure.nom;
+    container.appendChild(nomStructure);
+
+    const label = document.createElement('div');
+    label.textContent = 'Formations à cette adresse :';
+    label.style.marginTop = '8px';
+    container.appendChild(label);
+
+    const list = document.createElement('ul');
+    list.style.paddingLeft = '16px';
+
+    for (const f of formations) {
+      const li = document.createElement('li');
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.textContent = 'Voir structure';
-      btn.style.marginTop = '8px';
-
-      btn.addEventListener('click', () => {
-        router.push(`/${item.structure.slug}`);
-      });
-
-      container.appendChild(btn);
-
-      const m = L.marker([addr.latitude, addr.longitude], {
-        icon: L.icon({
-          iconUrl: item.formation.placeDisponible ? '/icones/marker_yellow.png' : '/icones/marker_gray.png',
-          iconSize: [41, 41],
-          iconAnchor: [22, 0],
-          className: 'marker-formation'
-        })
-      }).bindPopup(container);
-      m.on('click', () => {
-        emit('focus-from-map', {
-          type: 'formation',
-          slug: item.formation.slug
-        });
-      });
-      markers.addLayer(m);
-      markerRefs[key] = m;
+      btn.textContent = f.nom;
+      btn.style.background = 'none';
+      btn.style.border = 'none';
+      btn.style.color = '#007BFF';
+      btn.style.cursor = 'pointer';
+      btn.style.padding = '0';
+      btn.onclick = () => {
+        emit('focus-from-map', { type: 'formation', slug: f.slug });
+      };
+      li.appendChild(btn);
+      list.appendChild(li);
     }
+
+    container.appendChild(list);
+
+    const btnVoir = document.createElement('button');
+    btnVoir.type = 'button';
+    btnVoir.textContent = 'Voir structure';
+    btnVoir.style.marginTop = '10px';
+    btnVoir.onclick = () => {
+      router.push(`/${structure.slug}`);
+    };
+    container.appendChild(btnVoir);
+
+    const m = L.marker([adresse.latitude, adresse.longitude], {
+      icon: L.icon({
+        iconUrl: hasPlace ? '/icones/marker_yellow.png' : '/icones/marker_gray.png',
+        iconSize: [41, 41],
+        iconAnchor: [22, 0],
+        className: 'marker-formation'
+      })
+    }).bindPopup(container);
+    m.on('click', () => {
+      isGroup.value = true;
+      emit('focus-from-map', {
+        type: 'structure',
+        slug: structure.slug
+      });
+    });
+    markers.addLayer(m);
+    markerRefs[`formation-group-${key}`] = m;
   }
 }
 
 function openSelectedPopup() {
   if (!props.objFocus) return;
+  if (isGroup.value) {
+    isGroup.value = false;
+    const key = Object.keys(markerRefs)
+        .find(k => k.startsWith(`${props.objFocus?.type}-${props.objFocus?.slug}-`));
+    if (key) markerRefs[key].openPopup();
+    return;
+  }
 
   const { type, slug } = props.objFocus;
   let markerType = type;
@@ -304,7 +355,6 @@ function openSelectedPopup() {
     }, 100);
   });
 }
-
 
 function addLegend() {
   const legend = (L.control as unknown as (options: L.ControlOptions) => L.Control)({
