@@ -16,7 +16,6 @@ const props = defineProps<{
   objFocus?: { type: 'structure' | 'permanence' | 'formation'; slug: string };
   filters?: string[];
 }>();
-const isGroup = ref(false);
 
 const emit = defineEmits<{
   (e: 'reset-focus'): void;
@@ -27,6 +26,7 @@ type FormationWithStructure = {
   formation: FormationModel;
   structure: StructureModel;
 };
+const formationToGroupKey: Record<string, string> = {};
 const formationsNotOnStructure = computed<FormationWithStructure[]>(() => {
   const raw = props.structures?.flatMap(structure =>
     (structure.formations || []).map(frm => ({ formation: frm, structure }))
@@ -290,6 +290,11 @@ function addMarkers() {
     };
     container.appendChild(btnVoir);
 
+    const groupKey = `formation-group-${key}`;
+    for (const f of formations) {
+      formationToGroupKey[f.slug] = groupKey;
+    }
+
     const m = L.marker([adresse.latitude, adresse.longitude], {
       icon: L.icon({
         iconUrl: hasPlace ? '/icones/marker_yellow.png' : '/icones/marker_gray.png',
@@ -299,30 +304,35 @@ function addMarkers() {
       })
     }).bindPopup(container);
     m.on('click', () => {
-      isGroup.value = true;
       emit('focus-from-map', {
-        type: 'structure',
+        type: 'formation',
         slug: structure.slug
       });
     });
     markers.addLayer(m);
-    markerRefs[`formation-group-${key}`] = m;
+    markerRefs[groupKey] = m;
   }
 }
 
 function openSelectedPopup() {
   if (!props.objFocus) return;
-  if (isGroup.value) {
-    isGroup.value = false;
-    const key = Object.keys(markerRefs)
-        .find(k => k.startsWith(`${props.objFocus?.type}-${props.objFocus?.slug}-`));
-    if (key) markerRefs[key].openPopup();
-    return;
-  }
 
   const { type, slug } = props.objFocus;
   let markerType = type;
   let markerSlug = slug;
+
+  if (type === 'formation' && formationToGroupKey[slug]) {
+    const key = formationToGroupKey[slug];
+    const m = markerRefs[key];
+    if (!m) return;
+    markers.zoomToShowLayer(m, () => {
+      setTimeout(() => {
+        map.setView(m.getLatLng(), Math.max(map.getZoom(), 16), { animate: true });
+        m.openPopup();
+      }, 100);
+    });
+    return;
+  }
 
   if (type === 'formation') {
     const assoc = props.structures
