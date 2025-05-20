@@ -22,6 +22,8 @@ const emit = defineEmits<{
   (e: 'focus-from-map', payload: { type: 'structure' | 'permanence' | 'formation'; slug: string }): void;
 }>();
 
+let highlightLayer: L.LayerGroup | null = null;
+
 type FormationWithStructure = {
   formation: FormationModel;
   structure: StructureModel;
@@ -116,50 +118,41 @@ function addMarkers() {
 
   if (props.structures) {
     for (const s of props.structures) {
-      const formations = s.formations || [];
-      const hasSharedAddress = formations.some(f =>
-        f.adresses.some(fa =>
-          s.adresses.some(sa =>
-            sa.latitude === fa.latitude && sa.longitude === fa.longitude
-          )
-        )
-      );
-      let iconUrl = '/icones/marker_blue.png';
-      if (hasSharedAddress) {
-        const hasAvailableAtSharedAddress = formations.some(f =>
-          f.placeDisponible &&
-          f.adresses.some(fa =>
-            s.adresses.some(sa =>
-              sa.latitude === fa.latitude && sa.longitude === fa.longitude
-            )
-          )
-        );
-        iconUrl = hasAvailableAtSharedAddress
-          ? '/icones/marker_yellow.png'
-          : '/icones/marker_gray.png';
-      }
-
       for (const a of s.adresses) {
         const key = `structure-${s.slug}-${a.latitude}-${a.longitude}`;
         const formationsAtThisAddress = (s.formations || []).filter(f =>
-          f.adresses.some(fa => fa.latitude === a.latitude && fa.longitude === a.longitude)
+          f.adresses.some(fa =>
+            fa.latitude === a.latitude && fa.longitude === a.longitude
+          )
         );
+
+        let iconUrl = '/icones/marker_blue.png';
+        if (formationsAtThisAddress.length) {
+          const hasPlace = formationsAtThisAddress.some(f => f.placeDisponible);
+          iconUrl = hasPlace
+            ? '/icones/marker_yellow.png'
+            : '/icones/marker_gray.png';
+        }
+
         const container = document.createElement('div');
         const nomStructure = document.createElement('strong');
         nomStructure.textContent = s.nom;
         container.appendChild(nomStructure);
+
+        const label = document.createElement('div');
         if (formationsAtThisAddress.length) {
-          const label = document.createElement('div');
-          label.textContent = 'Formations de cette structure à cette adresse :';
+          label.textContent = 'Formations à cette adresse :';
           label.style.marginTop = '8px';
           container.appendChild(label);
+
           const list = document.createElement('ul');
           list.style.paddingLeft = '16px';
+
           for (const f of formationsAtThisAddress) {
             const li = document.createElement('li');
             const link = document.createElement('button');
             link.type = 'button';
-            link.textContent = `${f.nom}${f.placeDisponible ? ' (places disponibles)' : ' (pas de places disponibles)'}`;
+            link.textContent = `${f.nom}${f.placeDisponible ? ' (places disponibles)' : ' (pas de places)'}`;
             link.style.background = 'none';
             link.style.border = 'none';
             link.style.padding = '0';
@@ -167,12 +160,7 @@ function addMarkers() {
             if (f.placeDisponible) {
               link.style.color = '#007BFF';
               link.style.cursor = 'pointer';
-              link.onclick = () => {
-                emit('focus-from-map', {
-                  type: 'formation',
-                  slug: f.slug
-                });
-              };
+              link.onclick = () => emit('focus-from-map', { type: 'formation', slug: f.slug });
             } else {
               link.style.color = 'gray';
               link.style.cursor = 'default';
@@ -181,29 +169,33 @@ function addMarkers() {
             li.appendChild(link);
             list.appendChild(li);
           }
+
           container.appendChild(list);
+        } else {
+          label.textContent = 'Pas de formation à cette adresse';
+          label.style.marginTop = '8px';
+          label.style.fontStyle = 'italic';
+          container.appendChild(label);
         }
+
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.textContent = 'Voir la structure';
         btn.style.marginTop = '10px';
         btn.style.display = 'block';
-        btn.onclick = () => {
-          router.push(`/${s.slug}`);
-        };
+        btn.onclick = () => router.push(`/${s.slug}`);
         container.appendChild(btn);
+
         const m = L.marker([a.latitude, a.longitude], {
           icon: L.icon({
             iconUrl,
-            iconSize: [41, 41], iconAnchor: [22, 0], className: 'marker-structure'
+            iconSize: [41, 41],
+            iconAnchor: [22, 0],
+            className: 'marker-structure'
           })
         }).bindPopup(container);
-        m.on('click', () => {
-          emit('focus-from-map', {
-            type: 'structure',
-            slug: s.slug
-          });
-        });
+
+        m.on('click', () => emit('focus-from-map', { type: 'structure', slug: s.slug }));
         markers.addLayer(m);
         markerRefs[key] = m;
       }
@@ -351,7 +343,63 @@ function addMarkers() {
   }
 }
 
+function clearHighlight() {
+  if (highlightLayer) {
+    map.removeLayer(highlightLayer);
+    highlightLayer = null;
+  }
+}
+
+function highlightStructure(s: StructureModel) {
+  clearHighlight();
+
+  highlightLayer = L.layerGroup().addTo(map);
+
+  const clones: L.Marker[] = [];
+
+  for (const a of s.adresses) {
+    const key = `structure-${s.slug}-${a.latitude}-${a.longitude}`;
+    const original = markerRefs[key];
+    if (!original) continue;
+
+    const origIcon = (original.getIcon() as L.Icon);
+    const origUrl = origIcon.options.iconUrl as string;
+
+    const cloneUrl = origUrl.replace(/(marker_[a-z]+)\.png$/, '$1_clone.png');
+
+    const cloneIcon = L.icon({
+      ...origIcon.options,
+      iconUrl: cloneUrl
+    });
+
+    const popupContent = original.getPopup()?.getContent() as HTMLElement | string;
+
+    const clone = L.marker(original.getLatLng(), { icon: cloneIcon })
+      .bindPopup(popupContent)
+      .on('click', () => {
+        clearHighlight();
+        markers.zoomToShowLayer(original, () => {
+          map.setView(original.getLatLng(), Math.max(map.getZoom(), 16), { animate: true });
+          original.openPopup();
+        });
+      });
+
+    highlightLayer.addLayer(clone);
+    clones.push(clone);
+  }
+
+  if (clones.length > 0) {
+    clones[0].openPopup();
+  }
+
+  const bounds = L.latLngBounds(s.adresses.map(a =>
+    [a.latitude, a.longitude] as [number, number]
+  ));
+  map.fitBounds(bounds, { padding: [50, 50] });
+}
+
 function openSelectedPopup() {
+  clearHighlight();
   if (!props.objFocus) return;
 
   const { type, slug } = props.objFocus;
@@ -387,6 +435,27 @@ function openSelectedPopup() {
         markerType = 'structure';
         markerSlug = structure.slug;
       }
+    }
+  }
+
+  if (type === 'structure') {
+    const s = props.structures?.find(s => s.slug === slug);
+    if (s) {
+      if (s.adresses.length > 1) {
+        highlightStructure(s);
+        return;
+      }
+      const key0 = `structure-${s.slug}-${s.adresses[0].latitude}-${s.adresses[0].longitude}`;
+      const m0 = markerRefs[key0];
+      if (m0) {
+        markers.zoomToShowLayer(m0, () => {
+          setTimeout(() => {
+            map.setView(m0.getLatLng(), Math.max(map.getZoom(), 16), { animate: true });
+            m0.openPopup();
+          }, 100);
+        });
+      }
+      return;
     }
   }
 
@@ -561,5 +630,4 @@ watch(
     transform: translateY(50%);
   }
 }
-
 </style>
