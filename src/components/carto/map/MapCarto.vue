@@ -22,8 +22,6 @@ const emit = defineEmits<{
   (e: 'focus-from-map', payload: { type: 'structure' | 'permanence' | 'formation'; slug: string }): void;
 }>();
 
-let highlightLayer: L.LayerGroup | null = null;
-
 type FormationWithStructure = {
   formation: FormationModel;
   structure: StructureModel;
@@ -54,6 +52,8 @@ let markers: L.MarkerClusterGroup;
 const markerRefs: Record<string, L.Marker> = {};
 let ileDeFranceBounds: L.LatLngBounds;
 const router = useRouter();
+let highlightLayer: L.LayerGroup | null = null;
+let infoMulti: L.Control | null = null;
 
 defineExpose({
   resizeMap: () => {
@@ -352,6 +352,10 @@ function clearHighlight() {
     map.removeLayer(highlightLayer);
     highlightLayer = null;
   }
+  if (infoMulti) {
+    map.removeControl(infoMulti);
+    infoMulti = null;
+  }
 }
 
 function highlightMulti(
@@ -405,6 +409,21 @@ function highlightMulti(
     [a.latitude, a.longitude] as [number, number]
   ));
   map.fitBounds(bounds, { padding: [50, 50] });
+
+  const count = adresses.length;
+  const newInfo = (L.control as unknown as (opts: L.ControlOptions) => L.Control)({
+    position: 'bottomleft'
+  });
+  newInfo.onAdd = (): HTMLElement => {
+    const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+    div.style.padding = '6px 10px';
+    div.style.background = 'rgba(255,255,255,0.9)';
+    div.style.fontSize = '13px';
+    div.innerHTML = `⚠️ Il existe ${count} adresse${count > 1 ? 's' : ''} pour cette ${type}`;
+    return div;
+  };
+  infoMulti = newInfo;
+  newInfo.addTo(map);
 }
 
 function openSelectedPopup() {
@@ -631,6 +650,11 @@ watch(
 .ico-legend {
   width: 30px;
   height: 30px;
+}
+
+.leaflet-control {
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
 
 @media (max-width: 768px) {
