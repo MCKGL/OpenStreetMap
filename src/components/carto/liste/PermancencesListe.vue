@@ -25,17 +25,26 @@ function toggleList() {
   isOpen.value = !isOpen.value;
 }
 
-watch(() => props.objFocus, async () => {
-  await nextTick();
-  if (props.objFocus?.type === 'permanence') {
-    const el = document.getElementById(`permanence-${props.objFocus.slug}`);
+watch(
+  () => props.objFocus,
+  async (focus) => {
+    if (focus?.type !== 'permanence') return;
+
+    const found = props.permanences.some(p => p.slug === focus.slug);
+    if (!found) {
+      console.warn(`Permanence "${focus.slug}" introuvable dans la liste.`);
+      return;
+    }
+
+    await nextTick();
+    const el = document.getElementById(`permanence-${focus.slug}`);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else {
-      console.warn(`Permanence "${props.objFocus.slug}" non visible dans la liste (peut-être filtrée).`);
     }
-  }
-});
+  },
+  { immediate: true }
+);
+
 </script>
 
 <template>

@@ -50,14 +50,28 @@ function resetFocus() {
 }
 
 function onFocusFromMap({type, slug}: { type: string; slug: string }) {
-  router.push({
-    query: {
-      ...route.query,
-      type,
-      slug
-    }
-  });
+  const wasClosed = !isOpen.value;
   isOpen.value = true;
+
+  if (wasClosed) {
+    setTimeout(() => {
+      router.push({
+        query: {
+          ...route.query,
+          type,
+          slug
+        }
+      });
+    }, 320);
+  } else {
+    router.push({
+      query: {
+        ...route.query,
+        type,
+        slug
+      }
+    });
+  }
 }
 
 onMounted(async () => {

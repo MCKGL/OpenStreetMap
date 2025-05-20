@@ -44,18 +44,31 @@ function toggleList() {
   isOpen.value = !isOpen.value;
 }
 
-watch(() => props.objFocus, async () => {
-  await nextTick();
+watch(
+  () => props.objFocus,
+  async (focus) => {
+    if (focus?.type !== 'formation') return;
 
-  if (props.objFocus?.type === 'formation') {
-    const el = document.getElementById(`formation-${props.objFocus.slug}`);
+    const formationExists = allFormations.value.some(
+      (item) => item.formation.slug === focus.slug
+    );
+
+    if (!formationExists) {
+      console.warn(`Formation "${focus.slug}" introuvable dans la liste.`);
+      return;
+    }
+
+    // Attendre le DOM à jour
+    await nextTick();
+
+    const el = document.getElementById(`formation-${focus.slug}`);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else {
-      console.warn(`Formation "${props.objFocus.slug}" non visible dans la liste (peut-être filtrée).`);
     }
-  }
-});
+  },
+  { immediate: true }
+);
+
 </script>
 
 <template>

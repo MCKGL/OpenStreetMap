@@ -25,17 +25,26 @@ function navigateTo(structure: StructureModel) {
   });
 }
 
-watch(() => props.objFocus, async () => {
-  await nextTick();
-  if (props.objFocus?.type === 'structure') {
-    const el = document.getElementById(`structure-${props.objFocus.slug}`);
+watch(
+  () => props.objFocus,
+  async (focus) => {
+    if (focus?.type !== 'structure') return;
+
+    const found = props.structures.some(s => s.slug === focus.slug);
+    if (!found) {
+      console.warn(`Structure "${focus.slug}" introuvable dans la liste.`);
+      return;
+    }
+
+    await nextTick();
+    const el = document.getElementById(`structure-${focus.slug}`);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else {
-      console.warn(`Stucture "${props.objFocus.slug}" non visible dans la liste (peut-être filtrée).`);
     }
-  }
-});
+  },
+  { immediate: true }
+);
+
 </script>
 
 <template>
