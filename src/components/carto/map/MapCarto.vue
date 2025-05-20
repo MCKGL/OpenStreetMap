@@ -350,21 +350,23 @@ function clearHighlight() {
   }
 }
 
-function highlightStructure(s: StructureModel) {
+function highlightMulti(
+  type: 'structure' | 'permanence',
+  slug: string,
+  adresses: { latitude: number; longitude: number }[]
+) {
   clearHighlight();
 
   highlightLayer = L.layerGroup().addTo(map);
-
   const clones: L.Marker[] = [];
 
-  for (const a of s.adresses) {
-    const key = `structure-${s.slug}-${a.latitude}-${a.longitude}`;
+  for (const a of adresses) {
+    const key = `${type}-${slug}-${a.latitude}-${a.longitude}`;
     const original = markerRefs[key];
     if (!original) continue;
 
-    const origIcon = (original.getIcon() as L.Icon);
+    const origIcon = original.getIcon() as L.Icon;
     const origUrl = origIcon.options.iconUrl as string;
-
     const cloneUrl = origUrl.replace(/(marker_[a-z]+)\.png$/, '$1_clone.png');
 
     const cloneIcon = L.icon({
@@ -392,7 +394,7 @@ function highlightStructure(s: StructureModel) {
     clones[0].openPopup();
   }
 
-  const bounds = L.latLngBounds(s.adresses.map(a =>
+  const bounds = L.latLngBounds(adresses.map(a =>
     [a.latitude, a.longitude] as [number, number]
   ));
   map.fitBounds(bounds, { padding: [50, 50] });
@@ -442,11 +444,32 @@ function openSelectedPopup() {
     const s = props.structures?.find(s => s.slug === slug);
     if (s) {
       if (s.adresses.length > 1) {
-        highlightStructure(s);
+        highlightMulti('structure', slug, s.adresses);
         return;
       }
       const key0 = `structure-${s.slug}-${s.adresses[0].latitude}-${s.adresses[0].longitude}`;
       const m0 = markerRefs[key0];
+      if (m0) {
+        markers.zoomToShowLayer(m0, () => {
+          setTimeout(() => {
+            map.setView(m0.getLatLng(), Math.max(map.getZoom(), 16), { animate: true });
+            m0.openPopup();
+          }, 100);
+        });
+      }
+      return;
+    }
+  }
+
+  if (type === 'permanence') {
+    const p = props.permanences?.find(p => p.slug === slug);
+    if (p) {
+      if (p.adresses.length > 1) {
+        highlightMulti('permanence', slug, p.adresses);
+        return;
+      }
+      const a = p.adresses[0];
+      const m0 = markerRefs[`permanence-${slug}-${a.latitude}-${a.longitude}`];
       if (m0) {
         markers.zoomToShowLayer(m0, () => {
           setTimeout(() => {
