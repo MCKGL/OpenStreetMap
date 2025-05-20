@@ -63,6 +63,10 @@ defineExpose({
 
 function initMap() {
   map = L.map(mapContainer.value!, {minZoom: 5});
+
+  map.createPane('highlightPane');
+  map.getPane('highlightPane')!.style.zIndex = '650';
+
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
@@ -376,7 +380,10 @@ function highlightMulti(
 
     const popupContent = original.getPopup()?.getContent() as HTMLElement | string;
 
-    const clone = L.marker(original.getLatLng(), { icon: cloneIcon })
+    const clone = L.marker(original.getLatLng(), {
+      icon: cloneIcon,
+      pane: 'highlightPane'
+    })
       .bindPopup(popupContent)
       .on('click', () => {
         clearHighlight();
