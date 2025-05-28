@@ -426,13 +426,78 @@ function highlightMulti(
   newInfo.addTo(map);
 }
 
+function highlightFormation(frm: FormationModel, struct: StructureModel) {
+  clearHighlight();
+
+  const adrs = frm.adresses;
+  highlightLayer = L.layerGroup().addTo(map);
+  const clones: L.Marker[] = [];
+
+  for (const a of adrs) {
+    const structKey = `structure-${struct.slug}-${a.latitude}-${a.longitude}`;
+    let original = markerRefs[structKey];
+
+    if (!original) {
+      const groupPrefix = `formation-group-${struct.slug}-${a.latitude}-${a.longitude}`;
+      const grpKey = Object.keys(markerRefs)
+        .find(k => k.startsWith(groupPrefix));
+      if (grpKey) original = markerRefs[grpKey];
+    }
+    if (!original) continue;
+
+    const origIcon = original.getIcon() as L.Icon;
+    const cloneUrl = (origIcon.options.iconUrl as string)
+      .replace(/(marker_[a-z]+)\.png$/, '$1_clone.png');
+    const cloneIcon = L.icon({ ...origIcon.options, iconUrl: cloneUrl });
+
+    const popupContent = original.getPopup()?.getContent() as HTMLElement | string;
+    const clone = L.marker(original.getLatLng(), {
+      icon: cloneIcon,
+      pane: 'highlightPane'
+    })
+      .bindPopup(popupContent)
+      .on('click', () => {
+        clearHighlight();
+        markers.zoomToShowLayer(original!, () => {
+          map.setView(original!.getLatLng(), Math.max(map.getZoom(), 16), { animate: true });
+          original!.openPopup();
+        });
+      });
+
+    highlightLayer!.addLayer(clone);
+    clones.push(clone);
+  }
+
+  if (clones.length) clones[0].openPopup();
+
+  const bounds = L.latLngBounds(adrs.map(a =>
+    [a.latitude, a.longitude] as [number, number]
+  ));
+  map.fitBounds(bounds, { padding: [50, 50] });
+
+  const count = adrs.length;
+  const newInfo = (L.control as unknown as (opts: L.ControlOptions) => L.Control)({
+    position: 'bottomleft'
+  });
+  newInfo.onAdd = () => {
+    const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+    div.style.padding = '6px 10px';
+    div.style.background = 'rgba(255,255,255,0.9)';
+    div.style.fontSize = '13px';
+    div.innerHTML = `⚠️ Il existe ${count} adresse${count>1?'s':''} pour cette formation`;
+    return div;
+  };
+  infoMulti = newInfo;
+  newInfo.addTo(map);
+}
+
 function openSelectedPopup() {
   clearHighlight();
   if (!props.objFocus) return;
 
   const { type, slug } = props.objFocus;
-  let markerType = type;
-  let markerSlug = slug;
+  const markerType = type;
+  const markerSlug = slug;
 
   if (type === 'formation' && formationToGroupKey[slug]) {
     const key = formationToGroupKey[slug];
@@ -454,15 +519,28 @@ function openSelectedPopup() {
 
     if (assoc) {
       const { formation, structure } = assoc;
-      const shared = formation.adresses.some(fa =>
-        structure.adresses.some(sa =>
-          sa.latitude === fa.latitude && sa.longitude === fa.longitude
-        )
-      );
-      if (shared) {
-        markerType = 'structure';
-        markerSlug = structure.slug;
+
+      if (formation.adresses.length > 1) {
+        highlightFormation(formation, structure);
+        return;
       }
+
+      const a = formation.adresses[0];
+      const keyStruct = `structure-${structure.slug}-${a.latitude}-${a.longitude}`;
+      const m0 = markerRefs[keyStruct]
+        || markerRefs[
+          Object.keys(markerRefs)
+            .find(k => k.startsWith(`formation-group-${structure.slug}-${a.latitude}-${a.longitude}`))!
+          ];
+      if (m0) {
+        markers.zoomToShowLayer(m0, () => {
+          setTimeout(() => {
+            map.setView(m0.getLatLng(), Math.max(map.getZoom(), 16), { animate: true });
+            m0.openPopup();
+          }, 100);
+        });
+      }
+      return;
     }
   }
 

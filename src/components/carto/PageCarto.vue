@@ -115,9 +115,9 @@ watch(objFocus, (focus) => {
           {{ isOpen ? '«' : '»' }}
         </button>
         <div v-if="isOpen" class="list-content">
+          <PermancencesListe :permanences="permanences" :objFocus="objFocus"/>
           <FormationsListe :structures="structures" :filters="filters" :objFocus="objFocus"/>
           <StructuresListe :structures="structures" :objFocus="objFocus"/>
-          <PermancencesListe :permanences="permanences" :objFocus="objFocus"/>
         </div>
       </div>
 
