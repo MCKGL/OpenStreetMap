@@ -118,11 +118,22 @@ function initMap() {
   map.setView([48.684, 2.502], 9);
 }
 
+function uniqueCoords<T extends { latitude: number; longitude: number }>(addrs: T[]): T[] {
+  const seen = new Set<string>();
+  return addrs.filter(a => {
+    const key = `${a.latitude},${a.longitude}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function addMarkers() {
 
   if (props.structures) {
     for (const s of props.structures) {
-      for (const a of s.adresses) {
+      const adressesUniques = uniqueCoords(s.adresses);
+      for (const a of adressesUniques) {
         const key = `structure-${s.slug}-${a.latitude}-${a.longitude}`;
         const formationsAtThisAddress = (s.formations || []).filter(f =>
           f.adresses.some(fa =>
@@ -208,7 +219,8 @@ function addMarkers() {
 
   if (props.permanences) {
     for (const p of props.permanences) {
-      for (const a of p.adresses) {
+      const adressesUniques = uniqueCoords(p.adresses);
+      for (const a of adressesUniques) {
         const key = `permanence-${p.slug}-${a.latitude}-${a.longitude}`;
         const m = L.marker([a.latitude, a.longitude], {
           icon: L.icon({
