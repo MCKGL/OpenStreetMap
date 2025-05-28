@@ -684,7 +684,7 @@ watch(
 <style>
 
 #map {
-  height: 90vh;
+  height: 100vh;
 }
 
 .legend-toggle {
@@ -742,9 +742,9 @@ watch(
   height: 30px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 809px) {
   #map {
-    height: 80vh;
+    height: 100vh;
   }
 
   .legend-container .legend-content {
@@ -767,6 +767,10 @@ watch(
     bottom: 100%;
     right: 0;
     transform: translateY(50%);
+  }
+
+  .leaflet-control-container .leaflet-top .recenter-btn {
+    margin-top: 45px;
   }
 }
 </style>
