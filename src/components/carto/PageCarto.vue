@@ -140,10 +140,8 @@ watch(mobileView, (view) => {
     </div>
 
     <div class="panels">
-      <!-- Panel Liste -->
       <div class="panel list-panel" :class="{ closed: !isOpen }"
            v-show="!isMobile || mobileView==='list'">
-        <!-- Pour desktop on conserve le toggle-btn existant -->
         <button v-if="!isMobile" class="toggle-btn" @click="togglePanel">
           {{ isOpen ? '«' : '»' }}
         </button>
