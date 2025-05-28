@@ -22,28 +22,27 @@ const emit = defineEmits<{
   (e: 'focus-from-map', payload: { type: 'structure' | 'permanence' | 'formation'; slug: string }): void;
 }>();
 
-type FormationWithStructure = {
+type FormationWithOrphans = {
   formation: FormationModel;
   structure: StructureModel;
+  orphanAddrs: { latitude: number; longitude: number; ville: string; codePostal: string }[];
 };
+
 const formationToGroupKey: Record<string, string> = {};
-const formationsNotOnStructure = computed<FormationWithStructure[]>(() => {
-  const raw = props.structures?.flatMap(structure =>
-    (structure.formations || []).map(frm => ({ formation: frm, structure }))
+const formationsWithOrphans = computed<FormationWithOrphans[]>(() => {
+  return props.structures?.flatMap(structure =>
+    (structure.formations || [])
+      .map(frm => ({
+        structure,
+        formation: frm,
+        orphanAddrs: frm.adresses.filter(fa =>
+          !structure.adresses.some(sa =>
+            sa.latitude === fa.latitude && sa.longitude === fa.longitude
+          )
+        )
+      }))
+      .filter(x => x.orphanAddrs.length > 0)
   ) || [];
-
-  return raw.filter(({ formation, structure }) => {
-    if (props.filters?.includes('placeDisponible') && !formation.placeDisponible) return false;
-    if (props.filters?.includes('gardeEnfant') && !formation.gardeEnfants) return false;
-
-    const hasCommonAddress = formation.adresses.some(fAddr =>
-      structure.adresses.some(sAddr =>
-        sAddr.latitude === fAddr.latitude && sAddr.longitude === fAddr.longitude
-      )
-    );
-
-    return !hasCommonAddress;
-  });
 });
 
 const mapContainer = ref<HTMLElement | null>(null);
@@ -54,6 +53,8 @@ let ileDeFranceBounds: L.LatLngBounds;
 const router = useRouter();
 let highlightLayer: L.LayerGroup | null = null;
 let infoMulti: L.Control | null = null;
+let skipHighlight = false;
+let lastClickedMarker: L.Marker | null = null;
 
 defineExpose({
   resizeMap: () => {
@@ -209,8 +210,11 @@ function addMarkers() {
             className: 'marker-structure'
           })
         }).bindPopup(container);
-
-        m.on('click', () => emit('focus-from-map', { type: 'structure', slug: s.slug }));
+        m.on('click', () => {
+          skipHighlight = true;
+          lastClickedMarker = m;
+          emit('focus-from-map', { type: 'structure', slug: s.slug });
+        });
         markers.addLayer(m);
         markerRefs[key] = m;
       }
@@ -229,10 +233,9 @@ function addMarkers() {
           })
         }).bindPopup(`<strong>${p.nom}</strong><br>${a.ville} (${a.codePostal})`);
         m.on('click', () => {
-          emit('focus-from-map', {
-            type: 'permanence',
-            slug: p.slug
-          });
+          skipHighlight = true;
+          lastClickedMarker = m;
+          emit('focus-from-map', { type: 'permanence', slug: p.slug });
         });
         markers.addLayer(m);
         markerRefs[key] = m;
@@ -246,48 +249,38 @@ function addMarkers() {
     formations: FormationModel[]
   }>();
 
-  for (const item of formationsNotOnStructure.value) {
-    for (const addr of item.formation.adresses) {
-      const key = `${item.structure.slug}-${addr.latitude}-${addr.longitude}`;
+  for (const { structure, formation, orphanAddrs } of formationsWithOrphans.value) {
+    for (const addr of orphanAddrs) {
+      const key = `${structure.slug}-${addr.latitude}-${addr.longitude}`;
       if (!groupedFormations.has(key)) {
         groupedFormations.set(key, {
-          structure: item.structure,
+          structure,
           adresse: addr,
           formations: []
         });
       }
-      groupedFormations.get(key)!.formations.push(item.formation);
+      groupedFormations.get(key)!.formations.push(formation);
     }
   }
 
+// 2) Pour chaque point orphelin, on crée un marqueur "formation"
   for (const [key, { structure, adresse, formations }] of groupedFormations.entries()) {
     const hasPlace = formations.some(f => f.placeDisponible);
+    const iconUrl = hasPlace ? '/icones/marker_yellow.png' : '/icones/marker_gray.png';
 
     const container = document.createElement('div');
-
     const header = document.createElement('div');
     header.style.display = 'flex';
     header.style.alignItems = 'center';
-
     const nomStructure = document.createElement('strong');
     nomStructure.textContent = structure.nom;
     header.appendChild(nomStructure);
-
     const focusIcon = document.createElement('img');
     focusIcon.src = '/icones/focus-icon.svg';
-    focusIcon.alt = 'Focus sur la structure';
     focusIcon.style.width = '16px';
-    focusIcon.style.height = '16px';
-    focusIcon.style.cursor = 'pointer';
     focusIcon.style.marginLeft = '8px';
-    focusIcon.onclick = () => {
-      emit('focus-from-map', {
-        type: 'structure',
-        slug: structure.slug
-      });
-    };
+    focusIcon.onclick = () => emit('focus-from-map', { type: 'structure', slug: structure.slug });
     header.appendChild(focusIcon);
-
     container.appendChild(header);
 
     const label = document.createElement('div');
@@ -297,65 +290,40 @@ function addMarkers() {
 
     const list = document.createElement('ul');
     list.style.paddingLeft = '16px';
-
     for (const f of formations) {
       const li = document.createElement('li');
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.textContent = `${f.nom}${f.placeDisponible ? ' (places disponibles)' : ' (pas de places disponibles)'}`;
+      btn.textContent = `${f.nom}${f.placeDisponible ? ' (places disponibles)' : ' (pas de places)'}`;
       btn.style.background = 'none';
       btn.style.border = 'none';
       btn.style.padding = '0';
       btn.style.margin = '4px 0';
-
       if (f.placeDisponible) {
         btn.style.color = '#007BFF';
         btn.style.cursor = 'pointer';
-        btn.onclick = () => {
-          emit('focus-from-map', { type: 'formation', slug: f.slug });
-        };
+        btn.onclick = () => emit('focus-from-map', { type: 'formation', slug: f.slug });
       } else {
         btn.style.color = 'gray';
-        btn.style.cursor = 'default';
         btn.disabled = true;
       }
-
       li.appendChild(btn);
       list.appendChild(li);
     }
-
     container.appendChild(list);
 
-    const btnVoir = document.createElement('button');
-    btnVoir.type = 'button';
-    btnVoir.textContent = 'Voir structure';
-    btnVoir.style.marginTop = '10px';
-    btnVoir.onclick = () => {
-      router.push(`/${structure.slug}`);
-    };
-    container.appendChild(btnVoir);
-
-    const groupKey = `formation-group-${key}`;
-    for (const f of formations) {
-      formationToGroupKey[f.slug] = groupKey;
-    }
-
-    const m = L.marker([adresse.latitude, adresse.longitude], {
-      icon: L.icon({
-        iconUrl: hasPlace ? '/icones/marker_yellow.png' : '/icones/marker_gray.png',
-        iconSize: [41, 41],
-        iconAnchor: [22, 0],
-        className: 'marker-formation'
-      })
+    const marker = L.marker([adresse.latitude, adresse.longitude], {
+      icon: L.icon({ iconUrl, iconSize: [41,41], iconAnchor: [22,0], className: 'marker-formation' })
     }).bindPopup(container);
-    m.on('click', () => {
-      emit('focus-from-map', {
-        type: 'formation',
-        slug: structure.slug
-      });
+
+    marker.on('click', () => {
+      skipHighlight = true;
+      lastClickedMarker = marker;
+      emit('focus-from-map', { type: 'formation', slug: structure.slug });
     });
-    markers.addLayer(m);
-    markerRefs[groupKey] = m;
+
+    markers.addLayer(marker);
+    markerRefs[`formation-group-${key}`] = marker;
   }
 }
 
@@ -511,10 +479,10 @@ function openSelectedPopup() {
   const markerType = type;
   const markerSlug = slug;
 
-  if (type === 'formation' && formationToGroupKey[slug]) {
-    const key = formationToGroupKey[slug];
-    const m = markerRefs[key];
-    if (!m) return;
+  if (skipHighlight && lastClickedMarker) {
+    const m = lastClickedMarker;
+    skipHighlight = false;
+    lastClickedMarker = null;
     markers.zoomToShowLayer(m, () => {
       setTimeout(() => {
         map.setView(m.getLatLng(), Math.max(map.getZoom(), 16), { animate: true });
@@ -554,6 +522,19 @@ function openSelectedPopup() {
       }
       return;
     }
+  }
+
+  if (type === 'formation' && formationToGroupKey[slug]) {
+    const key = formationToGroupKey[slug];
+    const m = markerRefs[key];
+    if (!m) return;
+    markers.zoomToShowLayer(m, () => {
+      setTimeout(() => {
+        map.setView(m.getLatLng(), Math.max(map.getZoom(), 16), { animate: true });
+        m.openPopup();
+      }, 100);
+    });
+    return;
   }
 
   if (type === 'structure') {
@@ -770,7 +751,7 @@ watch(
   }
 
   .leaflet-control-container .leaflet-top .recenter-btn {
-    margin-top: 45px;
+    margin-top: 50px;
   }
 }
 </style>
