@@ -1,7 +1,9 @@
 import type {StructureModel} from '@/models/Structure.model.ts';
 import type {PermanenceModel} from '@/models/Permanence.model.ts';
 
-const JSON_PATH = '/api/cartographie.json';
+const JSON_PATH = import.meta.env.DEV
+  ? '/api/cartographie.json'
+  : 'https://www.reseau-alpha.org/cartographie.json';
 
 // Cache partagé pour tout le JSON
 let _rawCache: { structures: StructureModel[]; permanences: PermanenceModel[] } | null = null;
