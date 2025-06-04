@@ -263,7 +263,6 @@ function addMarkers() {
     }
   }
 
-// 2) Pour chaque point orphelin, on crée un marqueur "formation"
   for (const [key, { structure, adresse, formations }] of groupedFormations.entries()) {
     const hasPlace = formations.some(f => f.placeDisponible);
     const iconUrl = hasPlace ? '/icones/marker_yellow.png' : '/icones/marker_gray.png';
