@@ -8,6 +8,7 @@ import StructuresListe from "@/components/carto/liste/StructuresListe.vue";
 import PermancencesListe from "@/components/carto/liste/PermancencesListe.vue";
 import {useRoute, useRouter} from "vue-router";
 import FormationsListe from "@/components/carto/liste/FormationsListe.vue";
+import ContainerFiltre from "@/components/filtre/ContainerFiltre.vue";
 
 interface Focus {
   type: 'structure' | 'permanence' | 'formation';
@@ -126,6 +127,7 @@ watch(mobileView, (view) => {
 </script>
 
 <template>
+  <ContainerFiltre />
   <div v-if="loading" class="loading">Chargement…</div>
   <div v-else class="carto-wrapper" :class="mobileClass">
     <div class="view-switch">
