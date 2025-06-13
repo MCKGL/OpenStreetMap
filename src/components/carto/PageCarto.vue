@@ -25,6 +25,7 @@ const mapRef = ref();
 const route = useRoute();
 const router = useRouter();
 const isFilterOpen = ref(false)
+const listContentRef = ref<HTMLElement|null>(null);
 // TODO : gérer filtres de zero
 const filters = ref<string[]>([]);
 
@@ -54,6 +55,12 @@ function togglePanel() {
 
 function onToggleFilter(open: boolean) {
   isFilterOpen.value = open
+}
+
+function scrollToTop() {
+  if (listContentRef.value) {
+    listContentRef.value.scrollTop = 0;
+  }
 }
 
 function resetFocus() {
@@ -155,11 +162,21 @@ watch(mobileView, (view) => {
           <button v-if="!isMobile" class="toggle-btn" @click="togglePanel">
             {{ isOpen ? '«' : '»' }}
           </button>
-          <div class="list-content">
+          <div class="list-content" ref="listContentRef">
             <PermancencesListe :permanences="permanences" :objFocus="objFocus"/>
             <FormationsListe :structures="structures" :filters="filters" :objFocus="objFocus"/>
             <StructuresListe :structures="structures" :objFocus="objFocus"/>
           </div>
+          <button
+            v-if="!isMobile || mobileView==='list'"
+            class="scroll-top-btn"
+            @click="scrollToTop"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                 xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 15L12 9L6 15" stroke="#FFFFFF" stroke-width="2"/>
+            </svg>
+          </button>
         </div>
 
         <div class="panel map-panel" v-show="!isMobile || mobileView==='map'">
@@ -243,6 +260,19 @@ watch(mobileView, (view) => {
   box-shadow: 2px 0 5px rgba(0,0,0,0.1);
   overflow: hidden;
   height: 100%;
+}
+
+.scroll-top-btn {
+  position: absolute;
+  border: none;
+  cursor: pointer;
+  background: #f14b51 none repeat scroll 0 0;
+  bottom: 20px;
+  font-size: 30px;
+  height: 50px;
+  line-height: 52px;
+  right: 20px;
+  width: 45px;
 }
 
 .list-panel.closed {
