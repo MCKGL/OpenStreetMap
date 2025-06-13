@@ -406,7 +406,7 @@ label {
   font-family: 'Open Sans', sans-serif;
 }
 
-@media (max-width: 809px) {
+@media (max-width: 810px) {
   .first-section, .advanced-section-part {
     flex-direction: column;
   }

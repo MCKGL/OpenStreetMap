@@ -664,7 +664,7 @@ watch(
 <style>
 
 #map {
-  height: 100vh;
+  height: 100%;
 }
 
 .legend-toggle {
@@ -722,7 +722,7 @@ watch(
   height: 30px;
 }
 
-@media (max-width: 809px) {
+@media (max-width: 810px) {
   #map {
     height: 100vh;
   }

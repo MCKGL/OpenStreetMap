@@ -127,53 +127,68 @@ watch(mobileView, (view) => {
 </script>
 
 <template>
-  <ContainerFiltre />
   <div v-if="loading" class="loading">Chargement…</div>
-  <div v-else class="carto-wrapper" :class="mobileClass">
-    <div class="view-switch">
-      <button
-        :class="{ active: mobileView==='list' }"
-        @click="mobileView = 'list'"
-      >Liste</button>
-      <button
-        :class="{ active: mobileView==='map' }"
-        @click="mobileView = 'map'"
-      >Carte</button>
+  <div v-else class="all-carto-container">
+    <div class="container-filtre">
+      <ContainerFiltre />
     </div>
-
-    <div class="panels">
-      <div class="panel list-panel" :class="{ closed: !isOpen }"
-           v-show="!isMobile || mobileView==='list'">
-        <button v-if="!isMobile" class="toggle-btn" @click="togglePanel">
-          {{ isOpen ? '«' : '»' }}
-        </button>
-        <div class="list-content">
-          <PermancencesListe :permanences="permanences" :objFocus="objFocus"/>
-          <FormationsListe :structures="structures" :filters="filters" :objFocus="objFocus"/>
-          <StructuresListe :structures="structures" :objFocus="objFocus"/>
-        </div>
+    <div class="carto-wrapper" :class="mobileClass">
+      <div class="view-switch">
+        <button
+          :class="{ active: mobileView==='list' }"
+          @click="mobileView = 'list'"
+        >Liste</button>
+        <button
+          :class="{ active: mobileView==='map' }"
+          @click="mobileView = 'map'"
+        >Carte</button>
       </div>
 
-      <div class="panel map-panel" v-show="!isMobile || mobileView==='map'">
-        <MapCarto
-          ref="mapRef"
-          :structures="structures"
-          :permanences="permanences"
-          :objFocus="objFocus"
-          :filters="filters"
-          @reset-focus="resetFocus"
-          @focus-from-map="onFocusFromMap"
-        />
+      <div class="panels">
+        <div class="panel list-panel" :class="{ closed: !isOpen }"
+             v-show="!isMobile || mobileView==='list'">
+          <button v-if="!isMobile" class="toggle-btn" @click="togglePanel">
+            {{ isOpen ? '«' : '»' }}
+          </button>
+          <div class="list-content">
+            <PermancencesListe :permanences="permanences" :objFocus="objFocus"/>
+            <FormationsListe :structures="structures" :filters="filters" :objFocus="objFocus"/>
+            <StructuresListe :structures="structures" :objFocus="objFocus"/>
+          </div>
+        </div>
+
+        <div class="panel map-panel" v-show="!isMobile || mobileView==='map'">
+          <MapCarto
+            ref="mapRef"
+            :structures="structures"
+            :permanences="permanences"
+            :objFocus="objFocus"
+            :filters="filters"
+            @reset-focus="resetFocus"
+            @focus-from-map="onFocusFromMap"
+          />
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.carto-wrapper {
-  flex: 1;
+.all-carto-container {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  margin: 0;
+}
+
+.container-filtre {
+  flex: 0 0 auto;
+}
+
+.carto-wrapper {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: row;
   overflow: hidden;
 }
 
@@ -222,6 +237,7 @@ watch(mobileView, (view) => {
   transition: width 0.3s;
   box-shadow: 2px 0 5px rgba(0,0,0,0.1);
   overflow: hidden;
+  height: 100%;
 }
 
 .list-panel.closed {
@@ -237,6 +253,7 @@ watch(mobileView, (view) => {
 
 .map-panel {
   flex:1;
+  height: 100%;
 }
 
 .toggle-btn {
@@ -257,7 +274,7 @@ watch(mobileView, (view) => {
   transform: none;
 }
 
-@media (max-width: 809px) {
+@media (max-width: 810px) {
   .view-switch {
     display: block;
   }
@@ -275,32 +292,6 @@ watch(mobileView, (view) => {
   .map-panel {
     width: 100%;
     height: 100%;
-  }
-}
-
-@media (min-width: 810px) {
-  .carto-wrapper {
-    flex-direction: row;
-  }
-
-  .panels {
-    display: flex;
-    flex: 1;
-    height: 100%;
-  }
-
-  .list-panel {
-    width: 33.33%;
-    height: 100%;
-  }
-
-  .map-panel {
-    flex: 1;
-    height: 100%;
-  }
-
-  .view-switch {
-    display: none;
   }
 }
 </style>
