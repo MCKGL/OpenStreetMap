@@ -13,6 +13,9 @@ import {JOURS_SEMAINE, HORAIRES} from '@/models/HorairesPeriode.model.ts'
 import * as VilleDepartementService from '@/services/VilleDepartement.service.ts'
 import * as ProgrammeService from '@/services/Programme.service.ts'
 
+const isAdvancedOpen = ref(false);
+const isKeywordOpen = ref(false);
+
 const selectedActivites = ref<string[]>([]);
 const selectedLieux = ref<string[]>([]);
 const selectedCriteresScrolarisation = ref<string | null>(null);
@@ -128,9 +131,15 @@ onMounted(async () => {
     <hr />
 
     <section class="advanced-section">
-      <div class="section-title">
-        <h3>Recherche Avancée</h3>
+      <div class="section-title" @click="isAdvancedOpen = !isAdvancedOpen">
+        <h3>
+          <a href="javascript:void(0)">
+            <span class="accordion-icon">{{ isAdvancedOpen ? '−' : '+' }}</span>
+            Recherche Avancée
+          </a>
+        </h3>
       </div>
+      <section v-show="isAdvancedOpen" class="advanced-section">
       <p>Ces critères ne s’appliquent qu’aux formations publiées. Certaines structures
         d’apprentissage n’ont pas publié de formations. Pour consulter la liste complète des
         structures, utilisez la recherche simple.</p>
@@ -238,13 +247,19 @@ onMounted(async () => {
           />
         </div>
       </div>
+      </section>
     </section>
 
     <section class="keyword-section">
-      <div class="section-title">
-        <h3>Recherche par mot-clé</h3>
+      <div class="section-title" @click="isKeywordOpen = !isKeywordOpen">
+        <h3>
+          <a href="javascript:void(0)">
+            <span class="accordion-icon">{{ isKeywordOpen ? '−' : '+' }}</span>
+            Recherche par mot-clé
+          </a>
+        </h3>
       </div>
-      <div id="keyword-section-input">
+      <div id="keyword-section-input" v-show="isKeywordOpen">
         <label for="keyword" class="label">Taper un mot-clé : </label>
         <input
           id="keyword"
@@ -259,6 +274,10 @@ onMounted(async () => {
 <style>
 .multiselect__tag, .multiselect__option--highlight {
   background-color: #0F7ECB;
+}
+
+#filter-container {
+  padding: 0.5em;
 }
 
 .first-section, .advanced-section-part {
@@ -347,11 +366,12 @@ hr {
   background: #ddd;
 }
 
-h3 {
+h3 a {
   color: #f14b51;
   text-transform: uppercase;
   font-size: 14px;
   font-family: 'Noticia Text', serif;
+  text-decoration: none;
 }
 
 .section-title {
@@ -370,6 +390,30 @@ label {
   font-size: 14px;
   color: #444444;
   font-weight: 400;
+}
+
+.accordion-icon {
+  display: inline-block;
+  width: 27px;
+  height: 27px;
+  font-size: 21px;
+  background: #f14b51;
+  border-radius: 50%;
+  color: #fff;
+  text-align: center;
+  line-height: 27px;
+  margin-right: 10px;
+  font-family: 'Open Sans', sans-serif;
+}
+
+@media (max-width: 809px) {
+  .first-section, .advanced-section-part {
+    flex-direction: column;
+  }
+
+  #keyword-section-input {
+    width: auto;
+  }
 }
 
 </style>
