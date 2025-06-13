@@ -24,7 +24,8 @@ const isMobile = ref(window.innerWidth < 810);
 const mapRef = ref();
 const route = useRoute();
 const router = useRouter();
-// TODO : gérer filtres à partir des filtres existants (dès l'intégration)
+const isFilterOpen = ref(false)
+// TODO : gérer filtres de zero
 const filters = ref<string[]>([]);
 
 const objFocus = computed<Focus | undefined>(() => {
@@ -49,6 +50,10 @@ function togglePanel() {
     isOpen.value = !isOpen.value;
     setTimeout(() => mapRef.value?.resizeMap?.(), 310);
   }
+}
+
+function onToggleFilter(open: boolean) {
+  isFilterOpen.value = open
 }
 
 function resetFocus() {
@@ -130,10 +135,10 @@ watch(mobileView, (view) => {
   <div v-if="loading" class="loading">Chargement…</div>
   <div v-else class="all-carto-container">
     <div class="container-filtre">
-      <ContainerFiltre />
+      <ContainerFiltre @toggle-filter="onToggleFilter" />
     </div>
     <div class="carto-wrapper" :class="mobileClass">
-      <div class="view-switch">
+      <div class="view-switch" v-show="isMobile && !isFilterOpen">
         <button
           :class="{ active: mobileView==='list' }"
           @click="mobileView = 'list'"
@@ -195,7 +200,7 @@ watch(mobileView, (view) => {
 .view-switch {
   display: none;
   position: absolute;
-  top: 10px;
+  top: 75px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;

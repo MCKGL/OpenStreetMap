@@ -16,6 +16,10 @@ import * as ProgrammeService from '@/services/Programme.service.ts'
 const isFilterOpen = ref(false);
 const isMobile = ref(window.innerWidth < 810);
 
+const emit = defineEmits<{
+  (e: 'toggle-filter', open: boolean): void
+}>()
+
 const isAdvancedOpen = ref(false);
 const isKeywordOpen = ref(false);
 
@@ -65,6 +69,11 @@ function capitalize(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+function toggleFilter() {
+  isFilterOpen.value = !isFilterOpen.value
+  emit('toggle-filter', isFilterOpen.value)
+}
+
 function updateIsMobile() {
   isMobile.value = window.innerWidth < 810;
   if (!isMobile.value) isFilterOpen.value = true;
@@ -107,7 +116,7 @@ onBeforeUnmount(() => {
 <template>
   <section id="filter-container">
     <section class="filter-button-mobile-container">
-      <div class="filter-button-mobile" @click="isFilterOpen = !isFilterOpen">
+      <div class="filter-button-mobile" @click="toggleFilter">
         <div class="button-filter-text">
           <img id="filter-icon" src="/icones/filter.svg"  alt="filtrer les formations"/>
           {{ isFilterOpen ? 'Fermer le filtre' : 'Filtrer les formations' }}
