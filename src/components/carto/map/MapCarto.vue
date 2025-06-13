@@ -724,7 +724,7 @@ watch(
 
 @media (max-width: 810px) {
   #map {
-    height: 100vh;
+    height: 100%;
   }
 
   .legend-container .legend-content {
