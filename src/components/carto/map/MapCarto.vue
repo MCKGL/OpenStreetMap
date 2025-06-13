@@ -609,7 +609,10 @@ function addLegend() {
       </div>
     `;
     const btn = c.querySelector<HTMLButtonElement>('.legend-toggle')!;
-    btn.onclick = () => c.classList.toggle('open');
+    btn.onclick = () => {
+      const isOpen = c.classList.toggle('open');
+      btn.textContent = isOpen ? '✕' : 'Légende';
+    };
     return c;
   };
   legend.addTo(map);
@@ -664,7 +667,7 @@ watch(
 <style>
 
 #map {
-  height: 100vh;
+  height: 100%;
 }
 
 .legend-toggle {
@@ -722,9 +725,9 @@ watch(
   height: 30px;
 }
 
-@media (max-width: 809px) {
+@media (max-width: 810px) {
   #map {
-    height: 100vh;
+    height: 100%;
   }
 
   .legend-container .legend-content {
@@ -742,7 +745,6 @@ watch(
     border-radius: 5px 5px 0 0;
     padding: 5px 10px;
     cursor: pointer;
-    box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
     position: absolute;
     bottom: 100%;
     right: 0;

@@ -8,6 +8,7 @@ import StructuresListe from "@/components/carto/liste/StructuresListe.vue";
 import PermancencesListe from "@/components/carto/liste/PermancencesListe.vue";
 import {useRoute, useRouter} from "vue-router";
 import FormationsListe from "@/components/carto/liste/FormationsListe.vue";
+import ContainerFiltre from "@/components/filtre/ContainerFiltre.vue";
 
 interface Focus {
   type: 'structure' | 'permanence' | 'formation';
@@ -23,7 +24,9 @@ const isMobile = ref(window.innerWidth < 810);
 const mapRef = ref();
 const route = useRoute();
 const router = useRouter();
-// TODO : gérer filtres à partir des filtres existants (dès l'intégration)
+const isFilterOpen = ref(false)
+const listContentRef = ref<HTMLElement|null>(null);
+// TODO : gérer filtres de zero
 const filters = ref<string[]>([]);
 
 const objFocus = computed<Focus | undefined>(() => {
@@ -47,6 +50,16 @@ function togglePanel() {
   if (!isMobile.value) {
     isOpen.value = !isOpen.value;
     setTimeout(() => mapRef.value?.resizeMap?.(), 310);
+  }
+}
+
+function onToggleFilter(open: boolean) {
+  isFilterOpen.value = open
+}
+
+function scrollToTop() {
+  if (listContentRef.value) {
+    listContentRef.value.scrollTop = 0;
   }
 }
 
@@ -127,58 +140,84 @@ watch(mobileView, (view) => {
 
 <template>
   <div v-if="loading" class="loading">Chargement…</div>
-  <div v-else class="carto-wrapper" :class="mobileClass">
-    <div class="view-switch">
-      <button
-        :class="{ active: mobileView==='list' }"
-        @click="mobileView = 'list'"
-      >Liste</button>
-      <button
-        :class="{ active: mobileView==='map' }"
-        @click="mobileView = 'map'"
-      >Carte</button>
+  <div v-else class="all-carto-container">
+    <div class="container-filtre">
+      <ContainerFiltre @toggle-filter="onToggleFilter" />
     </div>
-
-    <div class="panels">
-      <div class="panel list-panel" :class="{ closed: !isOpen }"
-           v-show="!isMobile || mobileView==='list'">
-        <button v-if="!isMobile" class="toggle-btn" @click="togglePanel">
-          {{ isOpen ? '«' : '»' }}
-        </button>
-        <div class="list-content">
-          <PermancencesListe :permanences="permanences" :objFocus="objFocus"/>
-          <FormationsListe :structures="structures" :filters="filters" :objFocus="objFocus"/>
-          <StructuresListe :structures="structures" :objFocus="objFocus"/>
-        </div>
+    <div class="carto-wrapper" :class="mobileClass">
+      <div class="view-switch" v-show="isMobile && !isFilterOpen">
+        <button
+          :class="{ active: mobileView==='list' }"
+          @click="mobileView = 'list'"
+        >Liste</button>
+        <button
+          :class="{ active: mobileView==='map' }"
+          @click="mobileView = 'map'"
+        >Carte</button>
       </div>
 
-      <div class="panel map-panel" v-show="!isMobile || mobileView==='map'">
-        <MapCarto
-          ref="mapRef"
-          :structures="structures"
-          :permanences="permanences"
-          :objFocus="objFocus"
-          :filters="filters"
-          @reset-focus="resetFocus"
-          @focus-from-map="onFocusFromMap"
-        />
+      <div class="panels">
+        <div class="panel list-panel" :class="{ closed: !isOpen }"
+             v-show="!isMobile || mobileView==='list'">
+          <button v-if="!isMobile" class="toggle-btn" @click="togglePanel">
+            {{ isOpen ? '«' : '»' }}
+          </button>
+          <div class="list-content" ref="listContentRef">
+            <PermancencesListe :permanences="permanences" :objFocus="objFocus"/>
+            <FormationsListe :structures="structures" :filters="filters" :objFocus="objFocus"/>
+            <StructuresListe :structures="structures" :objFocus="objFocus"/>
+          </div>
+          <button
+            v-if="!isMobile || mobileView==='list'"
+            class="scroll-top-btn"
+            @click="scrollToTop"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                 xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 15L12 9L6 15" stroke="#FFFFFF" stroke-width="2"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="panel map-panel" v-show="!isMobile || mobileView==='map'">
+          <MapCarto
+            ref="mapRef"
+            :structures="structures"
+            :permanences="permanences"
+            :objFocus="objFocus"
+            :filters="filters"
+            @reset-focus="resetFocus"
+            @focus-from-map="onFocusFromMap"
+          />
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.carto-wrapper {
-  flex: 1;
+.all-carto-container {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  margin: 0;
+}
+
+.container-filtre {
+  flex: 0 0 auto;
+}
+
+.carto-wrapper {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: row;
   overflow: hidden;
 }
 
 .view-switch {
   display: none;
   position: absolute;
-  top: 10px;
+  top: 75px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
@@ -220,6 +259,20 @@ watch(mobileView, (view) => {
   transition: width 0.3s;
   box-shadow: 2px 0 5px rgba(0,0,0,0.1);
   overflow: hidden;
+  height: 100%;
+}
+
+.scroll-top-btn {
+  position: absolute;
+  border: none;
+  cursor: pointer;
+  background: #f14b51 none repeat scroll 0 0;
+  bottom: 20px;
+  font-size: 30px;
+  height: 50px;
+  line-height: 52px;
+  right: 20px;
+  width: 45px;
 }
 
 .list-panel.closed {
@@ -235,6 +288,7 @@ watch(mobileView, (view) => {
 
 .map-panel {
   flex:1;
+  height: 100%;
 }
 
 .toggle-btn {
@@ -255,7 +309,7 @@ watch(mobileView, (view) => {
   transform: none;
 }
 
-@media (max-width: 809px) {
+@media (max-width: 810px) {
   .view-switch {
     display: block;
   }
@@ -273,32 +327,6 @@ watch(mobileView, (view) => {
   .map-panel {
     width: 100%;
     height: 100%;
-  }
-}
-
-@media (min-width: 810px) {
-  .carto-wrapper {
-    flex-direction: row;
-  }
-
-  .panels {
-    display: flex;
-    flex: 1;
-    height: 100%;
-  }
-
-  .list-panel {
-    width: 33.33%;
-    height: 100%;
-  }
-
-  .map-panel {
-    flex: 1;
-    height: 100%;
-  }
-
-  .view-switch {
-    display: none;
   }
 }
 </style>

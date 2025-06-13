@@ -8,3 +8,20 @@ html, body, #app {
   display: flex;
   flex-direction: column;
 }
+.readon {
+  display: inline-block;
+  border: 2px solid #f14b51;
+  background: #f14b51;
+  text-align: center;
+  text-decoration: none;
+  transition: all 0.3s ease-in-out 0s;
+  border-radius: 5px;
+  padding: 6px 10px;
+  color: #fff;
+  height: fit-content;
+}
+
+.readon:hover {
+  background: #e13a40 none repeat scroll 0 0;
+  border-color: #e13a40;
+}
