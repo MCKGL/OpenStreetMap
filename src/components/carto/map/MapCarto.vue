@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {ref, onMounted, watch, computed} from 'vue';
+import {ref, onMounted, watch, computed, onBeforeUnmount} from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster';
@@ -637,12 +637,21 @@ function addRecenterButton() {
   ctrl.addTo(map);
 }
 
+function handleResize() {
+  map?.invalidateSize();
+}
+
 onMounted(() => {
+  window.addEventListener('resize', handleResize);
   initMap();
   addMarkers();
   openSelectedPopup();
   addLegend();
   addRecenterButton();
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize);
 });
 
 watch(() => props.objFocus, () => {

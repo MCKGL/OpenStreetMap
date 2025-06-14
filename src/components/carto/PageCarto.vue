@@ -260,6 +260,7 @@ watch(mobileView, (view) => {
 
 .container-filtre {
   flex: 0 0 auto;
+  z-index: 10;
 }
 
 .carto-wrapper {
@@ -344,6 +345,7 @@ watch(mobileView, (view) => {
 .map-panel {
   flex:1;
   height: 100%;
+  z-index: 1;
 }
 
 .toggle-btn {
