@@ -17,20 +17,21 @@ const isFilterOpen = ref(false);
 const isMobile = ref(window.innerWidth < 810);
 
 const emit = defineEmits<{
-  (e: 'toggle-filter', open: boolean): void
+  (e: 'toggle-filter', open: boolean): void;
+  (e: 'apply-filters', payload: Record<string, unknown>): void;
 }>()
 
 const isAdvancedOpen = ref(false);
 const isKeywordOpen = ref(false);
 
 const selectedActivites = ref<string[]>([]);
-const selectedLieux = ref<string[]>([]);
+const selectedLieux = ref<{ label: string; value: string }[]>([]);
 const selectedCriteresScrolarisation = ref<string | null>(null);
 const selectedCompetencesLinguistiquesVisees = ref<string | null>(null);
 const selectedProgrammes = ref<string | null>(null);
 const selectedPublics = ref<string[]>([]);
 const selectedObjectifs = ref<string[]>([]);
-const selectedJoursHoraires = ref<string[]>([]);
+const selectedJoursHoraires = ref<(string | {label: string; value: string})[]>([]);
 
 const activitesFormation = Object.values(ACTIVITE_FORMATION);
 const villeCodePostal = ref<{group: string, items: {label: string, value: string}[]}[]>([]);
@@ -79,6 +80,52 @@ function updateIsMobile() {
   if (!isMobile.value) isFilterOpen.value = true;
 }
 
+function applyFilters() {
+  const keywordInput = document.getElementById('keyword') as HTMLInputElement | null;
+  const keyword = keywordInput?.value.trim() ?? '';
+
+  const filtersPayload: Record<string, unknown> = {};
+
+  if (selectedActivites.value.length) filtersPayload.activites = selectedActivites.value;
+  if (selectedLieux.value.length) {
+    filtersPayload.lieux = selectedLieux.value.map(l => l.value);
+  }
+  if (selectedCriteresScrolarisation.value) filtersPayload.scolarisation = selectedCriteresScrolarisation.value;
+  if (selectedCompetencesLinguistiquesVisees.value) filtersPayload.competence = selectedCompetencesLinguistiquesVisees.value;
+  if (selectedProgrammes.value) filtersPayload.programmes = selectedProgrammes.value;
+  if (selectedPublics.value.length) filtersPayload.publics = selectedPublics.value;
+  if (selectedObjectifs.value.length) filtersPayload.objectifs = selectedObjectifs.value;
+  if (selectedJoursHoraires.value.length) {
+    const joursHorairesValues = selectedJoursHoraires.value.map(item =>
+      typeof item === 'string' ? item : item.value
+    );
+    filtersPayload.joursHoraires = joursHorairesValues.join(',');
+  }
+  if ((document.getElementById('checkbox-children') as HTMLInputElement)?.checked)
+    filtersPayload.gardeEnfant = true;
+  if ((document.getElementById('checkbox-summer') as HTMLInputElement)?.checked)
+    filtersPayload.coursEte = true;
+  if (keyword.length > 0) filtersPayload.keyword = keyword;
+
+  const hasAnyFilter = Object.keys(filtersPayload).length > 0;
+
+  emit('apply-filters', hasAnyFilter ? filtersPayload : {});
+
+}
+
+function parseArrayParam(param: string | null): string[] {
+  if (!param) return [];
+  return param.split(',').map(s => decodeURIComponent(s.trim())).filter(Boolean);
+}
+
+function parseJoursHorairesParam(param: string | null): (string | {label: string, value: string})[] {
+  if (!param) return [];
+  return param.split(',').map(val => {
+    const v = decodeURIComponent(val.trim());
+    return {label: v, value: v};
+  }).filter(Boolean);
+}
+
 onMounted(async () => {
   window.addEventListener('resize', updateIsMobile);
   updateIsMobile();
@@ -105,6 +152,38 @@ onMounted(async () => {
 
   const progData = await ProgrammeService.getProgrammes();
   programmes.value = progData.map(p => p.programme);
+
+  const params = new URLSearchParams(window.location.search);
+
+  selectedActivites.value = parseArrayParam(params.get('activites'));
+
+  const lieuxParam = parseArrayParam(params.get('lieux'));
+  selectedLieux.value = lieuxParam.map(val => ({label: val, value: val}));
+
+  selectedCriteresScrolarisation.value = params.get('scolarisation');
+
+  selectedCompetencesLinguistiquesVisees.value = params.get('competence');
+
+  selectedProgrammes.value = params.get('programmes');
+
+  selectedPublics.value = parseArrayParam(params.get('publics'));
+
+  selectedObjectifs.value = parseArrayParam(params.get('objectifs'));
+
+  selectedJoursHoraires.value = parseJoursHorairesParam(params.get('joursHoraires'));
+
+  const gardeEnfant = params.get('gardeEnfant');
+  (document.getElementById('checkbox-children') as HTMLInputElement).checked = gardeEnfant === 'true';
+
+  const coursEte = params.get('coursEte');
+  (document.getElementById('checkbox-summer') as HTMLInputElement).checked = coursEte === 'true';
+
+  const keyword = params.get('keyword');
+  if (keyword) {
+    const inputKeyword = document.getElementById('keyword') as HTMLInputElement | null;
+    if (inputKeyword) inputKeyword.value = keyword;
+    isKeywordOpen.value = true;
+  }
 });
 
 onBeforeUnmount(() => {
@@ -168,7 +247,7 @@ onBeforeUnmount(() => {
           />
         </div>
         <div id="fist-section-button">
-          <button class="readon">Trouver</button>
+          <button class="readon" @click="applyFilters">Trouver</button>
         </div>
 
       </section>
