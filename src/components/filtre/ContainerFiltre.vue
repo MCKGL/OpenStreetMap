@@ -76,7 +76,7 @@ function toggleFilter() {
 }
 
 function updateIsMobile() {
-  isMobile.value = window.innerWidth < 810;
+  isMobile.value = window.innerWidth <= 810;
   if (!isMobile.value) isFilterOpen.value = true;
 }
 
@@ -195,22 +195,13 @@ onBeforeUnmount(() => {
 <template>
   <section id="filter-container">
     <section class="filter-button-mobile-container">
-      <div class="filter-button-mobile" @click="toggleFilter">
-        <div class="button-filter-text">
-          <img id="filter-icon" src="/icones/filter.svg"  alt="filtrer les formations"/>
-          {{ isFilterOpen ? 'Fermer le filtre' : 'Filtrer les formations' }}
-        </div>
-        <img
-          id="expand-down-icon"
-          :src=" isFilterOpen
-        ? '/icones/close.svg'
-        : '/icones/expand_down.svg'
-      "
-          :alt=" isFilterOpen
-        ? 'fermer le filtre'
-        : 'ouvrir le filtre'
-      "
-        />
+      <div class="section-title" @click="toggleFilter">
+        <h3>
+          <a href="javascript:void(0)">
+            <span class="accordion-icon">{{ isFilterOpen ? '−' : '+' }}</span>
+            {{ isFilterOpen ? 'Fermer le filtre' : 'Filtrer les formations' }}
+          </a>
+        </h3>
       </div>
     </section>
 
@@ -401,6 +392,10 @@ onBeforeUnmount(() => {
   background-color: #0F7ECB;
 }
 
+.section-title h3 {
+  margin: 0;
+}
+
 #filter-container {
   padding: 0.5em;
 }
@@ -535,29 +530,6 @@ label {
   width: auto;
   padding: 0.5em;
   display: none;
-}
-
-.filter-button-mobile {
-  background: white;
-  text-align: initial;
-  border: none;
-  padding: 0.5em;
-  display: flex;
-}
-
-.button-filter-text {
-  display: flex;
-  flex: 1;
-  align-items: center;
-}
-
-.filter-button-mobile img {
-  width: 20px;
-  height: 20px;
-}
-
-#filter-icon {
-  margin-right: 0.5em;
 }
 
 @media (max-width: 810px) {

@@ -273,7 +273,7 @@ watch(mobileView, (view) => {
 .view-switch {
   display: none;
   position: absolute;
-  top: 75px;
+  top: 80px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
