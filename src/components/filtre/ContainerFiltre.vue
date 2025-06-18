@@ -14,7 +14,7 @@ import * as VilleDepartementService from '@/services/VilleDepartement.service.ts
 import * as ProgrammeService from '@/services/Programme.service.ts'
 
 const isFilterOpen = ref(false);
-const isMobile = ref(window.innerWidth < 810);
+const isMobile = ref(window.innerWidth <= 810);
 
 const emit = defineEmits<{
   (e: 'toggle-filter', open: boolean): void;

@@ -20,7 +20,7 @@ const permanences = ref<PermanenceModel[]>([]);
 const loading = ref(true);
 const isOpen = ref(true);
 const mobileView = ref<'list' | 'map'>('list');
-const isMobile = ref(window.innerWidth < 810);
+const isMobile = ref(window.innerWidth <= 810);
 const mapRef = ref();
 const route = useRoute();
 const router = useRouter();
@@ -159,7 +159,7 @@ onMounted(async () => {
   }
 
   const onResize = () => {
-    isMobile.value = window.innerWidth < 810;
+    isMobile.value = window.innerWidth <= 810;
     if (!isMobile.value) isOpen.value = true;
   };
   window.addEventListener('resize', onResize);
