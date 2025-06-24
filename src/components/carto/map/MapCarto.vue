@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {ref, onMounted, watch, computed, onBeforeUnmount} from 'vue';
+import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster';
@@ -9,6 +9,7 @@ import {StructureModel} from '@/models/Structure.model.ts';
 import {PermanenceModel} from '@/models/Permanence.model.ts';
 import type {FormationModel} from "@/models/Formation.model.ts";
 import {useRouter} from "vue-router";
+import type {AdresseModel} from "@/models/Adresse.model.ts";
 
 const props = defineProps<{
   structures?: StructureModel[];
@@ -55,12 +56,201 @@ let highlightLayer: L.LayerGroup | null = null;
 let infoMulti: L.Control | null = null;
 let skipHighlight = false;
 let lastClickedMarker: L.Marker | null = null;
+// const filtersArray = Array.from(props.filters || []);
+// const filtersObj = parseFilters(filtersArray);
+const filtersObj = computed(() => parseFilters(props.filters ?? []));
 
 defineExpose({
   resizeMap: () => {
     map?.invalidateSize();
   }
 });
+
+type FiltersObject = {
+  activites?: string[];
+  lieux?: string[];
+  scolarisation?: string;
+  competence?: string;
+  programmes?: string;
+  publics?: string[];
+  objectifs?: string[];
+  joursHoraires?: string[];
+  gardeEnfant?: boolean;
+  coursEte?: boolean;
+  keyword?: string;
+};
+
+type ArrayKeys = 'activites' | 'lieux' | 'publics' | 'objectifs' | 'joursHoraires';
+type StringKeys = 'scolarisation' | 'competence' | 'programmes' | 'keyword';
+type BooleanKeys = 'gardeEnfant' | 'coursEte';
+
+function parseFilters(filters: string[]): FiltersObject {
+  const result: FiltersObject = {};
+
+  filters.forEach(filterStr => {
+    const [keyRaw, valueRaw] = filterStr.split(':');
+    if (!valueRaw) return;
+    const key = keyRaw.trim();
+    if ((['gardeEnfant', 'coursEte'] as BooleanKeys[]).includes(key as BooleanKeys)) {
+      result[key as BooleanKeys] = valueRaw.trim() === 'true';
+      return;
+    }
+    if ((['activites', 'lieux', 'publics', 'objectifs', 'joursHoraires'] as ArrayKeys[]).includes(key as ArrayKeys)) {
+      result[key as ArrayKeys] = valueRaw.split(',').map(v => v.trim());
+      return;
+    }
+    if ((['scolarisation', 'competence', 'programmes', 'keyword'] as StringKeys[]).includes(key as StringKeys)) {
+      result[key as StringKeys] = valueRaw.trim();
+      return;
+    }
+  });
+  return result;
+}
+
+function parseLieuFilter(lieu: string): { ville: string; codePostal: string | null } {
+  const matchCodePostal = lieu.match(/\((\d{2,5})\)$/);
+  const codePostal = matchCodePostal ? matchCodePostal[1] : null;
+
+  const ville = lieu.replace(/\s*\(\d{2,5}\)$/, '').trim();
+  return { ville, codePostal };
+}
+
+
+function normalizeFilterJourHoraire(str: string): string {
+  const s = str.toLowerCase().trim();
+  const processed = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const jours = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+  for (const jour of jours) {
+    if (processed.startsWith(jour + ' ')) {
+      return jour + ':' + processed.slice(jour.length + 1);
+    }
+  }
+  return processed;
+}
+
+function filterStructureOrPermanence(
+  m: StructureModel | PermanenceModel,
+  filters: FiltersObject
+): boolean {
+  if (filters.lieux?.length) {
+    const lieuxMatch = filters.lieux.some(lieu => {
+      const { codePostal } = parseLieuFilter(lieu);
+      if (!codePostal) return false;
+
+      return m.adresses.some(a => {
+        const adresseCodePostal = a.codePostal;
+
+        if (codePostal.length === 2) {
+          return adresseCodePostal.startsWith(codePostal);
+        }
+
+        return adresseCodePostal === codePostal;
+      });
+    });
+
+    if (!lieuxMatch) return false;
+  }
+  if (filters.activites?.length) {
+    if (!m.activitesFormation || !filters.activites.some(a => m.activitesFormation.includes(a))) {
+      return false;
+    }
+  }
+  if (filters.keyword) {
+    const keyword = filters.keyword.toLowerCase();
+    const match = m.nom.toLowerCase().includes(keyword)
+      || (m.description && m.description.toLowerCase().includes(keyword));
+    if (!match) return false;
+  }
+  return true;
+}
+
+function filterFormation(f: FormationModel, filters: FiltersObject): boolean {
+  if (filters.gardeEnfant !== undefined && f.gardeEnfants !== filters.gardeEnfant) return false;
+  if (filters.coursEte !== undefined && f.coursEte !== filters.coursEte) return false;
+
+  if (filters.scolarisation && !f.criteresScolarisation.includes(filters.scolarisation)) return false;
+  if (filters.competence && !f.competencesLinguistiquesVisees.includes(filters.competence)) return false;
+
+  if (filters.programmes && !f.programmes.some(p => p.nom === filters.programmes)) return false;
+
+  if (filters.publics?.length) {
+    const publicsFormation = f.publicsSpecifiques?.map(p => p.publicSpecifique) || [];
+    if (!filters.publics.some(p => publicsFormation.includes(p))) return false;
+  }
+
+  if (filters.objectifs?.length) {
+    const objectifsFormation = f.objectifsVises?.map(o => o.objectifVise) || [];
+    if (!filters.objectifs.some(o => objectifsFormation.includes(o))) return false;
+  }
+
+  if (filters.joursHoraires?.length) {
+    const joursFiltresNormalized = filters.joursHoraires.map(j => normalizeFilterJourHoraire(j));
+    const joursFormation = (f.joursHoraires || [])
+      .map(j => j?.joursHoraires || '');
+    const matched = joursFiltresNormalized.some(jFilter => joursFormation.includes(jFilter));
+    if (!matched) return false;
+  }
+
+  if (filters.lieux?.length) {
+    const lieuxMatch = filters.lieux.some(lieu => {
+      const { ville, codePostal } = parseLieuFilter(lieu);
+      return f.adresses.some(a => {
+        const villeMatch =
+          a.ville.toLowerCase() === ville.toLowerCase() ||
+          a.correspondancesVille.some(cv => cv.toLowerCase() === ville.toLowerCase());
+
+        let codePostalMatch = true;
+        if (codePostal) {
+          if (codePostal.length === 2) {
+            codePostalMatch = a.codePostal.startsWith(codePostal) || a.correspondancesCodePostal.some(ccp => ccp.startsWith(codePostal));
+          } else {
+            codePostalMatch = a.codePostal === codePostal || a.correspondancesCodePostal.some(ccp => ccp === codePostal);
+          }
+        }
+
+        return villeMatch && codePostalMatch;
+      });
+    });
+    if (!lieuxMatch) return false;
+  }
+
+  if (filters.activites?.length) {
+    if (!filters.activites.includes(f.activite)) return false;
+  }
+
+  if (filters.keyword) {
+    const kw = filters.keyword.toLowerCase();
+    const match = f.nom.toLowerCase().includes(kw) || (f.presentationPublique && f.presentationPublique.toLowerCase().includes(kw));
+    if (!match) return false;
+  }
+
+  return true;
+}
+
+function filterAdressesByLieu(
+  adresses: AdresseModel[],
+  lieuxFilters: string[]
+): AdresseModel[] {
+  if (!lieuxFilters?.length) return adresses;
+
+  return adresses.filter(a =>
+    lieuxFilters.some(lieu => {
+      const { ville, codePostal } = parseLieuFilter(lieu);
+
+      const villeMatch =
+        a.ville.toLowerCase() === ville.toLowerCase() ||
+        a.correspondancesVille.some(cv => cv.toLowerCase() === ville.toLowerCase());
+
+      const codePostalMatch = codePostal
+        ? (codePostal.length === 2
+          ? a.codePostal.startsWith(codePostal)
+          : a.codePostal === codePostal)
+        : true;
+
+      return villeMatch && codePostalMatch;
+    })
+  );
+}
 
 function initMap() {
   map = L.map(mapContainer.value!, {minZoom: 5});
@@ -133,10 +323,14 @@ function addMarkers() {
 
   if (props.structures) {
     for (const s of props.structures) {
-      const adressesUniques = uniqueCoords(s.adresses);
+      if (!filterStructureOrPermanence(s, filtersObj.value)) continue;
+      const filteredFormations = (s.formations || []).filter(f => filterFormation(f, filtersObj.value));
+      const adressesUniques = filtersObj.value.lieux?.length
+        ? uniqueCoords(filterAdressesByLieu(s.adresses, filtersObj.value.lieux))
+        : uniqueCoords(s.adresses);
       for (const a of adressesUniques) {
         const key = `structure-${s.slug}-${a.latitude}-${a.longitude}`;
-        const formationsAtThisAddress = (s.formations || []).filter(f =>
+        const formationsAtThisAddress = filteredFormations.filter(f =>
           f.adresses.some(fa =>
             fa.latitude === a.latitude && fa.longitude === a.longitude
           )
@@ -223,6 +417,7 @@ function addMarkers() {
 
   if (props.permanences) {
     for (const p of props.permanences) {
+      if (!filterStructureOrPermanence(p, filtersObj.value)) continue;
       const adressesUniques = uniqueCoords(p.adresses);
       for (const a of adressesUniques) {
         const key = `permanence-${p.slug}-${a.latitude}-${a.longitude}`;
@@ -250,6 +445,9 @@ function addMarkers() {
   }>();
 
   for (const { structure, formation, orphanAddrs } of formationsWithOrphans.value) {
+    if (!filterFormation(formation, filtersObj.value)) {
+      continue;
+    }
     for (const addr of orphanAddrs) {
       const key = `${structure.slug}-${addr.latitude}-${addr.longitude}`;
       if (!groupedFormations.has(key)) {
@@ -264,6 +462,7 @@ function addMarkers() {
   }
 
   for (const [key, { structure, adresse, formations }] of groupedFormations.entries()) {
+    if (formations.length === 0) continue;
     const hasPlace = formations.some(f => f.placeDisponible);
     const iconUrl = hasPlace ? '/icones/marker_yellow.png' : '/icones/marker_gray.png';
 
@@ -658,9 +857,11 @@ watch(() => props.objFocus, () => {
   openSelectedPopup();
 });
 
+console.log('filters:', filtersObj.value);
 watch(
   () => [props.structures, props.permanences, props.filters],
   () => {
+    console.log('filters:', filtersObj.value);
     markers.clearLayers();
     addMarkers();
   },

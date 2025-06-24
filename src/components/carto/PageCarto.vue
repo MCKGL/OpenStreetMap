@@ -94,12 +94,19 @@ function onFocusFromMap({type, slug}: { type: string; slug: string }) {
   }
 }
 
-function onApplyFilters(payload: Record<string, unknown>) {
+function onApplyFilters(payload: Record<string, unknown>, clearFocus = true, clearFilters = true) {
   const cleanQuery = { ...route.query };
 
-  const keysToRemove = ['activites', 'lieux', 'scolarisation', 'competence', 'programmes', 'publics', 'objectifs', 'joursHoraires', 'gardeEnfant', 'coursEte', 'keyword'];
-  for (const key of keysToRemove) {
-    delete cleanQuery[key];
+  if (clearFilters) {
+    const keysToRemove = ['activites', 'lieux', 'scolarisation', 'competence', 'programmes', 'publics', 'objectifs', 'joursHoraires', 'gardeEnfant', 'coursEte', 'keyword'];
+    for (const key of keysToRemove) {
+      delete cleanQuery[key];
+    }
+  }
+
+  if (clearFocus) {
+    delete cleanQuery.type;
+    delete cleanQuery.slug;
   }
 
   const newFilters = Object.entries(payload)
@@ -149,7 +156,7 @@ onMounted(async () => {
   payload.coursEte = route.query.coursEte === 'true' || (Array.isArray(route.query.coursEte) && route.query.coursEte.includes('true'));
   payload.keyword = typeof route.query.keyword === 'string' ? route.query.keyword : undefined;
 
-  onApplyFilters(payload);
+  onApplyFilters(payload, false, false);
 
   try {
     structures.value = await getStructures();
@@ -357,7 +364,7 @@ watch(mobileView, (view) => {
   background: #fafafa;
   border:none;
   border-radius:50%;
-  z-index: 10;
+  z-index: 8;
 }
 
 .carto-wrapper.mode-map .view-switch {
