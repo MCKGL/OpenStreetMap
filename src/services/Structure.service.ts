@@ -1,5 +1,7 @@
 import type {StructureModel} from '@/models/Structure.model.ts';
 import type {PermanenceModel} from '@/models/Permanence.model.ts';
+import type {AdresseModel} from "@/models/Adresse.model.ts";
+import type {FormationModel} from "@/models/Formation.model.ts";
 
 const JSON_PATH = import.meta.env.DEV
   ? '/api/cartographie.json'
@@ -15,6 +17,15 @@ const CACHE_DURATION = 10 * 60 * 1000;
 interface ApiResponse {
   structures: StructureModel[];
   permanences: PermanenceModel[];
+}
+
+function cloneAdresse(a: AdresseModel): AdresseModel {
+  return {
+    ...a,
+    structures: [],
+    permanences: [],
+    formations: [],
+  };
 }
 
 /**
@@ -93,4 +104,49 @@ export function getPermanenceBySlug(slug: string): Promise<PermanenceModel> {
     if (!p) throw new Error(`Permanence avec slug ${slug} introuvable`);
     return p;
   });
+}
+
+/**
+ * Regroupe toutes les adresses en un seul tableau enrichi (structure, permanence, formation)
+ */
+export async function getAdressesPourCarte(): Promise<AdresseModel[]> {
+  const { structures, permanences } = await fetchAll();
+
+  const map = new Map<string, AdresseModel>();
+
+  function addAdresse(a: AdresseModel, type: 'structure' | 'permanence' | 'formation', ref: StructureModel | PermanenceModel | FormationModel) {
+    const key = `${a.latitude}-${a.longitude}-${type}`; // point + type ≠ unique
+    if (!map.has(key)) {
+      map.set(key, cloneAdresse(a));
+    }
+    const adresse = map.get(key)!;
+
+    if (type === 'structure') adresse.structures!.push(ref as StructureModel);
+    if (type === 'permanence') adresse.permanences!.push(ref as PermanenceModel);
+    if (type === 'formation') adresse.formations!.push(ref as FormationModel);
+  }
+
+  for (const s of structures) {
+    for (const a of s.adresses || []) {
+      addAdresse(a, 'structure', s);
+    }
+    for (const f of s.formations || []) {
+      for (const a of f.adresses || []) {
+        addAdresse(a, 'formation', { ...f, structure: s });
+      }
+    }
+  }
+
+  for (const p of permanences) {
+    for (const a of p.adresses || []) {
+      addAdresse(a, 'permanence', p);
+    }
+    for (const f of p.formations || []) {
+      for (const a of f.adresses || []) {
+        addAdresse(a, 'formation', { ...f, permanence: p });
+      }
+    }
+  }
+
+  return Array.from(map.values());
 }

@@ -3,7 +3,8 @@ import MapCarto from "@/components/carto/map/MapCarto.vue";
 import {computed, nextTick, onBeforeUnmount, onMounted, ref, watch} from "vue";
 import {StructureModel} from "@/models/Structure.model.ts";
 import {PermanenceModel} from "@/models/Permanence.model.ts";
-import {getPermanences, getStructures} from "@/services/Structure.service.ts";
+import type {AdresseModel} from "@/models/Adresse.model.ts";
+import {getAdressesPourCarte, getPermanences, getStructures} from "@/services/Structure.service.ts";
 import StructuresListe from "@/components/carto/liste/StructuresListe.vue";
 import PermancencesListe from "@/components/carto/liste/PermancencesListe.vue";
 import {type LocationQueryValue, useRoute, useRouter} from "vue-router";
@@ -17,6 +18,7 @@ interface Focus {
 
 const structures = ref<StructureModel[]>([]);
 const permanences = ref<PermanenceModel[]>([]);
+const adresses = ref<AdresseModel[]>([]);
 const loading = ref(true);
 const isOpen = ref(true);
 const mobileView = ref<'list' | 'map'>('list');
@@ -67,31 +69,6 @@ function resetFocus() {
   delete newQuery.slug;
   delete newQuery.type;
   router.replace({query: newQuery});
-}
-
-function onFocusFromMap({type, slug}: { type: string; slug: string }) {
-  const wasClosed = !isOpen.value;
-  isOpen.value = true;
-
-  if (wasClosed) {
-    setTimeout(() => {
-      router.push({
-        query: {
-          ...route.query,
-          type,
-          slug
-        }
-      });
-    }, 320);
-  } else {
-    router.push({
-      query: {
-        ...route.query,
-        type,
-        slug
-      }
-    });
-  }
 }
 
 function onApplyFilters(payload: Record<string, unknown>, clearFocus = true, clearFilters = true) {
@@ -161,6 +138,7 @@ onMounted(async () => {
   try {
     structures.value = await getStructures();
     permanences.value = await getPermanences();
+    adresses.value = await getAdressesPourCarte();
   } finally {
     loading.value = false;
   }
@@ -242,14 +220,20 @@ watch(mobileView, (view) => {
         </div>
 
         <div class="panel map-panel" v-show="!isMobile || mobileView==='map'">
+<!--          <MapCarto-->
+<!--            ref="mapRef"-->
+<!--            :structures="structures"-->
+<!--            :permanences="permanences"-->
+<!--            :objFocus="objFocus"-->
+<!--            :filters="filters"-->
+<!--            @reset-focus="resetFocus"-->
+<!--            @focus-from-map="onFocusFromMap"-->
+<!--          />-->
+
           <MapCarto
             ref="mapRef"
-            :structures="structures"
-            :permanences="permanences"
-            :objFocus="objFocus"
+            :adresses="adresses"
             :filters="filters"
-            @reset-focus="resetFocus"
-            @focus-from-map="onFocusFromMap"
           />
         </div>
       </div>

@@ -1,5 +1,7 @@
 import type {AdresseModel} from "@/models/Adresse.model.ts";
 import type {HorairesPeriodeModel} from "@/models/HorairesPeriode.model.ts";
+import type {StructureModel} from "@/models/Structure.model.ts";
+import type {PermanenceModel} from "@/models/Permanence.model.ts";
 
 export const ACTIVITE_FORMATION = {
   ACTIVITE_LINGUISTIQUE_VISEE_AUTONOMIE_SOCIAL : 'Français à visée sociale et communicative',
@@ -76,6 +78,9 @@ export class FormationModel {
   coursEte!: boolean;
   placeDisponible!: boolean;
   url!: string;
+  // new
+  structure?: StructureModel;
+  permanence?: PermanenceModel;
 }
 
 export interface ObjectifViseModel {

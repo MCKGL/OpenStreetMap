@@ -1,259 +1,29 @@
 <script setup lang="ts">
-import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue';
-import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 import 'leaflet.markercluster';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
-import {StructureModel} from '@/models/Structure.model.ts';
-import {PermanenceModel} from '@/models/Permanence.model.ts';
-import type {FormationModel} from "@/models/Formation.model.ts";
-import {useRouter} from "vue-router";
 import type {AdresseModel} from "@/models/Adresse.model.ts";
+import type {FormationModel} from "@/models/Formation.model.ts";
+import {onMounted, onBeforeUnmount, ref, watch} from 'vue';
+import {useRouter} from "vue-router";
+
+const mapRef = ref<HTMLElement | null>(null);
+let map: L.Map;
+let markers: L.MarkerClusterGroup;
+const router = useRouter();
 
 const props = defineProps<{
-  structures?: StructureModel[];
-  permanences?: PermanenceModel[];
-  objFocus?: { type: 'structure' | 'permanence' | 'formation'; slug: string };
+  adresses?: AdresseModel[],
   filters?: string[];
 }>();
 
-const emit = defineEmits<{
-  (e: 'reset-focus'): void;
-  (e: 'focus-from-map', payload: { type: 'structure' | 'permanence' | 'formation'; slug: string }): void;
-}>();
-
-type FormationWithOrphans = {
-  formation: FormationModel;
-  structure: StructureModel;
-  orphanAddrs: { latitude: number; longitude: number; ville: string; codePostal: string }[];
-};
-
-const formationToGroupKey: Record<string, string> = {};
-const formationsWithOrphans = computed<FormationWithOrphans[]>(() => {
-  return props.structures?.flatMap(structure =>
-    (structure.formations || [])
-      .map(frm => ({
-        structure,
-        formation: frm,
-        orphanAddrs: frm.adresses.filter(fa =>
-          !structure.adresses.some(sa =>
-            sa.latitude === fa.latitude && sa.longitude === fa.longitude
-          )
-        )
-      }))
-      .filter(x => x.orphanAddrs.length > 0)
-  ) || [];
-});
-
-const mapContainer = ref<HTMLElement | null>(null);
-let map: L.Map;
-let markers: L.MarkerClusterGroup;
-const markerRefs: Record<string, L.Marker> = {};
-let ileDeFranceBounds: L.LatLngBounds;
-const router = useRouter();
-let highlightLayer: L.LayerGroup | null = null;
-let infoMulti: L.Control | null = null;
-let skipHighlight = false;
-let lastClickedMarker: L.Marker | null = null;
-// const filtersArray = Array.from(props.filters || []);
-// const filtersObj = parseFilters(filtersArray);
-const filtersObj = computed(() => parseFilters(props.filters ?? []));
-
-defineExpose({
-  resizeMap: () => {
-    map?.invalidateSize();
-  }
-});
-
-type FiltersObject = {
-  activites?: string[];
-  lieux?: string[];
-  scolarisation?: string;
-  competence?: string;
-  programmes?: string;
-  publics?: string[];
-  objectifs?: string[];
-  joursHoraires?: string[];
-  gardeEnfant?: boolean;
-  coursEte?: boolean;
-  keyword?: string;
-};
-
-type ArrayKeys = 'activites' | 'lieux' | 'publics' | 'objectifs' | 'joursHoraires';
-type StringKeys = 'scolarisation' | 'competence' | 'programmes' | 'keyword';
-type BooleanKeys = 'gardeEnfant' | 'coursEte';
-
-function parseFilters(filters: string[]): FiltersObject {
-  const result: FiltersObject = {};
-
-  filters.forEach(filterStr => {
-    const [keyRaw, valueRaw] = filterStr.split(':');
-    if (!valueRaw) return;
-    const key = keyRaw.trim();
-    if ((['gardeEnfant', 'coursEte'] as BooleanKeys[]).includes(key as BooleanKeys)) {
-      result[key as BooleanKeys] = valueRaw.trim() === 'true';
-      return;
-    }
-    if ((['activites', 'lieux', 'publics', 'objectifs', 'joursHoraires'] as ArrayKeys[]).includes(key as ArrayKeys)) {
-      result[key as ArrayKeys] = valueRaw.split(',').map(v => v.trim());
-      return;
-    }
-    if ((['scolarisation', 'competence', 'programmes', 'keyword'] as StringKeys[]).includes(key as StringKeys)) {
-      result[key as StringKeys] = valueRaw.trim();
-      return;
-    }
-  });
-  return result;
-}
-
-function parseLieuFilter(lieu: string): { ville: string; codePostal: string | null } {
-  const matchCodePostal = lieu.match(/\((\d{2,5})\)$/);
-  const codePostal = matchCodePostal ? matchCodePostal[1] : null;
-
-  const ville = lieu.replace(/\s*\(\d{2,5}\)$/, '').trim();
-  return { ville, codePostal };
-}
-
-
-function normalizeFilterJourHoraire(str: string): string {
-  const s = str.toLowerCase().trim();
-  const processed = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  const jours = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
-  for (const jour of jours) {
-    if (processed.startsWith(jour + ' ')) {
-      return jour + ':' + processed.slice(jour.length + 1);
-    }
-  }
-  return processed;
-}
-
-function filterStructureOrPermanence(
-  m: StructureModel | PermanenceModel,
-  filters: FiltersObject
-): boolean {
-  if (filters.lieux?.length) {
-    const lieuxMatch = filters.lieux.some(lieu => {
-      const { codePostal } = parseLieuFilter(lieu);
-      if (!codePostal) return false;
-
-      return m.adresses.some(a => {
-        const adresseCodePostal = a.codePostal;
-
-        if (codePostal.length === 2) {
-          return adresseCodePostal.startsWith(codePostal);
-        }
-
-        return adresseCodePostal === codePostal;
-      });
-    });
-
-    if (!lieuxMatch) return false;
-  }
-  if (filters.activites?.length) {
-    if (!m.activitesFormation || !filters.activites.some(a => m.activitesFormation.includes(a))) {
-      return false;
-    }
-  }
-  if (filters.keyword) {
-    const keyword = filters.keyword.toLowerCase();
-    const match = m.nom.toLowerCase().includes(keyword)
-      || (m.description && m.description.toLowerCase().includes(keyword));
-    if (!match) return false;
-  }
-  return true;
-}
-
-function filterFormation(f: FormationModel, filters: FiltersObject): boolean {
-  if (filters.gardeEnfant !== undefined && f.gardeEnfants !== filters.gardeEnfant) return false;
-  if (filters.coursEte !== undefined && f.coursEte !== filters.coursEte) return false;
-
-  if (filters.scolarisation && !f.criteresScolarisation.includes(filters.scolarisation)) return false;
-  if (filters.competence && !f.competencesLinguistiquesVisees.includes(filters.competence)) return false;
-
-  if (filters.programmes && !f.programmes.some(p => p.nom === filters.programmes)) return false;
-
-  if (filters.publics?.length) {
-    const publicsFormation = f.publicsSpecifiques?.map(p => p.publicSpecifique) || [];
-    if (!filters.publics.some(p => publicsFormation.includes(p))) return false;
-  }
-
-  if (filters.objectifs?.length) {
-    const objectifsFormation = f.objectifsVises?.map(o => o.objectifVise) || [];
-    if (!filters.objectifs.some(o => objectifsFormation.includes(o))) return false;
-  }
-
-  if (filters.joursHoraires?.length) {
-    const joursFiltresNormalized = filters.joursHoraires.map(j => normalizeFilterJourHoraire(j));
-    const joursFormation = (f.joursHoraires || [])
-      .map(j => j?.joursHoraires || '');
-    const matched = joursFiltresNormalized.some(jFilter => joursFormation.includes(jFilter));
-    if (!matched) return false;
-  }
-
-  if (filters.lieux?.length) {
-    const lieuxMatch = filters.lieux.some(lieu => {
-      const { ville, codePostal } = parseLieuFilter(lieu);
-      return f.adresses.some(a => {
-        const villeMatch =
-          a.ville.toLowerCase() === ville.toLowerCase() ||
-          a.correspondancesVille.some(cv => cv.toLowerCase() === ville.toLowerCase());
-
-        let codePostalMatch = true;
-        if (codePostal) {
-          if (codePostal.length === 2) {
-            codePostalMatch = a.codePostal.startsWith(codePostal) || a.correspondancesCodePostal.some(ccp => ccp.startsWith(codePostal));
-          } else {
-            codePostalMatch = a.codePostal === codePostal || a.correspondancesCodePostal.some(ccp => ccp === codePostal);
-          }
-        }
-
-        return villeMatch && codePostalMatch;
-      });
-    });
-    if (!lieuxMatch) return false;
-  }
-
-  if (filters.activites?.length) {
-    if (!filters.activites.includes(f.activite)) return false;
-  }
-
-  if (filters.keyword) {
-    const kw = filters.keyword.toLowerCase();
-    const match = f.nom.toLowerCase().includes(kw) || (f.presentationPublique && f.presentationPublique.toLowerCase().includes(kw));
-    if (!match) return false;
-  }
-
-  return true;
-}
-
-function filterAdressesByLieu(
-  adresses: AdresseModel[],
-  lieuxFilters: string[]
-): AdresseModel[] {
-  if (!lieuxFilters?.length) return adresses;
-
-  return adresses.filter(a =>
-    lieuxFilters.some(lieu => {
-      const { ville, codePostal } = parseLieuFilter(lieu);
-
-      const villeMatch =
-        a.ville.toLowerCase() === ville.toLowerCase() ||
-        a.correspondancesVille.some(cv => cv.toLowerCase() === ville.toLowerCase());
-
-      const codePostalMatch = codePostal
-        ? (codePostal.length === 2
-          ? a.codePostal.startsWith(codePostal)
-          : a.codePostal === codePostal)
-        : true;
-
-      return villeMatch && codePostalMatch;
-    })
-  );
-}
-
+/**
+ * Initialise la carte Leaflet avec les tuiles OpenStreetMap.
+ */
 function initMap() {
-  map = L.map(mapContainer.value!, {minZoom: 5});
+  map = L.map(mapRef.value!, {minZoom: 5});
 
   map.createPane('highlightPane');
   map.getPane('highlightPane')!.style.zIndex = '650';
@@ -277,519 +47,237 @@ function initMap() {
   });
   map.addLayer(markers);
 
-  ileDeFranceBounds = L.latLngBounds([48.0, 1.6], [49.1, 3.6]);
-
-  if (props.objFocus) {
-    const {type, slug} = props.objFocus;
-    if (type === 'structure') {
-      const s = props.structures?.find(s => s.slug === slug);
-      if (s) {
-        const bounds = L.latLngBounds(s.adresses.map(a => [a.latitude, a.longitude] as [number, number]));
-        map.fitBounds(bounds, {padding: [50, 50]});
-        return;
-      }
-    } else if (type === 'permanence') {
-      const p = props.permanences?.find(p => p.slug === slug);
-      if (p) {
-        const bounds = L.latLngBounds(p.adresses.map(a => [a.latitude, a.longitude] as [number, number]));
-        map.fitBounds(bounds, {padding: [50, 50]});
-        return;
-      }
-    }
-  }
-
-  if (props.structures?.length === 1 && props.structures[0].adresses.length) {
-    const bounds = L.latLngBounds(
-      props.structures[0].adresses.map(a => [a.latitude, a.longitude] as [number, number])
-    );
-    map.fitBounds(bounds, {padding: [50, 50]});
-    return;
-  }
-
   map.setView([48.684, 2.502], 9);
 }
 
-function uniqueCoords<T extends { latitude: number; longitude: number }>(addrs: T[]): T[] {
-  const seen = new Set<string>();
-  return addrs.filter(a => {
-    const key = `${a.latitude},${a.longitude}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
+/**
+ * Ajoute les marqueurs sur la carte en fonction des adresses fournies.
+ */
 function addMarkers() {
+  if (!props.adresses) return;
+  markers.clearLayers();
 
-  if (props.structures) {
-    for (const s of props.structures) {
-      if (!filterStructureOrPermanence(s, filtersObj.value)) continue;
-      const filteredFormations = (s.formations || []).filter(f => filterFormation(f, filtersObj.value));
-      const adressesUniques = filtersObj.value.lieux?.length
-        ? uniqueCoords(filterAdressesByLieu(s.adresses, filtersObj.value.lieux))
-        : uniqueCoords(s.adresses);
-      for (const a of adressesUniques) {
-        const key = `structure-${s.slug}-${a.latitude}-${a.longitude}`;
-        const formationsAtThisAddress = filteredFormations.filter(f =>
-          f.adresses.some(fa =>
-            fa.latitude === a.latitude && fa.longitude === a.longitude
-          )
-        );
+  for (const adresse of props.adresses) {
+    const {latitude, longitude} = adresse;
+    if (!latitude || !longitude) continue;
 
-        let iconUrl = '/icones/marker_blue.png';
-        if (formationsAtThisAddress.length) {
-          const hasPlace = formationsAtThisAddress.some(f => f.placeDisponible);
-          iconUrl = hasPlace
-            ? '/icones/marker_yellow.png'
-            : '/icones/marker_gray.png';
-        }
-
-        const container = document.createElement('div');
-        const nomStructure = document.createElement('strong');
-        nomStructure.textContent = s.nom;
-        container.appendChild(nomStructure);
-
-        const label = document.createElement('div');
-        if (formationsAtThisAddress.length) {
-          label.textContent = 'Formations à cette adresse :';
-          label.style.marginTop = '8px';
-          container.appendChild(label);
-
-          const list = document.createElement('ul');
-          list.style.paddingLeft = '16px';
-
-          for (const f of formationsAtThisAddress) {
-            const li = document.createElement('li');
-            const link = document.createElement('button');
-            link.type = 'button';
-            link.textContent = `${f.nom}${f.placeDisponible ? ' (places disponibles)' : ' (pas de places)'}`;
-            link.style.background = 'none';
-            link.style.border = 'none';
-            link.style.padding = '0';
-            link.style.margin = '4px 0';
-            if (f.placeDisponible) {
-              link.style.color = '#007BFF';
-              link.style.cursor = 'pointer';
-              link.onclick = () => emit('focus-from-map', { type: 'formation', slug: f.slug });
-            } else {
-              link.style.color = 'gray';
-              link.style.cursor = 'default';
-              link.disabled = true;
-            }
-            li.appendChild(link);
-            list.appendChild(li);
-          }
-
-          container.appendChild(list);
-        } else {
-          label.textContent = 'Pas de formation à cette adresse';
-          label.style.marginTop = '8px';
-          label.style.fontStyle = 'italic';
-          container.appendChild(label);
-        }
-
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.textContent = 'Voir la structure';
-        btn.style.marginTop = '10px';
-        btn.style.display = 'block';
-        btn.onclick = () => router.push(`/${s.slug}`);
-        container.appendChild(btn);
-
-        const m = L.marker([a.latitude, a.longitude], {
-          icon: L.icon({
-            iconUrl,
-            iconSize: [41, 41],
-            iconAnchor: [22, 0],
-            className: 'marker-structure'
-          })
-        }).bindPopup(container);
-        m.on('click', () => {
-          skipHighlight = true;
-          lastClickedMarker = m;
-          emit('focus-from-map', { type: 'structure', slug: s.slug });
-        });
-        markers.addLayer(m);
-        markerRefs[key] = m;
+    // Structures
+    for (const s of adresse.structures || []) {
+      // Les formations de cette structure à cette adresse
+      const atThisAddress = (s.formations || []).filter(f =>
+        f.adresses.some(ad => ad.latitude === latitude && ad.longitude === longitude)
+      );
+      // Choix de l'icône : bleu par défaut, jaune si au moins une place dispo, gris sinon
+      let iconUrl = '/icones/marker_blue.png';
+      if (atThisAddress.length) {
+        iconUrl = atThisAddress.some(f => f.placeDisponible)
+          ? '/icones/marker_yellow.png'
+          : '/icones/marker_gray.png';
       }
-    }
-  }
 
-  if (props.permanences) {
-    for (const p of props.permanences) {
-      if (!filterStructureOrPermanence(p, filtersObj.value)) continue;
-      const adressesUniques = uniqueCoords(p.adresses);
-      for (const a of adressesUniques) {
-        const key = `permanence-${p.slug}-${a.latitude}-${a.longitude}`;
-        const m = L.marker([a.latitude, a.longitude], {
-          icon: L.icon({
-            iconUrl: '/icones/marker_black.png',
-            iconSize: [41, 41], iconAnchor: [22, 0], className: 'marker-permanence'
-          })
-        }).bindPopup(`<strong>${p.nom}</strong><br>${a.ville} (${a.codePostal})`);
-        m.on('click', () => {
-          skipHighlight = true;
-          lastClickedMarker = m;
-          emit('focus-from-map', { type: 'permanence', slug: p.slug });
-        });
-        markers.addLayer(m);
-        markerRefs[key] = m;
-      }
-    }
-  }
+      // Construction du contenu du popup
+      let popup = `<div>
+    <strong>${s.nom} STRUCTURE</strong><br>
+    ${s.activitesFormation.map(act => `<div>• ${act}</div>`).join('')}
+  `;
 
-  const groupedFormations = new Map<string, {
-    structure: StructureModel,
-    adresse: { latitude: number, longitude: number, ville: string, codePostal: string },
-    formations: FormationModel[]
-  }>();
-
-  for (const { structure, formation, orphanAddrs } of formationsWithOrphans.value) {
-    if (!filterFormation(formation, filtersObj.value)) {
-      continue;
-    }
-    for (const addr of orphanAddrs) {
-      const key = `${structure.slug}-${addr.latitude}-${addr.longitude}`;
-      if (!groupedFormations.has(key)) {
-        groupedFormations.set(key, {
-          structure,
-          adresse: addr,
-          formations: []
-        });
-      }
-      groupedFormations.get(key)!.formations.push(formation);
-    }
-  }
-
-  for (const [key, { structure, adresse, formations }] of groupedFormations.entries()) {
-    if (formations.length === 0) continue;
-    const hasPlace = formations.some(f => f.placeDisponible);
-    const iconUrl = hasPlace ? '/icones/marker_yellow.png' : '/icones/marker_gray.png';
-
-    const container = document.createElement('div');
-    const header = document.createElement('div');
-    header.style.display = 'flex';
-    header.style.alignItems = 'center';
-    const nomStructure = document.createElement('strong');
-    nomStructure.textContent = structure.nom;
-    header.appendChild(nomStructure);
-    const focusIcon = document.createElement('img');
-    focusIcon.src = '/icones/focus-icon.svg';
-    focusIcon.style.width = '16px';
-    focusIcon.style.marginLeft = '8px';
-    focusIcon.onclick = () => emit('focus-from-map', { type: 'structure', slug: structure.slug });
-    header.appendChild(focusIcon);
-    container.appendChild(header);
-
-    const label = document.createElement('div');
-    label.textContent = 'Formations à cette adresse :';
-    label.style.marginTop = '8px';
-    container.appendChild(label);
-
-    const list = document.createElement('ul');
-    list.style.paddingLeft = '16px';
-    for (const f of formations) {
-      const li = document.createElement('li');
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.textContent = `${f.nom}${f.placeDisponible ? ' (places disponibles)' : ' (pas de places)'}`;
-      btn.style.background = 'none';
-      btn.style.border = 'none';
-      btn.style.padding = '0';
-      btn.style.margin = '4px 0';
-      if (f.placeDisponible) {
-        btn.style.color = '#007BFF';
-        btn.style.cursor = 'pointer';
-        btn.onclick = () => emit('focus-from-map', { type: 'formation', slug: f.slug });
+      if (atThisAddress.length === 0) {
+        popup += `<div style="margin-top:8px; font-style:italic;">
+      Aucune formation renseignée à cette adresse
+    </div>`;
       } else {
-        btn.style.color = 'gray';
-        btn.disabled = true;
+        popup += `<div style="margin-top:8px;"><strong>Formations de cette structure à cette adresse :</strong></div>
+      <ul style="padding-left:16px; margin:4px 0;">
+        ${atThisAddress.map(f =>
+          `<li>
+             <button class="formation-link formation-list" data-slug="${f.slug}">
+               ${f.nom}
+             </button>
+           </li>`
+        ).join('')}
+      </ul>`;
       }
-      li.appendChild(btn);
-      list.appendChild(li);
+      popup += `</div>`;
+
+      // Création du marqueur
+      const m = L.marker([latitude, longitude], {
+        icon: L.icon({iconUrl, iconSize: [41, 41], iconAnchor: [22, 0]})
+      })
+        .bindPopup(popup)
+        .on('click', () => {
+          router.replace({
+            query: {
+              ...router.currentRoute.value.query,
+              type: 'structure',
+              slug: s.slug,
+              latitude: latitude.toString(),
+              longitude: longitude.toString()
+            }
+          });
+        })
+        .on('popupopen', () => {
+          // Rattache les handlers sur les boutons .formation-link
+          const container = m.getPopup()!.getElement()!;
+          container.querySelectorAll<HTMLButtonElement>('.formation-link').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const slug = btn.dataset.slug!;
+              router.replace({
+                query: {
+                  ...router.currentRoute.value.query,
+                  type: 'formation',
+                  slug,
+                  latitude: latitude.toString(),
+                  longitude: longitude.toString()
+                }
+              });
+              m.closePopup();
+            });
+          });
+        });
+      markers.addLayer(m);
     }
-    container.appendChild(list);
 
-    const marker = L.marker([adresse.latitude, adresse.longitude], {
-      icon: L.icon({ iconUrl, iconSize: [41,41], iconAnchor: [22,0], className: 'marker-formation' })
-    }).bindPopup(container);
+    // Permanences
+    for (const p of adresse.permanences || []) {
+      // Construction du contenu du popup
+      const popup = `<div>
+    <strong>${p.nom} PERMANENCE</strong><br>
+    <ul style="padding-left:16px; margin:4px 0;">
+      ${p.activitesCoordination.map(act => `<li>${act}</li>`).join('')}
+    </ul>
+  </div>`;
 
-    marker.on('click', () => {
-      skipHighlight = true;
-      lastClickedMarker = marker;
-      emit('focus-from-map', { type: 'formation', slug: structure.slug });
-    });
+      const m = L.marker([latitude, longitude], {
+        icon: L.icon({
+          iconUrl: '/icones/marker_black.png',
+          iconSize: [41, 41],
+          iconAnchor: [22, 0]
+        })
+      }).bindPopup(popup)
+        .on('click', () => {
+          router.replace({
+            query: {
+              ...router.currentRoute.value.query,
+              type: 'permanence',
+              slug: p.slug,
+              latitude: latitude.toString(),
+              longitude: longitude.toString()
+            }
+          });
+        });
+      markers.addLayer(m);
+    }
 
-    markers.addLayer(marker);
-    markerRefs[`formation-group-${key}`] = marker;
-  }
-}
 
-function clearHighlight() {
-  if (highlightLayer) {
-    map.removeLayer(highlightLayer);
-    highlightLayer = null;
-  }
-  if (infoMulti) {
-    map.removeControl(infoMulti);
-    infoMulti = null;
-  }
-}
+    // Formations orphelines (formations hors sa structure)
+    const orphanMap = new Map<number, FormationModel[]>();
+    for (const f of adresse.formations || []) {
+      const sameAsStruct = f.structure?.adresses.some(a => a.latitude === latitude && a.longitude === longitude);
+      const sameAsPerm = f.permanence?.adresses.some(a => a.latitude === latitude && a.longitude === longitude);
+      if (!sameAsStruct && !sameAsPerm) {
+        const key = f.structure?.id ?? f.id;
+        if (!orphanMap.has(key)) orphanMap.set(key, []);
+        orphanMap.get(key)!.push(f);
+      }
+    }
 
-function highlightMulti(
-  type: 'structure' | 'permanence',
-  slug: string,
-  adresses: { latitude: number; longitude: number }[]
-) {
-  clearHighlight();
+    // Création des marqueurs pour les formations orphelines
+    for (const formations of orphanMap.values()) {
+      // Récupération de la structure associée
+      const struct = formations[0].structure!;
+      const latitude = adresse.latitude, longitude = adresse.longitude;
 
-  highlightLayer = L.layerGroup().addTo(map);
-  const clones: L.Marker[] = [];
+      // Construction du contenu du popup
+      const activitesHTML = struct.activitesFormation
+        .map(act => `<li>${act}</li>`).join('');
 
-  for (const a of adresses) {
-    const key = `${type}-${slug}-${a.latitude}-${a.longitude}`;
-    const original = markerRefs[key];
-    if (!original) continue;
+      const formationsHTML = `
+  <ul>
+    ${formations.map(f => `
+      <li>
+        <button
+          class="orphan-link formation-list"
+          data-slug="${f.slug}">
+          ${f.nom}
+        </button>
+      </li>
+    `).join('')}
+  </ul>
+`;
 
-    const origIcon = original.getIcon() as L.Icon;
-    const origUrl = origIcon.options.iconUrl as string;
-    const cloneUrl = origUrl.replace(/(marker_[a-z]+)\.png$/, '$1_clone.png');
+      const popup = `
+    <div>
+      <strong>${struct.nom} FORMATION ORPH</strong>
+      <ul style="padding-left:16px;margin:4px 0;">
+        ${activitesHTML}
+      </ul>
+      <div style="margin-top:8px;font-weight:bold;">
+        Formations de cette structure à cette adresse :
+      </div>
+      ${formationsHTML}
+    </div>
+  `;
 
-    const cloneIcon = L.icon({
-      ...origIcon.options,
-      iconUrl: cloneUrl
-    });
+      // Choix de l'icône : jaune si au moins une place dispo, gris sinon
+      const iconUrl = formations.some(f => f.placeDisponible)
+        ? '/icones/marker_yellow.png'
+        : '/icones/marker_gray.png';
 
-    const popupContent = original.getPopup()?.getContent() as HTMLElement | string;
+      // Création du marqueur
+      const m = L.marker([latitude, longitude], {
+        icon: L.icon({iconUrl, iconSize: [41, 41], iconAnchor: [22, 0]})
+      }).bindPopup(popup);
 
-    const clone = L.marker(original.getLatLng(), {
-      icon: cloneIcon,
-      pane: 'highlightPane'
-    })
-      .bindPopup(popupContent)
-      .on('click', () => {
-        clearHighlight();
-        markers.zoomToShowLayer(original, () => {
-          map.setView(original.getLatLng(), Math.max(map.getZoom(), 16), { animate: true });
-          original.openPopup();
+      // S'il n'y a qu'une formation, on navigue au clic du marqueur
+      if (formations.length === 1) {
+        m.on('click', () => {
+          const f = formations[0];
+          router.replace({
+            query: {
+              ...router.currentRoute.value.query,
+              type: 'formation',
+              slug: f.slug,
+              latitude: latitude.toString(),
+              longitude: longitude.toString()
+            }
+          });
+        });
+      }
+
+      // A l'ouverture du popup, rattache le click sur les boutons .orphan-link
+      m.on('popupopen', () => {
+        const container = m.getPopup()!.getElement()!;
+        container.querySelectorAll<HTMLButtonElement>('.orphan-link').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const slug = btn.dataset.slug!;
+            router.replace({
+              query: {
+                ...router.currentRoute.value.query,
+                type: 'formation',
+                slug,
+                latitude: latitude.toString(),
+                longitude: longitude.toString()
+              }
+            });
+            m.closePopup();
+          });
         });
       });
-
-    highlightLayer.addLayer(clone);
-    clones.push(clone);
+      markers.addLayer(m);
+    }
   }
 
-  if (clones.length > 0) {
-    clones[0].openPopup();
+  // recentrage automatique
+  const layers = markers.getLayers() as L.Marker[];
+  if (layers.length) {
+    const fg = L.featureGroup(layers);
+    map.fitBounds(fg.getBounds(), {padding: [50, 50]});
   }
-
-  const bounds = L.latLngBounds(adresses.map(a =>
-    [a.latitude, a.longitude] as [number, number]
-  ));
-  map.fitBounds(bounds, { padding: [50, 50] });
-
-  const count = adresses.length;
-  const newInfo = (L.control as unknown as (opts: L.ControlOptions) => L.Control)({
-    position: 'bottomleft'
-  });
-  newInfo.onAdd = (): HTMLElement => {
-    const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-    div.style.padding = '6px 10px';
-    div.style.background = 'rgba(255,255,255,0.9)';
-    div.style.fontSize = '13px';
-    div.innerHTML = `⚠️ Il existe ${count} adresse${count > 1 ? 's' : ''} pour cette ${type}`;
-    return div;
-  };
-  infoMulti = newInfo;
-  newInfo.addTo(map);
 }
 
-function highlightFormation(frm: FormationModel, struct: StructureModel) {
-  clearHighlight();
-
-  const adrs = frm.adresses;
-  highlightLayer = L.layerGroup().addTo(map);
-  const clones: L.Marker[] = [];
-
-  for (const a of adrs) {
-    const structKey = `structure-${struct.slug}-${a.latitude}-${a.longitude}`;
-    let original = markerRefs[structKey];
-
-    if (!original) {
-      const groupPrefix = `formation-group-${struct.slug}-${a.latitude}-${a.longitude}`;
-      const grpKey = Object.keys(markerRefs)
-        .find(k => k.startsWith(groupPrefix));
-      if (grpKey) original = markerRefs[grpKey];
-    }
-    if (!original) continue;
-
-    const origIcon = original.getIcon() as L.Icon;
-    const cloneUrl = (origIcon.options.iconUrl as string)
-      .replace(/(marker_[a-z]+)\.png$/, '$1_clone.png');
-    const cloneIcon = L.icon({ ...origIcon.options, iconUrl: cloneUrl });
-
-    const popupContent = original.getPopup()?.getContent() as HTMLElement | string;
-    const clone = L.marker(original.getLatLng(), {
-      icon: cloneIcon,
-      pane: 'highlightPane'
-    })
-      .bindPopup(popupContent)
-      .on('click', () => {
-        clearHighlight();
-        markers.zoomToShowLayer(original!, () => {
-          map.setView(original!.getLatLng(), Math.max(map.getZoom(), 16), { animate: true });
-          original!.openPopup();
-        });
-      });
-
-    highlightLayer!.addLayer(clone);
-    clones.push(clone);
-  }
-
-  if (clones.length) clones[0].openPopup();
-
-  const bounds = L.latLngBounds(adrs.map(a =>
-    [a.latitude, a.longitude] as [number, number]
-  ));
-  map.fitBounds(bounds, { padding: [50, 50] });
-
-  const count = adrs.length;
-  const newInfo = (L.control as unknown as (opts: L.ControlOptions) => L.Control)({
-    position: 'bottomleft'
-  });
-  newInfo.onAdd = () => {
-    const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-    div.style.padding = '6px 10px';
-    div.style.background = 'rgba(255,255,255,0.9)';
-    div.style.fontSize = '13px';
-    div.innerHTML = `⚠️ Il existe ${count} adresse${count>1?'s':''} pour cette formation`;
-    return div;
-  };
-  infoMulti = newInfo;
-  newInfo.addTo(map);
-}
-
-function openSelectedPopup() {
-  clearHighlight();
-  if (!props.objFocus) return;
-
-  const { type, slug } = props.objFocus;
-  const markerType = type;
-  const markerSlug = slug;
-
-  if (skipHighlight && lastClickedMarker) {
-    const m = lastClickedMarker;
-    skipHighlight = false;
-    lastClickedMarker = null;
-    markers.zoomToShowLayer(m, () => {
-      setTimeout(() => {
-        map.setView(m.getLatLng(), Math.max(map.getZoom(), 16), { animate: true });
-        m.openPopup();
-      }, 100);
-    });
-    return;
-  }
-
-  if (type === 'formation') {
-    const assoc = props.structures
-      ?.flatMap(s => s.formations.map(f => ({ structure: s, formation: f })))
-      .find(x => x.formation.slug === slug);
-
-    if (assoc) {
-      const { formation, structure } = assoc;
-
-      if (formation.adresses.length > 1) {
-        highlightFormation(formation, structure);
-        return;
-      }
-
-      const a = formation.adresses[0];
-      const keyStruct = `structure-${structure.slug}-${a.latitude}-${a.longitude}`;
-      const m0 = markerRefs[keyStruct]
-        || markerRefs[
-          Object.keys(markerRefs)
-            .find(k => k.startsWith(`formation-group-${structure.slug}-${a.latitude}-${a.longitude}`))!
-          ];
-      if (m0) {
-        markers.zoomToShowLayer(m0, () => {
-          setTimeout(() => {
-            map.setView(m0.getLatLng(), Math.max(map.getZoom(), 16), { animate: true });
-            m0.openPopup();
-          }, 100);
-        });
-      }
-      return;
-    }
-  }
-
-  if (type === 'formation' && formationToGroupKey[slug]) {
-    const key = formationToGroupKey[slug];
-    const m = markerRefs[key];
-    if (!m) return;
-    markers.zoomToShowLayer(m, () => {
-      setTimeout(() => {
-        map.setView(m.getLatLng(), Math.max(map.getZoom(), 16), { animate: true });
-        m.openPopup();
-      }, 100);
-    });
-    return;
-  }
-
-  if (type === 'structure') {
-    const s = props.structures?.find(s => s.slug === slug);
-    if (s) {
-      if (s.adresses.length > 1) {
-        highlightMulti('structure', slug, s.adresses);
-        return;
-      }
-      const key0 = `structure-${s.slug}-${s.adresses[0].latitude}-${s.adresses[0].longitude}`;
-      const m0 = markerRefs[key0];
-      if (m0) {
-        markers.zoomToShowLayer(m0, () => {
-          setTimeout(() => {
-            map.setView(m0.getLatLng(), Math.max(map.getZoom(), 16), { animate: true });
-            m0.openPopup();
-          }, 100);
-        });
-      }
-      return;
-    }
-  }
-
-  if (type === 'permanence') {
-    const p = props.permanences?.find(p => p.slug === slug);
-    if (p) {
-      if (p.adresses.length > 1) {
-        highlightMulti('permanence', slug, p.adresses);
-        return;
-      }
-      const a = p.adresses[0];
-      const m0 = markerRefs[`permanence-${slug}-${a.latitude}-${a.longitude}`];
-      if (m0) {
-        markers.zoomToShowLayer(m0, () => {
-          setTimeout(() => {
-            map.setView(m0.getLatLng(), Math.max(map.getZoom(), 16), { animate: true });
-            m0.openPopup();
-          }, 100);
-        });
-      }
-      return;
-    }
-  }
-
-  const key = Object.keys(markerRefs)
-    .find(k => k.startsWith(`${markerType}-${markerSlug}-`));
-  if (!key) return;
-
-  const m = markerRefs[key];
-  markers.zoomToShowLayer(m, () => {
-    setTimeout(() => {
-      map.setView(m.getLatLng(), Math.max(map.getZoom(), 16), { animate: true });
-      m.openPopup();
-    }, 100);
-  });
-}
-
+/**
+ * Ajoute la légende au coin inférieur droit de la carte.
+ */
 function addLegend() {
   const legend = (L.control as unknown as (options: L.ControlOptions) => L.Control)({
     position: 'bottomright'
@@ -817,61 +305,71 @@ function addLegend() {
   legend.addTo(map);
 }
 
+/**
+ * Ajoute un bouton pour recentrer la carte sur l'Île-de-France et reset les paramètres d'URL
+ * typ, slug, latitude, longitude.
+ */
 function addRecenterButton() {
+  const ileDeFranceBounds: L.LatLngBounds = L.latLngBounds([48.0, 1.6], [49.1, 3.6]);
+
   const ctrl = (L.control as unknown as (options: L.ControlOptions) => L.Control)({
     position: 'topright'
   });
+
   ctrl.onAdd = () => {
     const btn = L.DomUtil.create('button', 'recenter-btn');
     btn.title = 'Recentrer sur Île-de-France';
     btn.innerHTML = '📍';
+
     L.DomEvent.disableClickPropagation(btn);
+
     btn.onclick = () => {
       map.closePopup();
-      map.fitBounds(ileDeFranceBounds, {animate: true});
-      emit('reset-focus');
+      map.fitBounds(ileDeFranceBounds, { animate: true });
+
+      // Reset des paramètres d'URL slug, type, latitude, longitude
+      const query = { ...router.currentRoute.value.query };
+      delete query.slug;
+      delete query.type;
+      delete query.latitude;
+      delete query.longitude;
+
+      router.replace({ query });
     };
     return btn;
   };
   ctrl.addTo(map);
 }
 
+
 function handleResize() {
   map?.invalidateSize();
 }
-
-onMounted(() => {
-  window.addEventListener('resize', handleResize);
-  initMap();
-  addMarkers();
-  openSelectedPopup();
-  addLegend();
-  addRecenterButton();
-});
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize);
 });
 
-watch(() => props.objFocus, () => {
-  openSelectedPopup();
+onMounted(() => {
+  window.addEventListener('resize', handleResize);
+  initMap();
+  addMarkers();
+  addLegend();
+  addRecenterButton();
 });
 
-console.log('filters:', filtersObj.value);
 watch(
-  () => [props.structures, props.permanences, props.filters],
+  () => [props.adresses, props.filters],
   () => {
-    console.log('filters:', filtersObj.value);
     markers.clearLayers();
     addMarkers();
   },
   {deep: true}
 );
-
 </script>
 
 <template>
-  <div ref="mapContainer" id="map"></div>
+  <div ref="mapRef" id="map"></div>
 </template>
 
 <style>
@@ -882,6 +380,18 @@ watch(
 
 .legend-toggle {
   display: none;
+}
+
+.formation-list {
+  border: none;
+  background: none;
+  text-align: inherit;
+  color: #0F7ECB;
+  cursor:pointer;
+}
+
+.formation-list:hover {
+  text-decoration: underline;
 }
 
 .leaflet-container {
