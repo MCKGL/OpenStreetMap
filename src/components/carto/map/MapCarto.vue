@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
+import L, {type MarkerOptions} from 'leaflet';
 import 'leaflet.markercluster';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
@@ -8,7 +8,20 @@ import type {AdresseModel} from "@/models/Adresse.model.ts";
 import type {FormationModel} from "@/models/Formation.model.ts";
 import {onMounted, onBeforeUnmount, ref, watch} from 'vue';
 import {useRouter} from "vue-router";
+import type { Router } from 'vue-router';
 
+// Import des modèles pour éviter les erreurs de type
+declare module 'leaflet' {
+  interface MarkerOptions {
+    customData?: {
+      type: 'structure' | 'permanence';
+      slug: string;
+      structureSlug?: string;
+    };
+  }
+}
+
+type QueryParams = Record<string, string | undefined>;
 const mapRef = ref<HTMLElement | null>(null);
 let map: L.Map;
 let markers: L.MarkerClusterGroup;
@@ -101,19 +114,18 @@ function addMarkers() {
 
       // Création du marqueur
       const m = L.marker([latitude, longitude], {
-        icon: L.icon({iconUrl, iconSize: [41, 41], iconAnchor: [22, 0]})
+        icon: L.icon({iconUrl, iconSize: [41, 41], iconAnchor: [22, 0]}),
+        customData: { type: 'structure', slug: s.slug,  structureSlug: s.slug}
       })
         .bindPopup(popup)
         .on('click', () => {
-          router.replace({
-            query: {
-              ...router.currentRoute.value.query,
-              type: 'structure',
-              slug: s.slug,
-              latitude: latitude.toString(),
-              longitude: longitude.toString()
-            }
-          });
+          const query = { ...router.currentRoute.value.query } as QueryParams;
+          query.type = 'structure';
+          query.slug = s.slug;
+          query.latitude = latitude.toString();
+          query.longitude = longitude.toString();
+          delete query.structureSlug;
+          router.replace({ query });
         })
         .on('popupopen', () => {
           // Rattache les handlers sur les boutons .formation-link
@@ -126,6 +138,7 @@ function addMarkers() {
                   ...router.currentRoute.value.query,
                   type: 'formation',
                   slug,
+                  structureSlug: s.slug,
                   latitude: latitude.toString(),
                   longitude: longitude.toString()
                 }
@@ -152,18 +165,17 @@ function addMarkers() {
           iconUrl: '/icones/marker_black.png',
           iconSize: [41, 41],
           iconAnchor: [22, 0]
-        })
+        }),
+        customData: { type: 'permanence', slug: p.slug }
       }).bindPopup(popup)
         .on('click', () => {
-          router.replace({
-            query: {
-              ...router.currentRoute.value.query,
-              type: 'permanence',
-              slug: p.slug,
-              latitude: latitude.toString(),
-              longitude: longitude.toString()
-            }
-          });
+          const query = { ...router.currentRoute.value.query } as QueryParams;
+          query.type = 'permanence';
+          query.slug = p.slug;
+          query.latitude = latitude.toString();
+          query.longitude = longitude.toString();
+          delete query.structureSlug;
+          router.replace({ query });
         });
       markers.addLayer(m);
     }
@@ -232,15 +244,13 @@ function addMarkers() {
       if (formations.length === 1) {
         m.on('click', () => {
           const f = formations[0];
-          router.replace({
-            query: {
-              ...router.currentRoute.value.query,
-              type: 'formation',
-              slug: f.slug,
-              latitude: latitude.toString(),
-              longitude: longitude.toString()
-            }
-          });
+          const query = { ...router.currentRoute.value.query } as QueryParams;
+          query.type = 'formation';
+          query.slug = f.slug;
+          query.latitude = latitude.toString();
+          query.longitude = longitude.toString();
+          delete query.structureSlug;
+          router.replace({ query });
         });
       }
 
@@ -250,15 +260,13 @@ function addMarkers() {
         container.querySelectorAll<HTMLButtonElement>('.orphan-link').forEach(btn => {
           btn.addEventListener('click', () => {
             const slug = btn.dataset.slug!;
-            router.replace({
-              query: {
-                ...router.currentRoute.value.query,
-                type: 'formation',
-                slug,
-                latitude: latitude.toString(),
-                longitude: longitude.toString()
-              }
-            });
+            const query = { ...router.currentRoute.value.query } as QueryParams;
+            query.type = 'formation';
+            query.slug = slug
+            query.latitude = latitude.toString();
+            query.longitude = longitude.toString();
+            delete query.structureSlug;
+            router.replace({ query });
             m.closePopup();
           });
         });
@@ -272,6 +280,71 @@ function addMarkers() {
   if (layers.length) {
     const fg = L.featureGroup(layers);
     map.fitBounds(fg.getBounds(), {padding: [50, 50]});
+  }
+}
+
+/**
+ * Focalise la carte sur le marqueur cible si les paramètres de la route sont présents.
+ * @param map La carte Leaflet
+ * @param markers Le groupe de marqueurs
+ * @param router Le routeur Vue
+ */
+function focusOnTargetMarker(map: L.Map, markers: L.MarkerClusterGroup, router: Router) {
+  const { latitude, longitude, type, slug, structureSlug } = router.currentRoute.value.query;
+
+  if (!(latitude && longitude && type && slug)) return;
+
+  const lat = parseFloat(latitude as string);
+  const lng = parseFloat(longitude as string);
+  const latLngStr = `${lat.toFixed(5)},${lng.toFixed(5)}`;
+  const layers = markers.getLayers() as L.Marker[];
+
+  const candidates = layers.filter(m => {
+    const pos = m.getLatLng();
+    return `${pos.lat.toFixed(5)},${pos.lng.toFixed(5)}` === latLngStr;
+  });
+
+  let target: L.Marker | undefined;
+
+  for (const m of candidates) {
+    const customData = (m.options as MarkerOptions).customData;
+
+    if (type === 'structure') {
+      if (customData?.type === 'structure' && customData?.slug === slug) {
+        target = m;
+        break;
+      }
+    } else if (type === 'permanence') {
+      if (customData?.type === 'permanence' && customData?.slug === slug) {
+        target = m;
+        break;
+      }
+    } else if (type === 'formation') {
+      if (structureSlug) {
+        if (customData?.type === 'structure' && customData?.structureSlug === structureSlug) {
+          target = m;
+          break;
+        }
+      } else {
+        // formations orphelines : pas besoin de customData, chercher dans popup
+        const popup = m.getPopup()?.getContent() as string;
+        if (popup && popup.includes(slug as string)) {
+          target = m;
+          break;
+        }
+      }
+    }
+  }
+
+  if (target) {
+    const latlng = target.getLatLng();
+    // Centrer la carte sur le marqueur
+    map.setView(latlng, map.getZoom(), { animate: true });
+    // Eclater le cluster si nécessaire
+    markers.zoomToShowLayer(target, () => {
+      map.setView(latlng, 20, { animate: true });
+      target?.openPopup();
+    });
   }
 }
 
@@ -331,6 +404,7 @@ function addRecenterButton() {
       const query = { ...router.currentRoute.value.query };
       delete query.slug;
       delete query.type;
+      delete query.structureSlug;
       delete query.latitude;
       delete query.longitude;
 
@@ -340,7 +414,6 @@ function addRecenterButton() {
   };
   ctrl.addTo(map);
 }
-
 
 function handleResize() {
   map?.invalidateSize();
@@ -356,6 +429,7 @@ onMounted(() => {
   addMarkers();
   addLegend();
   addRecenterButton();
+  focusOnTargetMarker(map, markers, router);
 });
 
 watch(
@@ -415,10 +489,6 @@ watch(
 
 .cluster-icon {
   line-height: 36px;
-}
-
-.leaflet-marker-icon.marker-ok {
-  filter: hue-rotate(200deg) saturate(2) brightness(1.5)
 }
 
 .legend-container {
