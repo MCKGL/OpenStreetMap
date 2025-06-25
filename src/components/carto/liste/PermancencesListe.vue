@@ -1,45 +1,71 @@
 <script setup lang="ts">
-import {nextTick, ref, watch} from "vue";
+import {nextTick, onMounted, ref, watch} from "vue";
 import {useRoute, useRouter} from "vue-router";
 import { PermanenceModel } from '@/models/Permanence.model.ts';
 
-const props = defineProps<{
-  permanences: PermanenceModel[];
-  objFocus?: { type: string; slug: string };
-}>();
 const router = useRouter();
 const route = useRoute();
 const isOpen = ref(true);
 
+const props = defineProps<{
+  permanences: PermanenceModel[];
+}>();
+
 function navigateTo(permanence: PermanenceModel) {
-  router.push({
-    query: {
-      ...route.query,
-      type: 'permanence',
-      slug: permanence.slug
+  const adresses = permanence.adresses || [];
+
+  const query: Record<string, string | undefined> = {
+    ...route.query,
+    type: 'permanence',
+    slug: permanence.slug,
+  };
+
+  delete query.latitude;
+  delete query.longitude;
+  delete query.structureSlug;
+
+  if (adresses.length === 1) {
+    const [a] = adresses;
+
+    if (a.latitude && a.longitude) {
+      query.latitude = a.latitude.toString();
+      query.longitude = a.longitude.toString();
     }
-  });
+  }
+  router.push({ query });
 }
 
 function toggleList() {
   isOpen.value = !isOpen.value;
 }
 
+function isHighlighted(permanence: PermanenceModel): boolean {
+  return (
+    route.query.type === 'permanence' &&
+    route.query.slug === permanence.slug
+  );
+}
+
+onMounted(() => {
+  const slug = route.query.slug;
+  if (route.query.type === 'permanence' && typeof slug === 'string') {
+    nextTick(() => {
+      const el = document.getElementById(`permanence-${slug}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
+});
+
 watch(
-  () => props.objFocus,
-  async (focus) => {
-    if (focus?.type !== 'permanence') return;
-
-    const found = props.permanences.some(p => p.slug === focus.slug);
-    if (!found) {
-      console.warn(`Permanence "${focus.slug}" introuvable dans la liste.`);
-      return;
-    }
-
-    await nextTick();
-    const el = document.getElementById(`permanence-${focus.slug}`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  () => route.query,
+  (query) => {
+    if (query.type === 'permanence' && typeof query.slug === 'string') {
+      nextTick(() => {
+        const el = document.getElementById(`permanence-${query.slug}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
     }
   },
   { immediate: true }
@@ -64,9 +90,9 @@ watch(
       :key="permanence.id"
       @click="navigateTo(permanence)"
       :id="`permanence-${permanence.slug}`"
-      :class="{ highlighted: props.objFocus?.type === 'permanence' && props.objFocus?.slug === permanence.slug }"
+      :class="{ highlighted: isHighlighted(permanence) }"
     >
-      {{ permanence.nom }}
+      {{ permanence.nom }} – Nombre d'adresses : {{ permanence.adresses.length }}
     </li>
   </ul>
 </template>

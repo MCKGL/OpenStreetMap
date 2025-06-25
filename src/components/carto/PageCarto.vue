@@ -3,21 +3,23 @@ import MapCarto from "@/components/carto/map/MapCarto.vue";
 import {computed, nextTick, onBeforeUnmount, onMounted, ref, watch} from "vue";
 import {StructureModel} from "@/models/Structure.model.ts";
 import {PermanenceModel} from "@/models/Permanence.model.ts";
+import type {FormationModel} from "@/models/Formation.model.ts";
 import type {AdresseModel} from "@/models/Adresse.model.ts";
-import {getAdressesPourCarte, getPermanences, getStructures} from "@/services/Structure.service.ts";
+import {
+  getAdresses,
+  getFormations,
+  getPermanences,
+  getStructures
+} from "@/services/Structure.service.ts";
 import StructuresListe from "@/components/carto/liste/StructuresListe.vue";
 import PermancencesListe from "@/components/carto/liste/PermancencesListe.vue";
 import {type LocationQueryValue, useRoute, useRouter} from "vue-router";
 import FormationsListe from "@/components/carto/liste/FormationsListe.vue";
 import ContainerFiltre from "@/components/filtre/ContainerFiltre.vue";
 
-interface Focus {
-  type: 'structure' | 'permanence' | 'formation';
-  slug: string;
-}
-
 const structures = ref<StructureModel[]>([]);
 const permanences = ref<PermanenceModel[]>([]);
+const formations = ref<FormationModel[]>([]);
 const adresses = ref<AdresseModel[]>([]);
 const loading = ref(true);
 const isOpen = ref(true);
@@ -29,18 +31,6 @@ const router = useRouter();
 const isFilterOpen = ref(false)
 const listContentRef = ref<HTMLElement|null>(null);
 const filters = ref<string[]>([]);
-
-const objFocus = computed<Focus | undefined>(() => {
-  const rawType = route.query.type as string | undefined;
-  const rawSlug = route.query.slug as string | undefined;
-
-  if (rawType === 'structure' || rawType === 'permanence' || rawType === 'formation') {
-    if (typeof rawSlug === 'string') {
-      return {type: rawType, slug: rawSlug};
-    }
-  }
-  return undefined;
-});
 
 const mobileClass = computed(() => {
   if (!isMobile.value) return '';
@@ -62,13 +52,6 @@ function scrollToTop() {
   if (listContentRef.value) {
     listContentRef.value.scrollTop = 0;
   }
-}
-
-function resetFocus() {
-  const newQuery = {...route.query};
-  delete newQuery.slug;
-  delete newQuery.type;
-  router.replace({query: newQuery});
 }
 
 function onApplyFilters(payload: Record<string, unknown>, clearFocus = true, clearFilters = true) {
@@ -138,7 +121,8 @@ onMounted(async () => {
   try {
     structures.value = await getStructures();
     permanences.value = await getPermanences();
-    adresses.value = await getAdressesPourCarte();
+    adresses.value = await getAdresses();
+    formations.value = await getFormations();
   } finally {
     loading.value = false;
   }
@@ -151,21 +135,6 @@ onMounted(async () => {
   onResize();
 
   onBeforeUnmount(() => window.removeEventListener('resize', onResize));
-});
-
-watch(objFocus, (focus) => {
-  if (!focus) return;
-
-  const found =
-    (focus.type === 'permanence' && permanences.value.some(p => p.slug === focus.slug)) ||
-    (focus.type === 'structure' && structures.value.some(s => s.slug === focus.slug)) ||
-    (focus.type === 'formation' && structures.value.some(s =>
-      s.formations.some(f => f.slug === focus.slug)
-    ));
-
-  if (!found) {
-    resetFocus();
-  }
 });
 
 watch(mobileView, (view) => {
@@ -203,9 +172,9 @@ watch(mobileView, (view) => {
             {{ isOpen ? '«' : '»' }}
           </button>
           <div class="list-content" ref="listContentRef">
-            <PermancencesListe :permanences="permanences" :objFocus="objFocus"/>
-            <FormationsListe :structures="structures" :filters="filters" :objFocus="objFocus"/>
-            <StructuresListe :structures="structures" :objFocus="objFocus"/>
+            <PermancencesListe :permanences="permanences"/>
+            <FormationsListe :formations="formations"/>
+            <StructuresListe :structures="structures"/>
           </div>
           <button
             v-if="!isMobile || mobileView==='list'"
@@ -220,16 +189,6 @@ watch(mobileView, (view) => {
         </div>
 
         <div class="panel map-panel" v-show="!isMobile || mobileView==='map'">
-<!--          <MapCarto-->
-<!--            ref="mapRef"-->
-<!--            :structures="structures"-->
-<!--            :permanences="permanences"-->
-<!--            :objFocus="objFocus"-->
-<!--            :filters="filters"-->
-<!--            @reset-focus="resetFocus"-->
-<!--            @focus-from-map="onFocusFromMap"-->
-<!--          />-->
-
           <MapCarto
             ref="mapRef"
             :adresses="adresses"

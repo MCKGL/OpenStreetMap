@@ -107,9 +107,32 @@ export function getPermanenceBySlug(slug: string): Promise<PermanenceModel> {
 }
 
 /**
+ * Renvoie la liste de toutes les formations (rattachées à une structure ou à une permanence)
+ */
+export async function getFormations(): Promise<FormationModel[]> {
+  const { structures, permanences } = await fetchAll();
+
+  const formations: FormationModel[] = [];
+
+  for (const s of structures) {
+    for (const f of s.formations || []) {
+      formations.push({ ...f, structure: s });
+    }
+  }
+
+  for (const p of permanences) {
+    for (const f of p.formations || []) {
+      formations.push({ ...f, permanence: p });
+    }
+  }
+
+  return formations;
+}
+
+/**
  * Regroupe toutes les adresses en un seul tableau enrichi (structure, permanence, formation)
  */
-export async function getAdressesPourCarte(): Promise<AdresseModel[]> {
+export async function getAdresses(): Promise<AdresseModel[]> {
   const { structures, permanences } = await fetchAll();
 
   const map = new Map<string, AdresseModel>();

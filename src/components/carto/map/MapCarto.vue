@@ -440,6 +440,13 @@ watch(
   },
   {deep: true}
 );
+
+watch(
+  () => router.currentRoute.value.query,
+  () => {
+    focusOnTargetMarker(map, markers, router);
+  }
+);
 </script>
 
 <template>
