@@ -7,8 +7,8 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import type {AdresseModel} from "@/models/Adresse.model.ts";
 import type {FormationModel} from "@/models/Formation.model.ts";
 import {onMounted, onBeforeUnmount, ref, watch} from 'vue';
-import {useRouter} from "vue-router";
-import type { Router } from 'vue-router';
+import {useRoute, useRouter} from "vue-router";
+import type {Router} from 'vue-router';
 
 // Import des modèles pour éviter les erreurs de type
 declare module 'leaflet' {
@@ -23,9 +23,13 @@ declare module 'leaflet' {
 
 type QueryParams = Record<string, string | undefined>;
 const mapRef = ref<HTMLElement | null>(null);
+const markerRefs: Record<string, L.Marker> = {};
 let map: L.Map;
 let markers: L.MarkerClusterGroup;
 const router = useRouter();
+const route  = useRoute();
+let highlightLayer: L.LayerGroup | null = null;
+let infoMulti: L.Control | null = null;
 
 const props = defineProps<{
   adresses?: AdresseModel[],
@@ -115,39 +119,26 @@ function addMarkers() {
       // Création du marqueur
       const m = L.marker([latitude, longitude], {
         icon: L.icon({iconUrl, iconSize: [41, 41], iconAnchor: [22, 0]}),
-        customData: { type: 'structure', slug: s.slug,  structureSlug: s.slug}
+        customData: {type: 'structure', slug: s.slug, structureSlug: s.slug}
       })
         .bindPopup(popup)
         .on('click', () => {
-          const query = { ...router.currentRoute.value.query } as QueryParams;
+          const query = {...router.currentRoute.value.query} as QueryParams;
           query.type = 'structure';
           query.slug = s.slug;
           query.latitude = latitude.toString();
           query.longitude = longitude.toString();
           delete query.structureSlug;
-          router.replace({ query });
+          router.replace({query});
         })
-        .on('popupopen', () => {
-          // Rattache les handlers sur les boutons .formation-link
-          const container = m.getPopup()!.getElement()!;
-          container.querySelectorAll<HTMLButtonElement>('.formation-link').forEach(btn => {
-            btn.addEventListener('click', () => {
-              const slug = btn.dataset.slug!;
-              router.replace({
-                query: {
-                  ...router.currentRoute.value.query,
-                  type: 'formation',
-                  slug,
-                  structureSlug: s.slug,
-                  latitude: latitude.toString(),
-                  longitude: longitude.toString()
-                }
-              });
-              m.closePopup();
-            });
-          });
-        });
+        .on('popupopen', () => bindFormationButtons(m, s.slug));
       markers.addLayer(m);
+      const key = `structure-${s.slug}-${latitude}-${longitude}`;
+      for (const f of atThisAddress) {
+        const fkey = `formation-${f.slug}-${latitude}-${longitude}`;
+        markerRefs[fkey] = m;
+      }
+      markerRefs[key] = m;
     }
 
     // Permanences
@@ -166,20 +157,21 @@ function addMarkers() {
           iconSize: [41, 41],
           iconAnchor: [22, 0]
         }),
-        customData: { type: 'permanence', slug: p.slug }
+        customData: {type: 'permanence', slug: p.slug}
       }).bindPopup(popup)
         .on('click', () => {
-          const query = { ...router.currentRoute.value.query } as QueryParams;
+          const query = {...router.currentRoute.value.query} as QueryParams;
           query.type = 'permanence';
           query.slug = p.slug;
           query.latitude = latitude.toString();
           query.longitude = longitude.toString();
           delete query.structureSlug;
-          router.replace({ query });
+          router.replace({query});
         });
       markers.addLayer(m);
+      const key = `permanence-${p.slug}-${latitude}-${longitude}`;
+      markerRefs[key] = m;
     }
-
 
     // Formations orphelines (formations hors sa structure)
     const orphanMap = new Map<number, FormationModel[]>();
@@ -244,13 +236,13 @@ function addMarkers() {
       if (formations.length === 1) {
         m.on('click', () => {
           const f = formations[0];
-          const query = { ...router.currentRoute.value.query } as QueryParams;
+          const query = {...router.currentRoute.value.query} as QueryParams;
           query.type = 'formation';
           query.slug = f.slug;
           query.latitude = latitude.toString();
           query.longitude = longitude.toString();
           delete query.structureSlug;
-          router.replace({ query });
+          router.replace({query});
         });
       }
 
@@ -260,18 +252,22 @@ function addMarkers() {
         container.querySelectorAll<HTMLButtonElement>('.orphan-link').forEach(btn => {
           btn.addEventListener('click', () => {
             const slug = btn.dataset.slug!;
-            const query = { ...router.currentRoute.value.query } as QueryParams;
+            const query = {...router.currentRoute.value.query} as QueryParams;
             query.type = 'formation';
             query.slug = slug
             query.latitude = latitude.toString();
             query.longitude = longitude.toString();
             delete query.structureSlug;
-            router.replace({ query });
+            router.replace({query});
             m.closePopup();
           });
         });
       });
       markers.addLayer(m);
+      for (const f of formations) {
+        const key = `formation-${f.slug}-${latitude}-${longitude}`;
+        markerRefs[key] = m;
+      }
     }
   }
 
@@ -284,13 +280,43 @@ function addMarkers() {
 }
 
 /**
+ * Externaliser la logique de clic sur les boutons de formation dans le popup d'un marqueur.
+ * Permet de 'forcer' le clic sur les boutons de formation dans le popup d'un marqueur structure
+ * sans quoi le listener de clic ne serait pas attaché à chaque fois...
+ * @param marker Le marqueur Leaflet
+ * @param slugStructure Le slug de la structure associée (optionnel)
+ */
+function bindFormationButtons(marker: L.Marker, slugStructure?: string) {
+  const container = marker.getPopup()?.getElement();
+  if (!container) return;
+  container
+    .querySelectorAll<HTMLButtonElement>('.formation-link')
+    .forEach(btn => {
+      btn.addEventListener('click', () => {
+        const slug = btn.dataset.slug!;
+        router.replace({
+          query: {
+            ...router.currentRoute.value.query,
+            type: 'formation',
+            slug,
+            structureSlug: slugStructure,
+            latitude: marker.getLatLng().lat.toString(),
+            longitude: marker.getLatLng().lng.toString()
+          }
+        });
+        marker.closePopup();
+      });
+    });
+}
+
+/**
  * Focalise la carte sur le marqueur cible si les paramètres de la route sont présents.
  * @param map La carte Leaflet
  * @param markers Le groupe de marqueurs
  * @param router Le routeur Vue
  */
 function focusOnTargetMarker(map: L.Map, markers: L.MarkerClusterGroup, router: Router) {
-  const { latitude, longitude, type, slug, structureSlug } = router.currentRoute.value.query;
+  const {latitude, longitude, type, slug, structureSlug} = router.currentRoute.value.query;
 
   if (!(latitude && longitude && type && slug)) return;
 
@@ -339,13 +365,119 @@ function focusOnTargetMarker(map: L.Map, markers: L.MarkerClusterGroup, router: 
   if (target) {
     const latlng = target.getLatLng();
     // Centrer la carte sur le marqueur
-    map.setView(latlng, map.getZoom(), { animate: true });
+    map.setView(latlng, map.getZoom(), {animate: true});
     // Eclater le cluster si nécessaire
     markers.zoomToShowLayer(target, () => {
-      map.setView(latlng, 20, { animate: true });
+      map.setView(latlng, 20, {animate: true});
       target?.openPopup();
+      bindFormationButtons(target, router.currentRoute.value.query.structureSlug as string);
     });
   }
+}
+
+/**
+ * Supprime la couche de surbrillance et donc les clones des marqueurs.
+ */
+function clearHighlight() {
+  if (highlightLayer) {
+    highlightLayer.remove();
+    highlightLayer = null;
+  }
+  if (infoMulti) {
+    infoMulti.remove();
+    infoMulti = null;
+  }
+}
+
+/**
+ * Met en évidence les points multiples sur la carte en fonction des paramètres de la route.
+ * Si plusieurs adresses correspondent au type et au slug (et qu'il n'y a pas de lat et lng dans l'url),
+ * les marqueurs sont clonés et affichés.
+ */
+function highlightMultiPoints({map, markers, markerRefs, adresses, route}: {
+  map: L.Map,
+  markers: L.MarkerClusterGroup,
+  markerRefs: Record<string, L.Marker>,
+  adresses: AdresseModel[],
+  route: ReturnType<typeof useRoute>
+}) {
+  const {type, slug, latitude, longitude} = route.query;
+
+  if (!type || !slug || latitude || longitude) {
+    clearHighlight();
+    return;
+  }
+
+  // Filtrage des adresses correspondantes
+  const targetAdresses = adresses.filter(a => {
+    const entities = type === 'structure'
+      ? a.structures
+      : type === 'permanence'
+        ? a.permanences
+        : a.formations;
+
+    return entities?.some(e => e.slug === slug);
+  });
+
+  if (!targetAdresses.length) return;
+
+  clearHighlight();
+  highlightLayer = L.layerGroup().addTo(map);
+  const clones: L.Marker[] = [];
+
+  for (const a of targetAdresses) {
+    const key = `${type}-${slug}-${a.latitude}-${a.longitude}`;
+    const original = markerRefs[key];
+    if (!original) continue;
+
+    const origIcon = original.getIcon() as L.Icon;
+    const origUrl = origIcon.options.iconUrl as string;
+    const cloneUrl = origUrl.replace(/(marker_[a-z]+)\.png$/, '$1_clone.png');
+
+    const cloneIcon = L.icon({
+      ...origIcon.options,
+      iconUrl: cloneUrl
+    });
+
+    const clone = L.marker(original.getLatLng(), {
+      icon: cloneIcon,
+      pane: 'highlightPane'
+    })
+      .on('click', () => {
+        clearHighlight();
+        markers.zoomToShowLayer(original, () => {
+          map.setView(original.getLatLng(), Math.max(map.getZoom(), 16), {animate: true});
+          original.openPopup();
+        });
+      });
+
+    highlightLayer.addLayer(clone);
+    clones.push(clone);
+  }
+
+  if (clones.length > 0) {
+    clones[0].openPopup();
+  }
+
+  const bounds = L.latLngBounds(
+    targetAdresses.map(a => [a.latitude, a.longitude] as [number, number])
+  );
+  map.fitBounds(bounds, {padding: [50, 50]});
+
+  const count = targetAdresses.length;
+  const newInfo = (L.control as unknown as (opts: L.ControlOptions) => L.Control)({
+    position: 'bottomleft'
+  });
+  newInfo.onAdd = (): HTMLElement => {
+    const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+    div.style.padding = '6px 10px';
+    div.style.background = 'rgba(255,255,255,0.9)';
+    div.style.fontSize = '13px';
+    div.innerHTML = `⚠️ Il existe ${count} adresse${count > 1 ? 's' : ''} pour cette ${type}`;
+    return div;
+  };
+  infoMulti = newInfo;
+  newInfo.addTo(map);
 }
 
 /**
@@ -398,17 +530,17 @@ function addRecenterButton() {
 
     btn.onclick = () => {
       map.closePopup();
-      map.fitBounds(ileDeFranceBounds, { animate: true });
+      map.fitBounds(ileDeFranceBounds, {animate: true});
 
       // Reset des paramètres d'URL slug, type, latitude, longitude
-      const query = { ...router.currentRoute.value.query };
+      const query = {...router.currentRoute.value.query};
       delete query.slug;
       delete query.type;
       delete query.structureSlug;
       delete query.latitude;
       delete query.longitude;
 
-      router.replace({ query });
+      router.replace({query});
     };
     return btn;
   };
@@ -445,6 +577,13 @@ watch(
   () => router.currentRoute.value.query,
   () => {
     focusOnTargetMarker(map, markers, router);
+    highlightMultiPoints({
+      map,
+      markers,
+      markerRefs,
+      adresses: props.adresses ?? [],
+      route
+    });
   }
 );
 </script>
@@ -468,7 +607,7 @@ watch(
   background: none;
   text-align: inherit;
   color: #0F7ECB;
-  cursor:pointer;
+  cursor: pointer;
 }
 
 .formation-list:hover {
