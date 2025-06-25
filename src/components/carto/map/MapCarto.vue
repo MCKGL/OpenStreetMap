@@ -647,13 +647,31 @@ watch(
 }
 
 .legend-content {
-  display: block;
+  display: none;
   background: white;
   padding: 10px;
   border-radius: 5px;
   line-height: 1.4;
   font-size: 14px;
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
+}
+
+.legend-container.open .legend-content {
+  display: block;
+}
+
+
+.legend-toggle {
+  display: block;
+  background: white;
+  border: none;
+  border-radius: 5px 5px 0 0;
+  padding: 5px 10px;
+  cursor: pointer;
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  transform: translateY(50%);
 }
 
 .ico-legend {
@@ -664,27 +682,6 @@ watch(
 @media (max-width: 810px) {
   #map {
     height: 100%;
-  }
-
-  .legend-container .legend-content {
-    display: none;
-  }
-
-  .legend-container.open .legend-content {
-    display: block;
-  }
-
-  .legend-toggle {
-    display: block;
-    background: white;
-    border: none;
-    border-radius: 5px 5px 0 0;
-    padding: 5px 10px;
-    cursor: pointer;
-    position: absolute;
-    bottom: 100%;
-    right: 0;
-    transform: translateY(50%);
   }
 
   .leaflet-control-container .leaflet-top .recenter-btn {
