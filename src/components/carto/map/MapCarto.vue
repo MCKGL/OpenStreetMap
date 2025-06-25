@@ -9,12 +9,13 @@ import type {FormationModel} from "@/models/Formation.model.ts";
 import {onMounted, onBeforeUnmount, ref, watch} from 'vue';
 import {useRoute, useRouter} from "vue-router";
 import type {Router} from 'vue-router';
+import {useParsedFilters} from "@/composables/useParsedFilters.ts";
 
 // Import des modèles pour éviter les erreurs de type
 declare module 'leaflet' {
   interface MarkerOptions {
     customData?: {
-      type: 'structure' | 'permanence';
+      type: 'structure' | 'permanence' | 'formation';
       slug: string;
       structureSlug?: string;
     };
@@ -30,10 +31,12 @@ const router = useRouter();
 const route  = useRoute();
 let highlightLayer: L.LayerGroup | null = null;
 let infoMulti: L.Control | null = null;
+const filters = useParsedFilters();
+
+console.log('🌀 Filters updated:', filters.value);
 
 const props = defineProps<{
   adresses?: AdresseModel[],
-  filters?: string[];
 }>();
 
 /**
@@ -562,10 +565,17 @@ onMounted(() => {
   addLegend();
   addRecenterButton();
   focusOnTargetMarker(map, markers, router);
+  highlightMultiPoints({
+    map,
+    markers,
+    markerRefs,
+    adresses: props.adresses ?? [],
+    route
+  });
 });
 
 watch(
-  () => [props.adresses, props.filters],
+  () => [props.adresses],
   () => {
     markers.clearLayers();
     addMarkers();
@@ -584,6 +594,7 @@ watch(
       adresses: props.adresses ?? [],
       route
     });
+    console.log('🌀 Filters updated:', filters.value);
   }
 );
 </script>

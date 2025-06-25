@@ -13,7 +13,6 @@ import {
 } from "@/services/Structure.service.ts";
 import StructuresListe from "@/components/carto/liste/StructuresListe.vue";
 import PermancencesListe from "@/components/carto/liste/PermancencesListe.vue";
-import {type LocationQueryValue, useRoute, useRouter} from "vue-router";
 import FormationsListe from "@/components/carto/liste/FormationsListe.vue";
 import ContainerFiltre from "@/components/filtre/ContainerFiltre.vue";
 
@@ -26,11 +25,8 @@ const isOpen = ref(true);
 const mobileView = ref<'list' | 'map'>('list');
 const isMobile = ref(window.innerWidth <= 810);
 const mapRef = ref();
-const route = useRoute();
-const router = useRouter();
 const isFilterOpen = ref(false)
 const listContentRef = ref<HTMLElement|null>(null);
-const filters = ref<string[]>([]);
 
 const mobileClass = computed(() => {
   if (!isMobile.value) return '';
@@ -54,70 +50,7 @@ function scrollToTop() {
   }
 }
 
-function onApplyFilters(payload: Record<string, unknown>, clearFocus = true, clearFilters = true) {
-  const cleanQuery = { ...route.query };
-
-  if (clearFilters) {
-    const keysToRemove = ['activites', 'lieux', 'scolarisation', 'competence', 'programmes', 'publics', 'objectifs', 'joursHoraires', 'gardeEnfant', 'coursEte', 'keyword'];
-    for (const key of keysToRemove) {
-      delete cleanQuery[key];
-    }
-  }
-
-  if (clearFocus) {
-    delete cleanQuery.type;
-    delete cleanQuery.slug;
-  }
-
-  const newFilters = Object.entries(payload)
-    .filter(([_, val]) => Array.isArray(val) ? val.length : val)
-    .reduce((acc, [key, val]) => {
-      acc[key] = Array.isArray(val) ? val.join(',') : String(val);
-      return acc;
-    }, {} as Record<string, string>);
-
-  filters.value = Object.entries(newFilters).map(([k, v]) => `${k}:${v}`);
-
-  router.replace({
-    query: {
-      ...cleanQuery,
-      ...newFilters
-    }
-  });
-}
-
-type QueryParam = LocationQueryValue | LocationQueryValue[];
-function parseQueryParam(param: QueryParam): string[] | undefined {
-  if (param === undefined || param === null) return undefined;
-
-  if (typeof param === 'string') {
-    return param.split(',');
-  }
-
-  if (Array.isArray(param)) {
-    return param.flatMap(item => parseQueryParam(item) ?? []);
-  }
-
-  return undefined;
-}
-
 onMounted(async () => {
-  const payload: Record<string, unknown> = {};
-
-  payload.activites = parseQueryParam(route.query.activites);
-  payload.lieux = parseQueryParam(route.query.lieux);
-  payload.programmes = parseQueryParam(route.query.programmes);
-  payload.publics = parseQueryParam(route.query.publics);
-  payload.objectifs = parseQueryParam(route.query.objectifs);
-  payload.joursHoraires = parseQueryParam(route.query.joursHoraires);
-  payload.scolarisation = typeof route.query.scolarisation === 'string' ? route.query.scolarisation : undefined;
-  payload.competence = typeof route.query.competence === 'string' ? route.query.competence : undefined;
-  payload.gardeEnfant = route.query.gardeEnfant === 'true' || (Array.isArray(route.query.gardeEnfant) && route.query.gardeEnfant.includes('true'));
-  payload.coursEte = route.query.coursEte === 'true' || (Array.isArray(route.query.coursEte) && route.query.coursEte.includes('true'));
-  payload.keyword = typeof route.query.keyword === 'string' ? route.query.keyword : undefined;
-
-  onApplyFilters(payload, false, false);
-
   try {
     structures.value = await getStructures();
     permanences.value = await getPermanences();
@@ -151,7 +84,7 @@ watch(mobileView, (view) => {
   <div v-if="loading" class="loading">Chargement…</div>
   <div v-else class="all-carto-container">
     <div class="container-filtre">
-      <ContainerFiltre @toggle-filter="onToggleFilter" @apply-filters="onApplyFilters" />
+      <ContainerFiltre @toggle-filter="onToggleFilter"/>
     </div>
     <div class="carto-wrapper" :class="mobileClass">
       <div class="view-switch" v-show="isMobile && !isFilterOpen">
@@ -192,7 +125,6 @@ watch(mobileView, (view) => {
           <MapCarto
             ref="mapRef"
             :adresses="adresses"
-            :filters="filters"
           />
         </div>
       </div>

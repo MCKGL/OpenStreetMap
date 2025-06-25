@@ -12,13 +12,14 @@ import {
 import {JOURS_SEMAINE, HORAIRES} from '@/models/HorairesPeriode.model.ts'
 import * as VilleDepartementService from '@/services/VilleDepartement.service.ts'
 import * as ProgrammeService from '@/services/Programme.service.ts'
+import router from "@/router";
+import type {LocationQueryRaw} from "vue-router";
 
 const isFilterOpen = ref(false);
 const isMobile = ref(window.innerWidth <= 810);
 
 const emit = defineEmits<{
   (e: 'toggle-filter', open: boolean): void;
-  (e: 'apply-filters', payload: Record<string, unknown>): void;
 }>()
 
 const isAdvancedOpen = ref(false);
@@ -40,6 +41,8 @@ const competencesLinguistiquesVisees = Object.values(COMPETENCES_LINGUISTIQUES_V
 const publicsSpecifiques = Object.values(PUBLICS_SPECIFIQUES);
 const objectifVise = Object.values(OBJECTIF_VISE);
 const programmes = ref<string[]>([]);
+const gardeEnfantChecked = ref(false);
+const coursEteChecked = ref(false);
 
 const horairesGeneraux = Object.values(HORAIRES);
 const joursSemaine = Object.values(JOURS_SEMAINE);
@@ -86,30 +89,28 @@ function applyFilters() {
 
   const filtersPayload: Record<string, unknown> = {};
 
-  if (selectedActivites.value.length) filtersPayload.activites = selectedActivites.value;
+  if (selectedActivites.value.length) filtersPayload.activites = selectedActivites.value.join(',');
   if (selectedLieux.value.length) {
-    filtersPayload.lieux = selectedLieux.value.map(l => l.value);
+    filtersPayload.lieux = selectedLieux.value.map(l => l.value).join(',');
   }
   if (selectedCriteresScrolarisation.value) filtersPayload.scolarisation = selectedCriteresScrolarisation.value;
   if (selectedCompetencesLinguistiquesVisees.value) filtersPayload.competence = selectedCompetencesLinguistiquesVisees.value;
   if (selectedProgrammes.value) filtersPayload.programmes = selectedProgrammes.value;
-  if (selectedPublics.value.length) filtersPayload.publics = selectedPublics.value;
-  if (selectedObjectifs.value.length) filtersPayload.objectifs = selectedObjectifs.value;
+  if (selectedPublics.value.length) filtersPayload.publics = selectedPublics.value.join(',');
+  if (selectedObjectifs.value.length) filtersPayload.objectifs = selectedObjectifs.value.join(',');
   if (selectedJoursHoraires.value.length) {
     const joursHorairesValues = selectedJoursHoraires.value.map(item =>
       typeof item === 'string' ? item : item.value
     );
     filtersPayload.joursHoraires = joursHorairesValues.join(',');
   }
-  if ((document.getElementById('checkbox-children') as HTMLInputElement)?.checked)
-    filtersPayload.gardeEnfant = true;
-  if ((document.getElementById('checkbox-summer') as HTMLInputElement)?.checked)
-    filtersPayload.coursEte = true;
+  if (gardeEnfantChecked.value) filtersPayload.gardeEnfant = true;
+  if (coursEteChecked.value) filtersPayload.coursEte = true;
   if (keyword.length > 0) filtersPayload.keyword = keyword;
 
-  const hasAnyFilter = Object.keys(filtersPayload).length > 0;
-
-  emit('apply-filters', hasAnyFilter ? filtersPayload : {});
+  router.replace({
+    query: filtersPayload as LocationQueryRaw
+  });
 
 }
 
@@ -172,11 +173,8 @@ onMounted(async () => {
 
   selectedJoursHoraires.value = parseJoursHorairesParam(params.get('joursHoraires'));
 
-  const gardeEnfant = params.get('gardeEnfant');
-  (document.getElementById('checkbox-children') as HTMLInputElement).checked = gardeEnfant === 'true';
-
-  const coursEte = params.get('coursEte');
-  (document.getElementById('checkbox-summer') as HTMLInputElement).checked = coursEte === 'true';
+  gardeEnfantChecked.value = (params.get('gardeEnfant') === 'true');
+  coursEteChecked.value = (params.get('coursEte') === 'true');
 
   const keyword = params.get('keyword');
   if (keyword) {
@@ -332,12 +330,12 @@ onBeforeUnmount(() => {
             </div>
             <div id="advanced-section-checkbox">
               <label for="checkbox" class="label">
-                <input type="checkbox" id="checkbox-children" />
+                <input type="checkbox" id="checkbox-children" v-model="gardeEnfantChecked" />
                 Garde d'enfants
               </label>
 
               <label for="checkbox" class="label">
-                <input type="checkbox" id="checkbox-summer" />
+                <input type="checkbox" id="checkbox-summer" v-model="coursEteChecked" />
                 Cours d'été
               </label>
             </div>
