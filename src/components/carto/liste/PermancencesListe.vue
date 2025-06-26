@@ -1,15 +1,22 @@
 <script setup lang="ts">
-import {nextTick, onMounted, ref, watch} from "vue";
+import {computed, nextTick, onMounted, ref, watch} from "vue";
 import {useRoute, useRouter} from "vue-router";
 import { PermanenceModel } from '@/models/Permanence.model.ts';
+import {useParsedFilters} from "@/composables/useParsedFilters.ts";
+import {permanencesFiltered} from "@/utils/filters.ts";
 
 const router = useRouter();
 const route = useRoute();
 const isOpen = ref(true);
+const filters = useParsedFilters();
 
 const props = defineProps<{
   permanences: PermanenceModel[];
 }>();
+
+const filteredPermanences = computed(() =>
+  permanencesFiltered(props.permanences, filters.value)
+);
 
 function navigateTo(permanence: PermanenceModel) {
   const adresses = permanence.adresses || [];
@@ -75,7 +82,7 @@ watch(
 
 <template>
   <div class="list-header">
-    <h2>Liste des Permanences</h2>
+    <h2>Liste des Permanences {{filteredPermanences.length}}</h2>
     <button
       class="toggle-btn"
       @click="toggleList"
@@ -86,7 +93,7 @@ watch(
   </div>
   <ul v-show="isOpen">
     <li
-      v-for="permanence in props.permanences"
+      v-for="permanence in filteredPermanences"
       :key="permanence.id"
       @click="navigateTo(permanence)"
       :id="`permanence-${permanence.slug}`"

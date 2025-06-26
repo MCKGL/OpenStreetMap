@@ -1,15 +1,22 @@
 <script setup lang="ts">
-import {nextTick, onMounted, ref, watch} from 'vue';
+import {computed, nextTick, onMounted, ref, watch} from 'vue';
 import { StructureModel } from '@/models/Structure.model.ts';
 import {useRoute, useRouter} from 'vue-router';
+import {structuresFiltered} from "@/utils/filters.ts";
+import {useParsedFilters} from "@/composables/useParsedFilters.ts";
 
 const router = useRouter();
 const route = useRoute();
 const isOpen = ref(true);
+const filters = useParsedFilters();
 
 const props = defineProps<{
   structures: StructureModel[];
 }>();
+
+const filteredStructures = computed(() =>
+  structuresFiltered(props.structures, filters.value)
+);
 
 function navigateTo(structure: StructureModel) {
   const adresses = structure.adresses || [];
@@ -75,14 +82,14 @@ watch(
 
 <template>
   <div class="list-header">
-    <h2>Liste des Structures</h2>
+    <h2>Liste des Structures {{filteredStructures.length}}</h2>
     <button class="toggle-btn" @click="toggleList" :aria-label="isOpen ? 'Fermer la liste' : 'Ouvrir la liste'">
       {{ isOpen ? '«' : '»' }}
     </button>
   </div>
   <ul v-show="isOpen" class="structures-list">
     <li
-      v-for="structure in props.structures"
+      v-for="structure in filteredStructures"
       :key="structure.id"
       @click="navigateTo(structure)"
       :id="`structure-${structure.slug}`"

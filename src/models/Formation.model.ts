@@ -1,5 +1,4 @@
 import type {AdresseModel} from "@/models/Adresse.model.ts";
-import type {HorairesPeriodeModel} from "@/models/HorairesPeriode.model.ts";
 import type {StructureModel} from "@/models/Structure.model.ts";
 import type {PermanenceModel} from "@/models/Permanence.model.ts";
 
@@ -61,6 +60,23 @@ export const COMPETENCES_LINGUISTIQUES_VISEES = {
   NIVEAU_CECR_C2 : 'C2 (CECRL)',
 }
 
+export const JOURS_SEMAINE = {
+  JOUR_LUNDI : 'Lundi',
+  JOUR_MARDI : 'mardi',
+  JOUR_MERCREDI : 'mercredi',
+  JOUR_JEUDI : 'jeudi',
+  JOUR_VENDREDI : 'vendredi',
+  JOUR_SAMEDI : 'samedi',
+  JOUR_DIMANCHE : 'dimanche',
+}
+
+export const HORAIRES = {
+  MATIN : 'matin',
+  MIDI : 'midi',
+  APRES_MIDI : 'après-midi',
+  SOIREE : 'soirée',
+}
+
 export class FormationModel {
   id!: number;
   slug!: string;
@@ -73,12 +89,11 @@ export class FormationModel {
   criteresScolarisation!: string[];
   publicsSpecifiques!: publicsSpecifiqueModel[];
   adresses!: AdresseModel[];
-  joursHoraires!: HorairesPeriodeModel[];
+  joursHoraires!: string[];
   programmes!: programmeModel[];
   coursEte!: boolean;
   placeDisponible!: boolean;
   url!: string;
-  // new
   structure?: StructureModel;
   permanence?: PermanenceModel;
 }

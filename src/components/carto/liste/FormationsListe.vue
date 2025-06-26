@@ -1,15 +1,22 @@
 <script setup lang="ts">
-import {nextTick, onMounted, ref, watch} from "vue";
+import {computed, nextTick, onMounted, ref, watch} from "vue";
 import {useRoute, useRouter} from "vue-router";
 import type { FormationModel } from "@/models/Formation.model.ts";
+import {useParsedFilters} from "@/composables/useParsedFilters.ts";
+import {formationsFiltered} from "@/utils/filters.ts";
 
 const router = useRouter();
 const route = useRoute();
 const isOpen = ref(true);
+const filters = useParsedFilters();
 
 const props = defineProps<{
   formations: FormationModel[];
 }>();
+
+const filteredStructures = computed(() =>
+  formationsFiltered(props.formations, filters.value)
+);
 
 function navigateTo(formation: FormationModel) {
   const adresses = formation.adresses || [];
@@ -84,20 +91,24 @@ watch(
 
 <template>
   <div class="list-header">
-    <h2>Liste des Formations</h2>
+    <h2>Liste des Formations {{filteredStructures.length}}</h2>
     <button class="toggle-btn" @click="toggleList" :aria-label="isOpen ? 'Fermer la liste' : 'Ouvrir la liste'">
       {{ isOpen ? '«' : '»' }}
     </button>
   </div>
   <ul v-show="isOpen">
     <li
-      v-for="formation in props.formations"
+      v-for="formation in filteredStructures"
       :key="formation.id"
       @click="navigateTo(formation)"
       :id="`formation-${formation.slug}`"
       :class="{ highlighted: isHighlighted(formation) }"
     >
-      {{ formation.nom }} - {{ formation.placeDisponible ? "Places disponibles" : "Pas de places disponibles" }} – Nombre d'adresses : {{ formation.adresses.length }}<em>{{ formation.structure? formation.structure.nom : formation.permanence?.nom }}</em>
+      {{ formation.nom }} - {{ formation.placeDisponible ? "Places disponibles" : "Pas de places disponibles" }}
+      – Nombre d'adresses : {{ formation.adresses.length }}
+      <em>{{ formation.structure? formation.structure.nom : formation.permanence?.nom }}</em>
+      {{formation.competencesLinguistiquesVisees}}
+      {{formation.joursHoraires}}
     </li>
   </ul>
 </template>

@@ -10,7 +10,6 @@ export class AdresseModel {
   ville!: string;
   correspondancesCodePostal!: string[];
   correspondancesVille!: string[];
-  // new
   structures?: StructureModel[];
   permanences?: PermanenceModel[];
   formations?: FormationModel[];

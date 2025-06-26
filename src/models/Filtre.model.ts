@@ -7,7 +7,7 @@ export class FiltreModel {
   publics?: string[];
   objectifs?: string[];
   joursHoraires?: string[];
-  gardeEnfant?: boolean;
+  gardeEnfants?: boolean;
   coursEte?: boolean;
   keyword?: string;
 }

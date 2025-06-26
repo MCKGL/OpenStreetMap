@@ -10,7 +10,7 @@ import {
   getFormations,
   getPermanences,
   getStructures
-} from "@/services/Structure.service.ts";
+} from "@/services/StructurePermanence.service.ts";
 import StructuresListe from "@/components/carto/liste/StructuresListe.vue";
 import PermancencesListe from "@/components/carto/liste/PermancencesListe.vue";
 import FormationsListe from "@/components/carto/liste/FormationsListe.vue";

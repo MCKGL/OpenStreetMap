@@ -7,9 +7,10 @@ import {
   PUBLICS_SPECIFIQUES,
   OBJECTIF_VISE,
   CRITERES_SCOLARISATION,
-  COMPETENCES_LINGUISTIQUES_VISEES
+  COMPETENCES_LINGUISTIQUES_VISEES,
+  HORAIRES,
+  JOURS_SEMAINE
 } from '@/models/Formation.model.ts'
-import {JOURS_SEMAINE, HORAIRES} from '@/models/HorairesPeriode.model.ts'
 import * as VilleDepartementService from '@/services/VilleDepartement.service.ts'
 import * as ProgrammeService from '@/services/Programme.service.ts'
 import router from "@/router";
@@ -41,7 +42,7 @@ const competencesLinguistiquesVisees = Object.values(COMPETENCES_LINGUISTIQUES_V
 const publicsSpecifiques = Object.values(PUBLICS_SPECIFIQUES);
 const objectifVise = Object.values(OBJECTIF_VISE);
 const programmes = ref<string[]>([]);
-const gardeEnfantChecked = ref(false);
+const gardeEnfantsChecked = ref(false);
 const coursEteChecked = ref(false);
 
 const horairesGeneraux = Object.values(HORAIRES);
@@ -104,7 +105,7 @@ function applyFilters() {
     );
     filtersPayload.joursHoraires = joursHorairesValues.join(',');
   }
-  if (gardeEnfantChecked.value) filtersPayload.gardeEnfant = true;
+  if (gardeEnfantsChecked.value) filtersPayload.gardeEnfants = true;
   if (coursEteChecked.value) filtersPayload.coursEte = true;
   if (keyword.length > 0) filtersPayload.keyword = keyword;
 
@@ -173,7 +174,7 @@ onMounted(async () => {
 
   selectedJoursHoraires.value = parseJoursHorairesParam(params.get('joursHoraires'));
 
-  gardeEnfantChecked.value = (params.get('gardeEnfant') === 'true');
+  gardeEnfantsChecked.value = (params.get('gardeEnfants') === 'true');
   coursEteChecked.value = (params.get('coursEte') === 'true');
 
   const keyword = params.get('keyword');
@@ -330,7 +331,7 @@ onBeforeUnmount(() => {
             </div>
             <div id="advanced-section-checkbox">
               <label for="checkbox" class="label">
-                <input type="checkbox" id="checkbox-children" v-model="gardeEnfantChecked" />
+                <input type="checkbox" id="checkbox-children" v-model="gardeEnfantsChecked" />
                 Garde d'enfants
               </label>
 
