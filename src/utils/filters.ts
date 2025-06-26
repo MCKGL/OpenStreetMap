@@ -1,4 +1,4 @@
-import type { FiltreModel } from '@/models/Filtre.model'
+import type {FiltreModel} from '@/models/Filtre.model'
 import type {PermanenceModel} from "@/models/Permanence.model.ts";
 import type {StructureModel} from "@/models/Structure.model.ts";
 import type {AdresseModel} from "@/models/Adresse.model.ts";
@@ -35,12 +35,13 @@ function parseLieuFilter(lieu: string): { ville: string; codePostal: string | nu
   const match = lieu.match(/\((\d{2,5})\)$/);
   const codePostal = match ? match[1] : null;
   const ville = lieu.replace(/\s*\(\d{2,5}\)$/, '').trim();
-  return { ville, codePostal };
+  return {ville, codePostal};
 }
 
 type ArrayKeys = 'activites' | 'lieux' | 'publics' | 'objectifs' | 'joursHoraires';
 type StringKeys = 'scolarisation' | 'competence' | 'programmes' | 'keyword';
 type BooleanKeys = 'gardeEnfants' | 'coursEte';
+
 export function parseFilters(filters: string[]): FiltreModel {
   const result: FiltreModel = {};
 
@@ -79,13 +80,13 @@ function matchActivites(activites: string[] | string, filter: FiltreModel): bool
   );
 }
 
-export function matchLieux(adresses: AdresseModel[] = [], filter: FiltreModel): boolean {
+function matchLieux(adresses: AdresseModel[] = [], filter: FiltreModel): boolean {
   if (!filter.lieux || filter.lieux.length === 0) return true;
 
   const lieuxFiltres = filter.lieux.map(parseLieuFilter);
 
   return adresses.some(adresse =>
-    lieuxFiltres.some(({ ville, codePostal }) => {
+    lieuxFiltres.some(({ville, codePostal}) => {
       if (!adresse) return false;
 
       if (codePostal && codePostal.length === 2) {
@@ -177,16 +178,16 @@ export function permanencesFiltered(permanences: PermanenceModel[], filter: Filt
   );
 }
 
-  export function structuresFiltered(structures: StructureModel[], filter: FiltreModel): StructureModel[] {
-    const hasAdvancedFilter =
-      !!filter.competence ||
-      !!filter.coursEte ||
-      !!filter.gardeEnfants ||
-      !!filter.joursHoraires?.length ||
-      !!filter.objectifs?.length ||
-      !!filter.programmes ||
-      !!filter.publics?.length ||
-      !!filter.scolarisation;
+export function structuresFiltered(structures: StructureModel[], filter: FiltreModel): StructureModel[] {
+  const hasAdvancedFilter =
+    !!filter.competence ||
+    !!filter.coursEte ||
+    !!filter.gardeEnfants ||
+    !!filter.joursHoraires?.length ||
+    !!filter.objectifs?.length ||
+    !!filter.programmes ||
+    !!filter.publics?.length ||
+    !!filter.scolarisation;
 
   if (hasAdvancedFilter) return [];
 
