@@ -107,8 +107,6 @@ watch(
       {{ formation.nom }} - {{ formation.placeDisponible ? "Places disponibles" : "Pas de places disponibles" }}
       – Nombre d'adresses : {{ formation.adresses.length }}
       <em>{{ formation.structure? formation.structure.nom : formation.permanence?.nom }}</em>
-      {{formation.competencesLinguistiquesVisees}}
-      {{formation.joursHoraires}}
     </li>
   </ul>
 </template>
