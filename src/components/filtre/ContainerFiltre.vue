@@ -7,18 +7,20 @@ import {
   PUBLICS_SPECIFIQUES,
   OBJECTIF_VISE,
   CRITERES_SCOLARISATION,
-  COMPETENCES_LINGUISTIQUES_VISEES
+  COMPETENCES_LINGUISTIQUES_VISEES,
+  HORAIRES,
+  JOURS_SEMAINE
 } from '@/models/Formation.model.ts'
-import {JOURS_SEMAINE, HORAIRES} from '@/models/HorairesPeriode.model.ts'
 import * as VilleDepartementService from '@/services/VilleDepartement.service.ts'
 import * as ProgrammeService from '@/services/Programme.service.ts'
+import router from "@/router";
+import type {LocationQueryRaw} from "vue-router";
 
 const isFilterOpen = ref(false);
-const isMobile = ref(window.innerWidth < 810);
+const isMobile = ref(window.innerWidth <= 810);
 
 const emit = defineEmits<{
   (e: 'toggle-filter', open: boolean): void;
-  (e: 'apply-filters', payload: Record<string, unknown>): void;
 }>()
 
 const isAdvancedOpen = ref(false);
@@ -40,6 +42,8 @@ const competencesLinguistiquesVisees = Object.values(COMPETENCES_LINGUISTIQUES_V
 const publicsSpecifiques = Object.values(PUBLICS_SPECIFIQUES);
 const objectifVise = Object.values(OBJECTIF_VISE);
 const programmes = ref<string[]>([]);
+const gardeEnfantsChecked = ref(false);
+const coursEteChecked = ref(false);
 
 const horairesGeneraux = Object.values(HORAIRES);
 const joursSemaine = Object.values(JOURS_SEMAINE);
@@ -76,7 +80,7 @@ function toggleFilter() {
 }
 
 function updateIsMobile() {
-  isMobile.value = window.innerWidth < 810;
+  isMobile.value = window.innerWidth <= 810;
   if (!isMobile.value) isFilterOpen.value = true;
 }
 
@@ -86,30 +90,28 @@ function applyFilters() {
 
   const filtersPayload: Record<string, unknown> = {};
 
-  if (selectedActivites.value.length) filtersPayload.activites = selectedActivites.value;
+  if (selectedActivites.value.length) filtersPayload.activites = selectedActivites.value.join(',');
   if (selectedLieux.value.length) {
-    filtersPayload.lieux = selectedLieux.value.map(l => l.value);
+    filtersPayload.lieux = selectedLieux.value.map(l => l.value).join(',');
   }
   if (selectedCriteresScrolarisation.value) filtersPayload.scolarisation = selectedCriteresScrolarisation.value;
   if (selectedCompetencesLinguistiquesVisees.value) filtersPayload.competence = selectedCompetencesLinguistiquesVisees.value;
   if (selectedProgrammes.value) filtersPayload.programmes = selectedProgrammes.value;
-  if (selectedPublics.value.length) filtersPayload.publics = selectedPublics.value;
-  if (selectedObjectifs.value.length) filtersPayload.objectifs = selectedObjectifs.value;
+  if (selectedPublics.value.length) filtersPayload.publics = selectedPublics.value.join(',');
+  if (selectedObjectifs.value.length) filtersPayload.objectifs = selectedObjectifs.value.join(',');
   if (selectedJoursHoraires.value.length) {
     const joursHorairesValues = selectedJoursHoraires.value.map(item =>
       typeof item === 'string' ? item : item.value
     );
     filtersPayload.joursHoraires = joursHorairesValues.join(',');
   }
-  if ((document.getElementById('checkbox-children') as HTMLInputElement)?.checked)
-    filtersPayload.gardeEnfant = true;
-  if ((document.getElementById('checkbox-summer') as HTMLInputElement)?.checked)
-    filtersPayload.coursEte = true;
+  if (gardeEnfantsChecked.value) filtersPayload.gardeEnfants = true;
+  if (coursEteChecked.value) filtersPayload.coursEte = true;
   if (keyword.length > 0) filtersPayload.keyword = keyword;
 
-  const hasAnyFilter = Object.keys(filtersPayload).length > 0;
-
-  emit('apply-filters', hasAnyFilter ? filtersPayload : {});
+  router.replace({
+    query: filtersPayload as LocationQueryRaw
+  });
 
 }
 
@@ -172,11 +174,8 @@ onMounted(async () => {
 
   selectedJoursHoraires.value = parseJoursHorairesParam(params.get('joursHoraires'));
 
-  const gardeEnfant = params.get('gardeEnfant');
-  (document.getElementById('checkbox-children') as HTMLInputElement).checked = gardeEnfant === 'true';
-
-  const coursEte = params.get('coursEte');
-  (document.getElementById('checkbox-summer') as HTMLInputElement).checked = coursEte === 'true';
+  gardeEnfantsChecked.value = (params.get('gardeEnfants') === 'true');
+  coursEteChecked.value = (params.get('coursEte') === 'true');
 
   const keyword = params.get('keyword');
   if (keyword) {
@@ -195,22 +194,13 @@ onBeforeUnmount(() => {
 <template>
   <section id="filter-container">
     <section class="filter-button-mobile-container">
-      <div class="filter-button-mobile" @click="toggleFilter">
-        <div class="button-filter-text">
-          <img id="filter-icon" src="/icones/filter.svg"  alt="filtrer les formations"/>
-          {{ isFilterOpen ? 'Fermer le filtre' : 'Filtrer les formations' }}
-        </div>
-        <img
-          id="expand-down-icon"
-          :src=" isFilterOpen
-        ? '/icones/close.svg'
-        : '/icones/expand_down.svg'
-      "
-          :alt=" isFilterOpen
-        ? 'fermer le filtre'
-        : 'ouvrir le filtre'
-      "
-        />
+      <div class="section-title" @click="toggleFilter">
+        <h3>
+          <a href="javascript:void(0)">
+            <span class="accordion-icon">{{ isFilterOpen ? '−' : '+' }}</span>
+            {{ isFilterOpen ? 'Fermer le filtre' : 'Filtrer les formations' }}
+          </a>
+        </h3>
       </div>
     </section>
 
@@ -341,12 +331,12 @@ onBeforeUnmount(() => {
             </div>
             <div id="advanced-section-checkbox">
               <label for="checkbox" class="label">
-                <input type="checkbox" id="checkbox-children" />
+                <input type="checkbox" id="checkbox-children" v-model="gardeEnfantsChecked" />
                 Garde d'enfants
               </label>
 
               <label for="checkbox" class="label">
-                <input type="checkbox" id="checkbox-summer" />
+                <input type="checkbox" id="checkbox-summer" v-model="coursEteChecked" />
                 Cours d'été
               </label>
             </div>
@@ -399,6 +389,10 @@ onBeforeUnmount(() => {
 <style>
 .multiselect__tag, .multiselect__option--highlight {
   background-color: #0F7ECB;
+}
+
+.section-title h3 {
+  margin: 0;
 }
 
 #filter-container {
@@ -535,29 +529,6 @@ label {
   width: auto;
   padding: 0.5em;
   display: none;
-}
-
-.filter-button-mobile {
-  background: white;
-  text-align: initial;
-  border: none;
-  padding: 0.5em;
-  display: flex;
-}
-
-.button-filter-text {
-  display: flex;
-  flex: 1;
-  align-items: center;
-}
-
-.filter-button-mobile img {
-  width: 20px;
-  height: 20px;
-}
-
-#filter-icon {
-  margin-right: 0.5em;
 }
 
 @media (max-width: 810px) {

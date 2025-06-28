@@ -1,69 +1,85 @@
 <script setup lang="ts">
-import {ref, computed, watch, nextTick} from "vue";
+import {computed, nextTick, onMounted, ref, watch} from "vue";
 import {useRoute, useRouter} from "vue-router";
-import { StructureModel } from '@/models/Structure.model.ts';
 import type { FormationModel } from "@/models/Formation.model.ts";
+import {useParsedFilters} from "@/composables/useParsedFilters.ts";
+import {formationsFiltered, hasAdvancedFilters} from "@/utils/filters.ts";
 
-const props = defineProps<{
-  structures: StructureModel[];
-  filters?: string[];
-  objFocus?: { type: string; slug: string };
-}>();
 const router = useRouter();
 const route = useRoute();
 const isOpen = ref(true);
+const filters = useParsedFilters();
 
-type FormationWithStructure = {
-  formation: FormationModel;
-  structure: StructureModel;
-};
-const allFormations = computed<FormationWithStructure[]>(() =>
-  props.structures.flatMap(structure =>
-    (structure.formations || []).map(formation => ({
-      formation,
-      structure
-    }))
-  ).filter(item => {
-    if (props.filters?.includes('placeDisponible') && !item.formation.placeDisponible) return false;
-    if (props.filters?.includes('gardeEnfant') && !item.formation.gardeEnfants) return false;
-    return true;
-  })
+const props = defineProps<{
+  formations: FormationModel[];
+}>();
+
+const filteredStructures = computed(() =>
+  formationsFiltered(props.formations, filters.value)
 );
 
-function navigateTo(item: FormationWithStructure) {
-  router.push({
-    query: {
-      ...route.query,
-      type: 'formation',
-      slug: item.formation.slug
+function navigateTo(formation: FormationModel) {
+  const adresses = formation.adresses || [];
+  const hasAdvFilters = hasAdvancedFilters(filters.value);
+
+  const query: Record<string, string | undefined> = {
+    ...route.query,
+    type: 'formation',
+    slug: formation.slug,
+  };
+
+  delete query.latitude;
+  delete query.longitude;
+  delete query.structureSlug;
+
+  if (adresses.length === 1) {
+    const [a] = adresses;
+
+    if (a.latitude && a.longitude) {
+      query.latitude = a.latitude.toString();
+      query.longitude = a.longitude.toString();
     }
-  });
+
+    if (!hasAdvFilters && formation.structure?.adresses?.some(sa =>
+        sa.latitude === a.latitude && sa.longitude === a.longitude)) {
+      query.structureSlug = formation.structure.slug;
+    }
+  }
+
+  router.push({ query });
 }
 
 function toggleList() {
   isOpen.value = !isOpen.value;
 }
 
+function isHighlighted(formation: FormationModel): boolean {
+  return (
+    route.query.type === 'formation' &&
+    route.query.slug === formation.slug
+  );
+}
+
+onMounted(() => {
+  const slug = route.query.slug;
+  if (route.query.type === 'formation' && typeof slug === 'string') {
+    nextTick(() => {
+      const el = document.getElementById(`formation-${slug}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
+});
+
 watch(
-  () => props.objFocus,
-  async (focus) => {
-    if (focus?.type !== 'formation') return;
-
-    const formationExists = allFormations.value.some(
-      (item) => item.formation.slug === focus.slug
-    );
-
-    if (!formationExists) {
-      console.warn(`Formation "${focus.slug}" introuvable dans la liste.`);
-      return;
-    }
-
-    // Attendre le DOM à jour
-    await nextTick();
-
-    const el = document.getElementById(`formation-${focus.slug}`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  () => route.query,
+  (query) => {
+    if (query.type === 'formation' && typeof query.slug === 'string') {
+      nextTick(() => {
+        const el = document.getElementById(`formation-${query.slug}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
     }
   },
   { immediate: true }
@@ -73,20 +89,22 @@ watch(
 
 <template>
   <div class="list-header">
-    <h2>Liste des Formations</h2>
+    <h2>Liste des Formations {{filteredStructures.length}}</h2>
     <button class="toggle-btn" @click="toggleList" :aria-label="isOpen ? 'Fermer la liste' : 'Ouvrir la liste'">
       {{ isOpen ? '«' : '»' }}
     </button>
   </div>
   <ul v-show="isOpen">
     <li
-      v-for="item in allFormations"
-      :key="item.formation.id"
-      @click="navigateTo(item)"
-      :id="`formation-${item.formation.slug}`"
-      :class="{ highlighted: props.objFocus?.type === 'formation' && props.objFocus?.slug === item.formation.slug }"
+      v-for="formation in filteredStructures"
+      :key="formation.id"
+      @click="navigateTo(formation)"
+      :id="`formation-${formation.slug}`"
+      :class="{ highlighted: isHighlighted(formation) }"
     >
-      {{ item.formation.nom }} - {{ item.formation.placeDisponible ? "Places disponibles" : "Pas de places disponibles" }} – <em>{{ item.structure.nom }}</em>
+      {{ formation.nom }} - {{ formation.placeDisponible ? "Places disponibles" : "Pas de places disponibles" }}
+      – Nombre d'adresses : {{ formation.adresses.length }}
+      <em>{{ formation.structure? formation.structure.nom : formation.permanence?.nom }}</em>
     </li>
   </ul>
 </template>

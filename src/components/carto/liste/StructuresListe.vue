@@ -1,45 +1,78 @@
 <script setup lang="ts">
-import {nextTick, ref, watch} from 'vue';
+import {computed, nextTick, onMounted, ref, watch} from 'vue';
 import { StructureModel } from '@/models/Structure.model.ts';
 import {useRoute, useRouter} from 'vue-router';
+import {structuresFiltered} from "@/utils/filters.ts";
+import {useParsedFilters} from "@/composables/useParsedFilters.ts";
 
-const props = defineProps<{
-  structures: StructureModel[];
-  objFocus?: { type: string; slug: string };
-}>();
 const router = useRouter();
 const route = useRoute();
 const isOpen = ref(true);
+const filters = useParsedFilters();
+
+const props = defineProps<{
+  structures: StructureModel[];
+}>();
+
+const filteredStructures = computed(() =>
+  structuresFiltered(props.structures, filters.value)
+);
+
+function navigateTo(structure: StructureModel) {
+  const adresses = structure.adresses || [];
+
+  const query: Record<string, string | undefined> = {
+    ...route.query,
+    type: 'structure',
+    slug: structure.slug,
+  };
+
+  delete query.latitude;
+  delete query.longitude;
+  delete query.structureSlug;
+
+  if (adresses.length === 1) {
+    const [a] = adresses;
+
+    if (a.latitude && a.longitude) {
+      query.latitude = a.latitude.toString();
+      query.longitude = a.longitude.toString();
+    }
+  }
+  router.push({ query });
+}
 
 function toggleList() {
   isOpen.value = !isOpen.value;
 }
 
-function navigateTo(structure: StructureModel) {
-  router.push({
-    query: {
-      ...route.query,
-      type: 'structure',
-      slug: structure.slug
-    }
-  });
+function isHighlighted(structure: StructureModel): boolean {
+  return (
+    route.query.type === 'structure' &&
+    route.query.slug === structure.slug
+  );
 }
 
+onMounted(() => {
+  const slug = route.query.slug;
+  if (route.query.type === 'structure' && typeof slug === 'string') {
+    nextTick(() => {
+      const el = document.getElementById(`structure-${slug}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
+});
+
 watch(
-  () => props.objFocus,
-  async (focus) => {
-    if (focus?.type !== 'structure') return;
-
-    const found = props.structures.some(s => s.slug === focus.slug);
-    if (!found) {
-      console.warn(`Structure "${focus.slug}" introuvable dans la liste.`);
-      return;
-    }
-
-    await nextTick();
-    const el = document.getElementById(`structure-${focus.slug}`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  () => route.query,
+  (query) => {
+    if (query.type === 'structure' && typeof query.slug === 'string') {
+      nextTick(() => {
+        const el = document.getElementById(`structure-${query.slug}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
     }
   },
   { immediate: true }
@@ -49,20 +82,20 @@ watch(
 
 <template>
   <div class="list-header">
-    <h2>Liste des Structures</h2>
+    <h2>Liste des Structures {{filteredStructures.length}}</h2>
     <button class="toggle-btn" @click="toggleList" :aria-label="isOpen ? 'Fermer la liste' : 'Ouvrir la liste'">
       {{ isOpen ? '«' : '»' }}
     </button>
   </div>
   <ul v-show="isOpen" class="structures-list">
     <li
-      v-for="structure in props.structures"
+      v-for="structure in filteredStructures"
       :key="structure.id"
       @click="navigateTo(structure)"
       :id="`structure-${structure.slug}`"
-      :class="{ highlighted: props.objFocus?.type === 'structure' && props.objFocus?.slug === structure.slug }"
+      :class="{ highlighted: isHighlighted(structure) }"
     >
-      {{ structure.nom }}
+      {{ structure.nom }} – Nombre d'adresses : {{ structure.adresses.length }}
     </li>
   </ul>
 </template>

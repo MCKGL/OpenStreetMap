@@ -3,42 +3,30 @@ import MapCarto from "@/components/carto/map/MapCarto.vue";
 import {computed, nextTick, onBeforeUnmount, onMounted, ref, watch} from "vue";
 import {StructureModel} from "@/models/Structure.model.ts";
 import {PermanenceModel} from "@/models/Permanence.model.ts";
-import {getPermanences, getStructures} from "@/services/Structure.service.ts";
+import type {FormationModel} from "@/models/Formation.model.ts";
+import type {AdresseModel} from "@/models/Adresse.model.ts";
+import {
+  getAdresses,
+  getFormations,
+  getPermanences,
+  getStructures
+} from "@/services/StructurePermanence.service.ts";
 import StructuresListe from "@/components/carto/liste/StructuresListe.vue";
 import PermancencesListe from "@/components/carto/liste/PermancencesListe.vue";
-import {type LocationQueryValue, useRoute, useRouter} from "vue-router";
 import FormationsListe from "@/components/carto/liste/FormationsListe.vue";
 import ContainerFiltre from "@/components/filtre/ContainerFiltre.vue";
 
-interface Focus {
-  type: 'structure' | 'permanence' | 'formation';
-  slug: string;
-}
-
 const structures = ref<StructureModel[]>([]);
 const permanences = ref<PermanenceModel[]>([]);
+const formations = ref<FormationModel[]>([]);
+const adresses = ref<AdresseModel[]>([]);
 const loading = ref(true);
 const isOpen = ref(true);
 const mobileView = ref<'list' | 'map'>('list');
-const isMobile = ref(window.innerWidth < 810);
+const isMobile = ref(window.innerWidth <= 810);
 const mapRef = ref();
-const route = useRoute();
-const router = useRouter();
 const isFilterOpen = ref(false)
 const listContentRef = ref<HTMLElement|null>(null);
-const filters = ref<string[]>([]);
-
-const objFocus = computed<Focus | undefined>(() => {
-  const rawType = route.query.type as string | undefined;
-  const rawSlug = route.query.slug as string | undefined;
-
-  if (rawType === 'structure' || rawType === 'permanence' || rawType === 'formation') {
-    if (typeof rawSlug === 'string') {
-      return {type: rawType, slug: rawSlug};
-    }
-  }
-  return undefined;
-});
 
 const mobileClass = computed(() => {
   if (!isMobile.value) return '';
@@ -62,125 +50,24 @@ function scrollToTop() {
   }
 }
 
-function resetFocus() {
-  const newQuery = {...route.query};
-  delete newQuery.slug;
-  delete newQuery.type;
-  router.replace({query: newQuery});
-}
-
-function onFocusFromMap({type, slug}: { type: string; slug: string }) {
-  const wasClosed = !isOpen.value;
-  isOpen.value = true;
-
-  if (wasClosed) {
-    setTimeout(() => {
-      router.push({
-        query: {
-          ...route.query,
-          type,
-          slug
-        }
-      });
-    }, 320);
-  } else {
-    router.push({
-      query: {
-        ...route.query,
-        type,
-        slug
-      }
-    });
-  }
-}
-
-function onApplyFilters(payload: Record<string, unknown>) {
-  const cleanQuery = { ...route.query };
-
-  const keysToRemove = ['activites', 'lieux', 'scolarisation', 'competence', 'programmes', 'publics', 'objectifs', 'joursHoraires', 'gardeEnfant', 'coursEte', 'keyword'];
-  for (const key of keysToRemove) {
-    delete cleanQuery[key];
-  }
-
-  const newFilters = Object.entries(payload)
-    .filter(([_, val]) => Array.isArray(val) ? val.length : val)
-    .reduce((acc, [key, val]) => {
-      acc[key] = Array.isArray(val) ? val.join(',') : String(val);
-      return acc;
-    }, {} as Record<string, string>);
-
-  filters.value = Object.entries(newFilters).map(([k, v]) => `${k}:${v}`);
-
-  router.replace({
-    query: {
-      ...cleanQuery,
-      ...newFilters
-    }
-  });
-}
-
-type QueryParam = LocationQueryValue | LocationQueryValue[];
-function parseQueryParam(param: QueryParam): string[] | undefined {
-  if (param === undefined || param === null) return undefined;
-
-  if (typeof param === 'string') {
-    return param.split(',');
-  }
-
-  if (Array.isArray(param)) {
-    return param.flatMap(item => parseQueryParam(item) ?? []);
-  }
-
-  return undefined;
-}
-
 onMounted(async () => {
-  const payload: Record<string, unknown> = {};
-
-  payload.activites = parseQueryParam(route.query.activites);
-  payload.lieux = parseQueryParam(route.query.lieux);
-  payload.programmes = parseQueryParam(route.query.programmes);
-  payload.publics = parseQueryParam(route.query.publics);
-  payload.objectifs = parseQueryParam(route.query.objectifs);
-  payload.joursHoraires = parseQueryParam(route.query.joursHoraires);
-  payload.scolarisation = typeof route.query.scolarisation === 'string' ? route.query.scolarisation : undefined;
-  payload.competence = typeof route.query.competence === 'string' ? route.query.competence : undefined;
-  payload.gardeEnfant = route.query.gardeEnfant === 'true' || (Array.isArray(route.query.gardeEnfant) && route.query.gardeEnfant.includes('true'));
-  payload.coursEte = route.query.coursEte === 'true' || (Array.isArray(route.query.coursEte) && route.query.coursEte.includes('true'));
-  payload.keyword = typeof route.query.keyword === 'string' ? route.query.keyword : undefined;
-
-  onApplyFilters(payload);
-
   try {
     structures.value = await getStructures();
     permanences.value = await getPermanences();
+    adresses.value = await getAdresses();
+    formations.value = await getFormations();
   } finally {
     loading.value = false;
   }
 
   const onResize = () => {
-    isMobile.value = window.innerWidth < 810;
+    isMobile.value = window.innerWidth <= 810;
     if (!isMobile.value) isOpen.value = true;
   };
   window.addEventListener('resize', onResize);
   onResize();
 
   onBeforeUnmount(() => window.removeEventListener('resize', onResize));
-});
-
-watch(objFocus, (focus) => {
-  if (!focus) return;
-
-  const found =
-    (focus.type === 'permanence' && permanences.value.some(p => p.slug === focus.slug)) ||
-    (focus.type === 'structure' && structures.value.some(s => s.slug === focus.slug)) ||
-    (focus.type === 'formation' && structures.value.some(s =>
-      s.formations.some(f => f.slug === focus.slug)
-    ));
-
-  if (!found) {
-    resetFocus();
-  }
 });
 
 watch(mobileView, (view) => {
@@ -197,7 +84,7 @@ watch(mobileView, (view) => {
   <div v-if="loading" class="loading">Chargement…</div>
   <div v-else class="all-carto-container">
     <div class="container-filtre">
-      <ContainerFiltre @toggle-filter="onToggleFilter" @apply-filters="onApplyFilters" />
+      <ContainerFiltre @toggle-filter="onToggleFilter"/>
     </div>
     <div class="carto-wrapper" :class="mobileClass">
       <div class="view-switch" v-show="isMobile && !isFilterOpen">
@@ -218,9 +105,9 @@ watch(mobileView, (view) => {
             {{ isOpen ? '«' : '»' }}
           </button>
           <div class="list-content" ref="listContentRef">
-            <PermancencesListe :permanences="permanences" :objFocus="objFocus"/>
-            <FormationsListe :structures="structures" :filters="filters" :objFocus="objFocus"/>
-            <StructuresListe :structures="structures" :objFocus="objFocus"/>
+            <PermancencesListe :permanences="permanences"/>
+            <FormationsListe :formations="formations"/>
+            <StructuresListe :structures="structures"/>
           </div>
           <button
             v-if="!isMobile || mobileView==='list'"
@@ -237,12 +124,7 @@ watch(mobileView, (view) => {
         <div class="panel map-panel" v-show="!isMobile || mobileView==='map'">
           <MapCarto
             ref="mapRef"
-            :structures="structures"
-            :permanences="permanences"
-            :objFocus="objFocus"
-            :filters="filters"
-            @reset-focus="resetFocus"
-            @focus-from-map="onFocusFromMap"
+            :adresses="adresses"
           />
         </div>
       </div>
@@ -260,6 +142,7 @@ watch(mobileView, (view) => {
 
 .container-filtre {
   flex: 0 0 auto;
+  z-index: 10;
 }
 
 .carto-wrapper {
@@ -272,7 +155,7 @@ watch(mobileView, (view) => {
 .view-switch {
   display: none;
   position: absolute;
-  top: 75px;
+  top: 80px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
@@ -344,6 +227,7 @@ watch(mobileView, (view) => {
 .map-panel {
   flex:1;
   height: 100%;
+  z-index: 1;
 }
 
 .toggle-btn {
@@ -355,7 +239,7 @@ watch(mobileView, (view) => {
   background: #fafafa;
   border:none;
   border-radius:50%;
-  z-index: 10;
+  z-index: 8;
 }
 
 .carto-wrapper.mode-map .view-switch {

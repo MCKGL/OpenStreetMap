@@ -23,15 +23,17 @@ export default defineConfig({
         secure: false,
         rewrite: path => path.replace(/^\/api/, ''),
       },
-      '/app_dev.php/programmes.json': {
-        target: 'http://localhost:8080',
+      '/api/programmes.json': {
+        target: 'https://staging-www.reseau-alpha.org',
         changeOrigin: true,
         secure: false,
+        rewrite: path => path.replace(/^\/api/, ''),
       },
-      '/app_dev.php/villes-departements.json': {
-        target: 'http://localhost:8080',
+      '/api/villes-departements.json': {
+        target: 'https://staging-www.reseau-alpha.org',
         changeOrigin: true,
         secure: false,
+        rewrite: path => path.replace(/^\/api/, ''),
       }
     }
   }
