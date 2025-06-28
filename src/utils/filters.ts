@@ -15,6 +15,19 @@ export const FILTER_KEYS = [
   'gardeEnfants', 'coursEte', 'keyword',
 ] as const;
 
+export function hasAdvancedFilters(filters: FiltreModel): boolean {
+  return (
+    (filters.scolarisation && filters.scolarisation.length > 0) ||
+    (filters.competence && filters.competence.length > 0) ||
+    (filters.programmes && filters.programmes.length > 0) ||
+    (filters.publics && filters.publics.length > 0) ||
+    (filters.objectifs && filters.objectifs.length > 0) ||
+    (filters.joursHoraires && filters.joursHoraires.length > 0) ||
+    filters.gardeEnfants === true ||
+    filters.coursEte === true
+  );
+}
+
 function normalizeFilterJourHoraire(str: string): string {
   const s = str.toLowerCase().trim();
   const processed = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -212,4 +225,20 @@ export function formationsFiltered(formations: FormationModel[], filter: FiltreM
     matchCompetence(f.competencesLinguistiquesVisees, filter) &&
     matchJoursHoraires(f.joursHoraires, filter)
   );
+}
+
+export function adressesFiltered(adresses: AdresseModel[], filter: FiltreModel): AdresseModel[] {
+  return adresses
+    .filter(adresse => matchLieux([adresse], filter))
+    .map(adresse => ({
+      ...adresse,
+      formations: formationsFiltered(adresse.formations ?? [], filter),
+      structures: structuresFiltered(adresse.structures ?? [], filter),
+      permanences: permanencesFiltered(adresse.permanences ?? [], filter)
+    }))
+    .filter(adresse =>
+      adresse.formations.length > 0 ||
+      adresse.structures.length > 0 ||
+      adresse.permanences.length > 0
+    );
 }

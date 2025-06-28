@@ -3,7 +3,7 @@ import {computed, nextTick, onMounted, ref, watch} from "vue";
 import {useRoute, useRouter} from "vue-router";
 import type { FormationModel } from "@/models/Formation.model.ts";
 import {useParsedFilters} from "@/composables/useParsedFilters.ts";
-import {formationsFiltered} from "@/utils/filters.ts";
+import {formationsFiltered, hasAdvancedFilters} from "@/utils/filters.ts";
 
 const router = useRouter();
 const route = useRoute();
@@ -20,6 +20,7 @@ const filteredStructures = computed(() =>
 
 function navigateTo(formation: FormationModel) {
   const adresses = formation.adresses || [];
+  const hasAdvFilters = hasAdvancedFilters(filters.value);
 
   const query: Record<string, string | undefined> = {
     ...route.query,
@@ -39,11 +40,8 @@ function navigateTo(formation: FormationModel) {
       query.longitude = a.longitude.toString();
     }
 
-    if (
-      formation.structure?.adresses?.some(sa =>
-        sa.latitude === a.latitude && sa.longitude === a.longitude
-      )
-    ) {
+    if (!hasAdvFilters && formation.structure?.adresses?.some(sa =>
+        sa.latitude === a.latitude && sa.longitude === a.longitude)) {
       query.structureSlug = formation.structure.slug;
     }
   }

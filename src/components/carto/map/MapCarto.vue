@@ -6,9 +6,11 @@ import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import type {AdresseModel} from "@/models/Adresse.model.ts";
 import type {FormationModel} from "@/models/Formation.model.ts";
-import {onMounted, onBeforeUnmount, ref, watch} from 'vue';
+import {onMounted, onBeforeUnmount, ref, watch, computed} from 'vue';
 import {useRoute, useRouter} from "vue-router";
 import type {Router} from 'vue-router';
+import {useParsedFilters} from "@/composables/useParsedFilters.ts";
+import {adressesFiltered, hasAdvancedFilters} from "@/utils/filters.ts";
 
 // Import des modèles pour éviter les erreurs de type
 declare module 'leaflet' {
@@ -30,10 +32,15 @@ const router = useRouter();
 const route  = useRoute();
 let highlightLayer: L.LayerGroup | null = null;
 let infoMulti: L.Control | null = null;
+const filters = useParsedFilters();
 
 const props = defineProps<{
   adresses: AdresseModel[],
 }>();
+
+const filteredAdresses = computed( () =>
+  adressesFiltered(props.adresses, filters.value)
+);
 
 /**
  * Initialise la carte Leaflet avec les tuiles OpenStreetMap.
@@ -73,71 +80,273 @@ function addMarkers() {
   if (!props.adresses) return;
   markers.clearLayers();
 
-  for (const adresse of props.adresses) {
+  for (const adresse of filteredAdresses.value) {
     const {latitude, longitude} = adresse;
     if (!latitude || !longitude) continue;
 
-    // Structures
-    for (const s of adresse.structures || []) {
-      // Les formations de cette structure à cette adresse
-      const atThisAddress = (s.formations || []).filter(f =>
-        f.adresses.some(ad => ad.latitude === latitude && ad.longitude === longitude)
-      );
-      // Choix de l'icône : bleu par défaut, jaune si au moins une place dispo, gris sinon
-      let iconUrl = '/icones/marker_blue.png';
-      if (atThisAddress.length) {
-        iconUrl = atThisAddress.some(f => f.placeDisponible)
-          ? '/icones/marker_yellow.png'
-          : '/icones/marker_gray.png';
-      }
+    const hasAdvFilters = hasAdvancedFilters(filters.value);
 
-      // Construction du contenu du popup
-      let popup = `<div>
+    // si on n'a pas de filtres avancés, on affiche les structures et formations 'orphelines' (c'est-à-dire pas à la même adresse que leurs structures)
+    if(!hasAdvFilters) {
+      // Structures
+      for (const s of adresse.structures || []) {
+        // Les formations de cette structure à cette adresse
+        const atThisAddress = (s.formations || []).filter(f =>
+          f.adresses.some(ad => ad.latitude === latitude && ad.longitude === longitude)
+        );
+        // Choix de l'icône : bleu par défaut, jaune si au moins une place dispo, gris sinon
+        let iconUrl = '/icones/marker_blue.png';
+        if (atThisAddress.length) {
+          iconUrl = atThisAddress.some(f => f.placeDisponible)
+            ? '/icones/marker_yellow.png'
+            : '/icones/marker_gray.png';
+        }
+
+        // Construction du contenu du popup
+        let popup = `<div>
     <strong>${s.nom} STRUCTURE</strong><br>
     ${s.activitesFormation.map(act => `<div>• ${act}</div>`).join('')}
   `;
 
-      if (atThisAddress.length === 0) {
-        popup += `<div style="margin-top:8px; font-style:italic;">
+        if (atThisAddress.length === 0) {
+          popup += `<div style="margin-top:8px; font-style:italic;">
       Aucune formation renseignée à cette adresse
     </div>`;
-      } else {
-        popup += `<div style="margin-top:8px;"><strong>Formations de cette structure à cette adresse :</strong></div>
+        } else {
+          popup += `<div style="margin-top:8px;"><strong>Formations de cette structure à cette adresse :</strong></div>
       <ul style="padding-left:16px; margin:4px 0;">
         ${atThisAddress.map(f =>
-          `<li>
+            `<li>
              <button class="formation-link formation-list" data-slug="${f.slug}">
                ${f.nom}
              </button>
            </li>`
-        ).join('')}
+          ).join('')}
       </ul>`;
-      }
-      popup += `</div>`;
+        }
+        popup += `</div>`;
 
-      // Création du marqueur
-      const m = L.marker([latitude, longitude], {
-        icon: L.icon({iconUrl, iconSize: [41, 41], iconAnchor: [22, 0]}),
-        customData: {type: 'structure', slug: s.slug, structureSlug: s.slug}
-      })
-        .bindPopup(popup)
-        .on('click', () => {
-          const query = {...router.currentRoute.value.query} as QueryParams;
-          query.type = 'structure';
-          query.slug = s.slug;
-          query.latitude = latitude.toString();
-          query.longitude = longitude.toString();
-          delete query.structureSlug;
-          router.replace({query});
+        // Création du marqueur
+        const m = L.marker([latitude, longitude], {
+          icon: L.icon({iconUrl, iconSize: [41, 41], iconAnchor: [22, 0]}),
+          customData: {type: 'structure', slug: s.slug, structureSlug: s.slug}
         })
-        .on('popupopen', () => bindFormationButtons(m, s.slug));
-      markers.addLayer(m);
-      const key = `structure-${s.slug}-${latitude}-${longitude}`;
-      for (const f of atThisAddress) {
-        const fkey = `formation-${f.slug}-${latitude}-${longitude}`;
-        markerRefs[fkey] = m;
+          .bindPopup(popup)
+          .on('click', () => {
+            const query = {...router.currentRoute.value.query} as QueryParams;
+            query.type = 'structure';
+            query.slug = s.slug;
+            query.latitude = latitude.toString();
+            query.longitude = longitude.toString();
+            delete query.structureSlug;
+            router.replace({query});
+          })
+          .on('popupopen', () => bindFormationButtons(m, s.slug));
+        markers.addLayer(m);
+        const key = `structure-${s.slug}-${latitude}-${longitude}`;
+        for (const f of atThisAddress) {
+          const fkey = `formation-${f.slug}-${latitude}-${longitude}`;
+          markerRefs[fkey] = m;
+        }
+        markerRefs[key] = m;
       }
-      markerRefs[key] = m;
+
+      // Formations orphelines (formations hors sa structure)
+      const orphanMap = new Map<number, FormationModel[]>();
+      for (const f of adresse.formations || []) {
+        const sameAsStruct = f.structure?.adresses.some(a => a.latitude === latitude && a.longitude === longitude);
+        const sameAsPerm = f.permanence?.adresses.some(a => a.latitude === latitude && a.longitude === longitude);
+        if (!sameAsStruct && !sameAsPerm) {
+          const key = f.structure?.id ?? f.id;
+          if (!orphanMap.has(key)) orphanMap.set(key, []);
+          orphanMap.get(key)!.push(f);
+        }
+      }
+
+      // Création des marqueurs pour les formations orphelines
+      for (const formations of orphanMap.values()) {
+        // Récupération de la structure associée
+        const struct = formations[0].structure!;
+        const latitude = adresse.latitude, longitude = adresse.longitude;
+
+        // Construction du contenu du popup
+        const activitesHTML = struct.activitesFormation
+          .map(act => `<li>${act}</li>`).join('');
+
+        const formationsHTML = `
+  <ul>
+    ${formations.map(f => `
+      <li>
+        <button
+          class="orphan-link formation-list"
+          data-slug="${f.slug}">
+          ${f.nom}
+        </button>
+      </li>
+    `).join('')}
+  </ul>
+`;
+
+        const popup = `
+    <div>
+      <strong>${struct.nom} FORMATION ORPH</strong>
+      <ul style="padding-left:16px;margin:4px 0;">
+        ${activitesHTML}
+      </ul>
+      <div style="margin-top:8px;font-weight:bold;">
+        Formations de cette structure à cette adresse :
+      </div>
+      ${formationsHTML}
+    </div>
+  `;
+
+        // Choix de l'icône : jaune si au moins une place dispo, gris sinon
+        const iconUrl = formations.some(f => f.placeDisponible)
+          ? '/icones/marker_yellow.png'
+          : '/icones/marker_gray.png';
+
+        // Création du marqueur
+        const m = L.marker([latitude, longitude], {
+          icon: L.icon({iconUrl, iconSize: [41, 41], iconAnchor: [22, 0]})
+        }).bindPopup(popup);
+
+        // S'il n'y a qu'une formation, on navigue au clic du marqueur
+        if (formations.length === 1) {
+          m.on('click', () => {
+            const f = formations[0];
+            const query = {...router.currentRoute.value.query} as QueryParams;
+            query.type = 'formation';
+            query.slug = f.slug;
+            query.latitude = latitude.toString();
+            query.longitude = longitude.toString();
+            delete query.structureSlug;
+            router.replace({query});
+          });
+        }
+
+        // A l'ouverture du popup, rattache le click sur les boutons .orphan-link
+        m.on('popupopen', () => {
+          const container = m.getPopup()!.getElement()!;
+          container.querySelectorAll<HTMLButtonElement>('.orphan-link').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const slug = btn.dataset.slug!;
+              const query = {...router.currentRoute.value.query} as QueryParams;
+              query.type = 'formation';
+              query.slug = slug
+              query.latitude = latitude.toString();
+              query.longitude = longitude.toString();
+              delete query.structureSlug;
+              router.replace({query});
+              m.closePopup();
+            });
+          });
+        });
+        markers.addLayer(m);
+        for (const f of formations) {
+          const key = `formation-${f.slug}-${latitude}-${longitude}`;
+          markerRefs[key] = m;
+        }
+      }
+    }
+
+    // Si on a des filtres avancés, on n'affiche que les formations, mais pas les structures
+    if(hasAdvFilters) {
+      // Map pour grouper les formations à la même adresse ET ayant la même structure
+      const grouped = new Map<string, FormationModel[]>();
+
+      for (const f of adresse.formations || []) {
+        if (!f.structure) continue;
+        const key = `${f.structure.id}-${latitude}-${longitude}`;
+        if (!grouped.has(key)) grouped.set(key, []);
+        grouped.get(key)!.push(f);
+      }
+
+      // Création des marqueurs par groupe (même structure, même adresse)
+      for (const [key, formations] of grouped.entries()) {
+        const struct = formations[0].structure!;
+
+        // Construction du contenu du popup
+        const activitesHTML = struct.activitesFormation
+          .map(act => `<li>${act}</li>`)
+          .join('');
+
+        const formationsHTML = `
+    <ul>
+      ${formations.map(f => `
+        <li>
+          <button
+            class="formation-link formation-list"
+            data-slug="${f.slug}">
+            ${f.nom}
+          </button>
+        </li>
+      `).join('')}
+    </ul>
+  `;
+
+        const popup = `
+    <div>
+      <strong>${struct.nom} FORMATION FILTRE AVD</strong>
+      <ul style="padding-left:16px; margin:4px 0;">
+        ${activitesHTML}
+      </ul>
+      <div style="margin-top:8px; font-weight:bold;">
+        Formations de cette structure à cette adresse :
+      </div>
+      ${formationsHTML}
+    </div>
+  `;
+
+        const hasPlaces = formations.some(f => f.placeDisponible);
+        const iconUrl = hasPlaces
+          ? '/icones/marker_yellow.png'
+          : '/icones/marker_gray.png';
+
+
+        // Création du marqueur
+        const m = L.marker([latitude, longitude], {
+          icon: L.icon({iconUrl, iconSize: [41, 41], iconAnchor: [22, 0]})
+        }).bindPopup(popup);
+
+        // Si une seule formation : clic = navigation
+        if (formations.length === 1) {
+          const f = formations[0];
+          m.on('click', () => {
+            const query = {...router.currentRoute.value.query} as QueryParams;
+            query.type = 'formation';
+            query.slug = f.slug;
+            query.latitude = latitude.toString();
+            query.longitude = longitude.toString();
+            delete query.structureSlug;
+            router.replace({query});
+          });
+        }
+
+        // Sinon : clics dans popup
+        m.on('popupopen', () => {
+          const container = m.getPopup()!.getElement()!;
+          container.querySelectorAll<HTMLButtonElement>('.formation-link').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const slug = btn.dataset.slug!;
+              const query = {...router.currentRoute.value.query} as QueryParams;
+              query.type = 'formation';
+              query.slug = slug;
+              query.latitude = latitude.toString();
+              query.longitude = longitude.toString();
+              delete query.structureSlug;
+              router.replace({query});
+              m.closePopup();
+            });
+          });
+        });
+
+        markers.addLayer(m);
+
+        for (const f of formations) {
+          const key = `formation-${f.slug}-${latitude}-${longitude}`;
+          markerRefs[key] = m;
+        }
+      }
     }
 
     // Permanences
@@ -172,102 +381,6 @@ function addMarkers() {
       markerRefs[key] = m;
     }
 
-    // Formations orphelines (formations hors sa structure)
-    const orphanMap = new Map<number, FormationModel[]>();
-    for (const f of adresse.formations || []) {
-      const sameAsStruct = f.structure?.adresses.some(a => a.latitude === latitude && a.longitude === longitude);
-      const sameAsPerm = f.permanence?.adresses.some(a => a.latitude === latitude && a.longitude === longitude);
-      if (!sameAsStruct && !sameAsPerm) {
-        const key = f.structure?.id ?? f.id;
-        if (!orphanMap.has(key)) orphanMap.set(key, []);
-        orphanMap.get(key)!.push(f);
-      }
-    }
-
-    // Création des marqueurs pour les formations orphelines
-    for (const formations of orphanMap.values()) {
-      // Récupération de la structure associée
-      const struct = formations[0].structure!;
-      const latitude = adresse.latitude, longitude = adresse.longitude;
-
-      // Construction du contenu du popup
-      const activitesHTML = struct.activitesFormation
-        .map(act => `<li>${act}</li>`).join('');
-
-      const formationsHTML = `
-  <ul>
-    ${formations.map(f => `
-      <li>
-        <button
-          class="orphan-link formation-list"
-          data-slug="${f.slug}">
-          ${f.nom}
-        </button>
-      </li>
-    `).join('')}
-  </ul>
-`;
-
-      const popup = `
-    <div>
-      <strong>${struct.nom} FORMATION ORPH</strong>
-      <ul style="padding-left:16px;margin:4px 0;">
-        ${activitesHTML}
-      </ul>
-      <div style="margin-top:8px;font-weight:bold;">
-        Formations de cette structure à cette adresse :
-      </div>
-      ${formationsHTML}
-    </div>
-  `;
-
-      // Choix de l'icône : jaune si au moins une place dispo, gris sinon
-      const iconUrl = formations.some(f => f.placeDisponible)
-        ? '/icones/marker_yellow.png'
-        : '/icones/marker_gray.png';
-
-      // Création du marqueur
-      const m = L.marker([latitude, longitude], {
-        icon: L.icon({iconUrl, iconSize: [41, 41], iconAnchor: [22, 0]})
-      }).bindPopup(popup);
-
-      // S'il n'y a qu'une formation, on navigue au clic du marqueur
-      if (formations.length === 1) {
-        m.on('click', () => {
-          const f = formations[0];
-          const query = {...router.currentRoute.value.query} as QueryParams;
-          query.type = 'formation';
-          query.slug = f.slug;
-          query.latitude = latitude.toString();
-          query.longitude = longitude.toString();
-          delete query.structureSlug;
-          router.replace({query});
-        });
-      }
-
-      // A l'ouverture du popup, rattache le click sur les boutons .orphan-link
-      m.on('popupopen', () => {
-        const container = m.getPopup()!.getElement()!;
-        container.querySelectorAll<HTMLButtonElement>('.orphan-link').forEach(btn => {
-          btn.addEventListener('click', () => {
-            const slug = btn.dataset.slug!;
-            const query = {...router.currentRoute.value.query} as QueryParams;
-            query.type = 'formation';
-            query.slug = slug
-            query.latitude = latitude.toString();
-            query.longitude = longitude.toString();
-            delete query.structureSlug;
-            router.replace({query});
-            m.closePopup();
-          });
-        });
-      });
-      markers.addLayer(m);
-      for (const f of formations) {
-        const key = `formation-${f.slug}-${latitude}-${longitude}`;
-        markerRefs[key] = m;
-      }
-    }
   }
 
   // recentrage automatique
@@ -400,6 +513,7 @@ function highlightMultiPoints({map, markers, markerRefs, adresses, route}: {
   adresses: AdresseModel[],
   route: ReturnType<typeof useRoute>
 }) {
+
   const {type, slug, latitude, longitude} = route.query;
 
   if (!type || !slug || latitude || longitude) {
@@ -582,6 +696,8 @@ watch(
 watch(
   () => router.currentRoute.value.query,
   () => {
+    markers.clearLayers();
+    addMarkers();
     focusOnTargetMarker(map, markers, router);
     highlightMultiPoints({
       map,
@@ -590,7 +706,8 @@ watch(
       adresses: props.adresses ?? [],
       route
     });
-    // console.log(filteredAdresses.value)
+    console.log(filters.value)
+    console.log(hasAdvancedFilters(filters.value))
   }
 );
 </script>
