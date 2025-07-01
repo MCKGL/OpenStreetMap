@@ -477,7 +477,7 @@ function focusOnTargetMarker(map: L.Map, markers: L.MarkerClusterGroup, router: 
   if (target) {
     const latlng = target.getLatLng();
     // Centrer la carte sur le marqueur
-    map.setView(latlng, 20, {animate: true});
+    map.setView(latlng, 16, {animate: true});
     // Eclater le cluster si nécessaire
     markers.zoomToShowLayer(target, () => {
       map.setView(latlng, 20, {animate: true});
