@@ -383,9 +383,11 @@ function addMarkers() {
 
   }
 
+  const { latitude, longitude } = route.query;
+  const hasLatLngInUrl = latitude !== undefined && longitude !== undefined;
   // recentrage automatique
   const layers = markers.getLayers() as L.Marker[];
-  if (layers.length) {
+  if (layers.length && hasLatLngInUrl) {
     const fg = L.featureGroup(layers);
     map.fitBounds(fg.getBounds(), {padding: [50, 50]});
   }
@@ -429,7 +431,6 @@ function bindFormationButtons(marker: L.Marker, slugStructure?: string) {
  */
 function focusOnTargetMarker(map: L.Map, markers: L.MarkerClusterGroup, router: Router) {
   const {latitude, longitude, type, slug, structureSlug} = router.currentRoute.value.query;
-
   if (!(latitude && longitude && type && slug)) return;
 
   const lat = parseFloat(latitude as string);
