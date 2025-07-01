@@ -109,6 +109,10 @@ function applyFilters() {
   if (coursEteChecked.value) filtersPayload.coursEte = true;
   if (keyword.length > 0) filtersPayload.keyword = keyword;
 
+  isAdvancedOpen.value = false;
+  isKeywordOpen.value = false;
+  toggleFilter();
+
   router.replace({
     query: filtersPayload as LocationQueryRaw
   });

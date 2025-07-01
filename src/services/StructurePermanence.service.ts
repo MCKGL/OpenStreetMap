@@ -5,7 +5,7 @@ import type {FormationModel} from "@/models/Formation.model.ts";
 
 const JSON_PATH = import.meta.env.DEV
   ? '/api/cartographie.json'
-  : 'https://www.reseau-alpha.org/cartographie.json';
+  : 'https://staging-www.reseau-alpha.org//cartographie.json';
 
 // Cache partagé pour tout le JSON
 let _rawCache: { structures: StructureModel[]; permanences: PermanenceModel[] } | null = null;

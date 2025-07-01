@@ -18,7 +18,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api/cartographie.json': {
-        target: 'https://www.reseau-alpha.org',
+        target: 'https://staging-www.reseau-alpha.org',
         changeOrigin: true,
         secure: false,
         rewrite: path => path.replace(/^\/api/, ''),

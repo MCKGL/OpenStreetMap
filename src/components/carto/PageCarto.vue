@@ -33,6 +33,11 @@ const mobileClass = computed(() => {
   return mobileView.value === 'list' ? 'mode-list' : 'mode-map';
 });
 
+const onResize = () => {
+  isMobile.value = window.innerWidth <= 810;
+  if (!isMobile.value) isOpen.value = true;
+};
+
 function togglePanel() {
   if (!isMobile.value) {
     isOpen.value = !isOpen.value;
@@ -60,18 +65,14 @@ onMounted(async () => {
     loading.value = false;
   }
 
-  const onResize = () => {
-    isMobile.value = window.innerWidth <= 810;
-    if (!isMobile.value) isOpen.value = true;
-  };
   window.addEventListener('resize', onResize);
   onResize();
 
   onBeforeUnmount(() => window.removeEventListener('resize', onResize));
 });
 
-watch(mobileView, (view) => {
-  if (view === 'map') {
+watch(mobileView, (newView) => {
+  if (newView === 'map' && isMobile.value) {
     nextTick(() => {
       mapRef.value?.resizeMap?.();
     });
@@ -100,7 +101,7 @@ watch(mobileView, (view) => {
 
       <div class="panels">
         <div class="panel list-panel" :class="{ closed: !isOpen }"
-             v-show="!isMobile || mobileView==='list'">
+             v-if="!isMobile || mobileView==='list'">
           <button v-if="!isMobile" class="toggle-btn" @click="togglePanel">
             {{ isOpen ? '«' : '»' }}
           </button>
@@ -121,7 +122,7 @@ watch(mobileView, (view) => {
           </button>
         </div>
 
-        <div class="panel map-panel" v-show="!isMobile || mobileView==='map'">
+        <div class="panel map-panel" v-if="!isMobile || mobileView==='map'">
           <MapCarto
             ref="mapRef"
             :adresses="adresses"

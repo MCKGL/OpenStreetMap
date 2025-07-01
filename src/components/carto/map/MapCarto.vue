@@ -6,7 +6,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import type {AdresseModel} from "@/models/Adresse.model.ts";
 import type {FormationModel} from "@/models/Formation.model.ts";
-import {onMounted, onBeforeUnmount, ref, watch, computed} from 'vue';
+import {onMounted, ref, watch, computed, onBeforeUnmount} from 'vue';
 import {useRoute, useRouter} from "vue-router";
 import type {Router} from 'vue-router';
 import {useParsedFilters} from "@/composables/useParsedFilters.ts";
@@ -477,7 +477,7 @@ function focusOnTargetMarker(map: L.Map, markers: L.MarkerClusterGroup, router: 
   if (target) {
     const latlng = target.getLatLng();
     // Centrer la carte sur le marqueur
-    map.setView(latlng, map.getZoom(), {animate: true});
+    map.setView(latlng, 20, {animate: true});
     // Eclater le cluster si nécessaire
     markers.zoomToShowLayer(target, () => {
       map.setView(latlng, 20, {animate: true});
@@ -706,8 +706,6 @@ watch(
       adresses: props.adresses ?? [],
       route
     });
-    console.log(filters.value)
-    console.log(hasAdvancedFilters(filters.value))
   }
 );
 </script>
