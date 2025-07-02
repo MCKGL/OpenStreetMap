@@ -489,14 +489,6 @@ hr {
   background: #ddd;
 }
 
-h3 a {
-  color: #f14b51;
-  text-transform: uppercase;
-  font-size: 14px;
-  font-family: 'Noticia Text', serif;
-  text-decoration: none;
-}
-
 .section-title {
   margin: 0.5em;
 }
@@ -513,20 +505,6 @@ label {
   font-size: 14px;
   color: #444444;
   font-weight: 400;
-}
-
-.accordion-icon {
-  display: inline-block;
-  width: 27px;
-  height: 27px;
-  font-size: 21px;
-  background: #f14b51;
-  border-radius: 50%;
-  color: #fff;
-  text-align: center;
-  line-height: 27px;
-  margin-right: 10px;
-  font-family: 'Open Sans', sans-serif;
 }
 
 .filter-button-mobile-container {

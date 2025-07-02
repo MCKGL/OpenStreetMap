@@ -9,6 +9,7 @@ const router = useRouter();
 const route = useRoute();
 const isOpen = ref(true);
 const filters = useParsedFilters();
+const openDescriptions = ref<Record<string, boolean>>({});
 
 const props = defineProps<{
   structures: StructureModel[];
@@ -53,6 +54,14 @@ function isHighlighted(structure: StructureModel): boolean {
   );
 }
 
+function toggleDescription(slug: string) {
+  openDescriptions.value[slug] = !openDescriptions.value[slug];
+}
+
+function isDescriptionOpen(slug: string): boolean {
+  return openDescriptions.value[slug] || false;
+}
+
 onMounted(() => {
   const slug = route.query.slug;
   if (route.query.type === 'structure' && typeof slug === 'string') {
@@ -82,58 +91,63 @@ watch(
 
 <template>
   <div class="list-header">
-    <h2>Liste des Structures {{filteredStructures.length}}</h2>
+    <h2>{{filteredStructures.length}} Structures</h2>
     <button class="toggle-btn" @click="toggleList" :aria-label="isOpen ? 'Fermer la liste' : 'Ouvrir la liste'">
-      {{ isOpen ? '«' : '»' }}
+      <img
+        v-if="isOpen"
+        src="/icons/expand_up.svg"
+        alt="Fermer la liste"
+        width="20"
+        height="20"
+      />
+      <img
+        v-else
+        src="/icons/expand_down.svg"
+        alt="Ouvrir la liste"
+        width="20"
+        height="20"
+      />
     </button>
   </div>
-  <ul v-show="isOpen" class="structures-list">
+  <ul v-show="isOpen" class="ul-list">
     <li
+      class="li-list"
       v-for="structure in filteredStructures"
       :key="structure.id"
-      @click="navigateTo(structure)"
       :id="`structure-${structure.slug}`"
       :class="{ highlighted: isHighlighted(structure) }"
     >
-      {{ structure.nom }} – Nombre d'adresses : {{ structure.adresses.length }}
+
+      <div class="section-title" @click.stop="toggleDescription(structure.slug)" @click="navigateTo(structure)">
+        <h3>
+          <a href="javascript:void(0)">
+            <div>
+              <span class="accordion-icon">{{ isDescriptionOpen(structure.slug) ? '−' : '+' }}</span>
+            </div>
+            <div>
+              {{ structure.nom }}
+            </div>
+          </a>
+        </h3>
+      </div>
+
+      <div v-if="isDescriptionOpen(structure.slug)">
+        <p>Description de la structure {{ structure.nom }}…</p>
+        <div class="more-btn">
+          <a
+            class="readon"
+            :href="structure.urlCoordination"
+            target="_blank"
+          >
+            En savoir plus
+          </a>
+        </div>
+      </div>
+
     </li>
   </ul>
 </template>
 
 <style scoped>
-.list-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
 
-.toggle-btn {
-  background: transparent;
-  border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 0;
-}
-
-.toggle-btn:focus {
-  outline: 2px solid #007acc;
-}
-
-.structures-list {
-  list-style: inside;
-}
-
-.structures-list li {
-  padding: 5px;
-  cursor: pointer;
-}
-
-.structures-list li:hover {
-  background-color: #f0f0f0;
-}
-
-.highlighted {
-  background-color: #e0f7fa;
-  font-weight: bold;
-}
 </style>

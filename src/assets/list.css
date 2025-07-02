@@ -1,0 +1,44 @@
+.list-header {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.list-header h2 {
+  font-family: 'Noticia Text', serif;
+  font-weight: 400;
+  margin: 0 0 20px;
+}
+
+.toggle-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0;
+  align-self: baseline;
+  margin-top: 9px;
+}
+
+.ul-list {
+  padding: 0;
+  margin-top: 0;
+}
+
+.li-list {
+  list-style: none;
+  padding: 5px;
+  cursor: pointer;
+}
+
+.li-list:hover {
+  background-color: #f0f0f0;
+}
+
+.highlighted {
+  background-color: #e0f7fa;
+}
+
+.more-btn {
+  display: flex;
+  justify-content: end;
+}

@@ -29,7 +29,7 @@ const markerRefs: Record<string, L.Marker> = {};
 let map: L.Map;
 let markers: L.MarkerClusterGroup;
 const router = useRouter();
-const route  = useRoute();
+const route = useRoute();
 let highlightLayer: L.LayerGroup | null = null;
 let infoMulti: L.Control | null = null;
 const filters = useParsedFilters();
@@ -38,7 +38,7 @@ const props = defineProps<{
   adresses: AdresseModel[],
 }>();
 
-const filteredAdresses = computed( () =>
+const filteredAdresses = computed(() =>
   adressesFiltered(props.adresses, filters.value)
 );
 
@@ -87,7 +87,7 @@ function addMarkers() {
     const hasAdvFilters = hasAdvancedFilters(filters.value);
 
     // si on n'a pas de filtres avancés, on affiche les structures et formations 'orphelines' (c'est-à-dire pas à la même adresse que leurs structures)
-    if(!hasAdvFilters) {
+    if (!hasAdvFilters) {
       // Structures
       for (const s of adresse.structures || []) {
         // Les formations de cette structure à cette adresse
@@ -95,36 +95,56 @@ function addMarkers() {
           f.adresses.some(ad => ad.latitude === latitude && ad.longitude === longitude)
         );
         // Choix de l'icône : bleu par défaut, jaune si au moins une place dispo, gris sinon
-        let iconUrl = '/icones/marker_blue.png';
+        let iconUrl = '/icons/marker_blue.png';
         if (atThisAddress.length) {
           iconUrl = atThisAddress.some(f => f.placeDisponible)
-            ? '/icones/marker_yellow.png'
-            : '/icones/marker_gray.png';
+            ? '/icons/marker_yellow.png'
+            : '/icons/marker_gray.png';
         }
 
         // Construction du contenu du popup
-        let popup = `<div>
-    <strong>${s.nom} STRUCTURE</strong><br>
-    ${s.activitesFormation.map(act => `<div>• ${act}</div>`).join('')}
-  `;
+        const logoHtml = s.logo
+          ? `<div class="popup-img"><img src="${s.logo}" alt="${s.nom}" /></div>`
+          : '';
+
+        let popup = `<div class="popup-container">
+    <div class="popup-description">
+      ${logoHtml}
+      <div class="popup-text-container">
+          <p><strong class="popup-title">${s.nom}</strong></p>
+          <ul class="popup-activity-list">
+              ${s.activitesFormation.map(act => `<li class="popup-activity-list-item">${act}</li>`).join('')}
+          </ul>
+      </div>
+    </div>`;
 
         if (atThisAddress.length === 0) {
-          popup += `<div style="margin-top:8px; font-style:italic;">
-      Aucune formation renseignée à cette adresse
-    </div>`;
+          popup += `<div class="popup-formation-list-none">
+                        Aucune formation renseignée à cette adresse
+                    </div>`;
         } else {
-          popup += `<div style="margin-top:8px;"><strong>Formations de cette structure à cette adresse :</strong></div>
-      <ul style="padding-left:16px; margin:4px 0;">
-        ${atThisAddress.map(f =>
+          popup += `<div><strong>Formations de cette structure à cette adresse :</strong></div>
+                    <ul class="popup-formation-list">
+                        ${atThisAddress.map(f =>
             `<li>
-             <button class="formation-link formation-list" data-slug="${f.slug}">
-               ${f.nom}
-             </button>
-           </li>`
+                         <button class="formation-link formation-list" data-slug="${f.slug}">
+                           ${f.nom}
+                         </button>
+                       </li>`
           ).join('')}
-      </ul>`;
+                    </ul>`;
         }
-        popup += `</div>`;
+
+        popup += `<div class="popup-btn">
+                    <a
+                      class="readon"
+                      href="${s.urlCoordination}"
+                      target="_blank"
+                    >
+                      Voir la structure
+                    </a>
+                </div>
+            </div>`;
 
         // Création du marqueur
         const m = L.marker([latitude, longitude], {
@@ -170,11 +190,8 @@ function addMarkers() {
         const latitude = adresse.latitude, longitude = adresse.longitude;
 
         // Construction du contenu du popup
-        const activitesHTML = struct.activitesFormation
-          .map(act => `<li>${act}</li>`).join('');
-
         const formationsHTML = `
-  <ul>
+  <ul class="popup-formation-list">
     ${formations.map(f => `
       <li>
         <button
@@ -187,23 +204,42 @@ function addMarkers() {
   </ul>
 `;
 
+        const logoHtml = struct.logo
+          ? `<div class="popup-img"><img src="${struct.logo}" alt="${struct.nom}" /></div>`
+          : '';
+
         const popup = `
-    <div>
-      <strong>${struct.nom} FORMATION ORPH</strong>
-      <ul style="padding-left:16px;margin:4px 0;">
-        ${activitesHTML}
-      </ul>
-      <div style="margin-top:8px;font-weight:bold;">
+    <div class="popup-container">
+    <div class="popup-description">
+      ${logoHtml}
+      <div class="popup-text-container">
+          <p><strong class="popup-title">${struct.nom}</strong></p>
+          <ul class="popup-activity-list">
+              ${struct.activitesFormation.map(act => `<li class="popup-activity-list-item">${act}</li>`).join('')}
+          </ul>
+      </div>
+    </div>
+      <div>
         Formations de cette structure à cette adresse :
       </div>
       ${formationsHTML}
+    </div>
+
+    <div class="popup-btn">
+      <a
+        class="readon"
+        href="${struct.urlCoordination}"
+        target="_blank"
+      >
+        Voir la structure
+      </a>
     </div>
   `;
 
         // Choix de l'icône : jaune si au moins une place dispo, gris sinon
         const iconUrl = formations.some(f => f.placeDisponible)
-          ? '/icones/marker_yellow.png'
-          : '/icones/marker_gray.png';
+          ? '/icons/marker_yellow.png'
+          : '/icons/marker_gray.png';
 
         // Création du marqueur
         const m = L.marker([latitude, longitude], {
@@ -250,7 +286,7 @@ function addMarkers() {
     }
 
     // Si on a des filtres avancés, on n'affiche que les formations, mais pas les structures
-    if(hasAdvFilters) {
+    if (hasAdvFilters) {
       // Map pour grouper les formations à la même adresse ET ayant la même structure
       const grouped = new Map<string, FormationModel[]>();
 
@@ -266,41 +302,55 @@ function addMarkers() {
         const struct = formations[0].structure!;
 
         // Construction du contenu du popup
-        const activitesHTML = struct.activitesFormation
-          .map(act => `<li>${act}</li>`)
-          .join('');
-
         const formationsHTML = `
-    <ul>
-      ${formations.map(f => `
-        <li>
-          <button
-            class="formation-link formation-list"
-            data-slug="${f.slug}">
-            ${f.nom}
-          </button>
-        </li>
-      `).join('')}
-    </ul>
-  `;
+  <ul class="popup-formation-list">
+    ${formations.map(f => `
+      <li>
+        <button
+          class="orphan-link formation-list"
+          data-slug="${f.slug}">
+          ${f.nom}
+        </button>
+      </li>
+    `).join('')}
+  </ul>
+`;
+
+        const logoHtml = struct.logo
+          ? `<div class="popup-img"><img src="${struct.logo}" alt="${struct.nom}" /></div>`
+          : '';
 
         const popup = `
-    <div>
-      <strong>${struct.nom} FORMATION FILTRE AVD</strong>
-      <ul style="padding-left:16px; margin:4px 0;">
-        ${activitesHTML}
-      </ul>
-      <div style="margin-top:8px; font-weight:bold;">
+    <div class="popup-container">
+    <div class="popup-description">
+      ${logoHtml}
+      <div class="popup-text-container">
+          <p><strong class="popup-title">${struct.nom}</strong></p>
+          <ul class="popup-activity-list">
+              ${struct.activitesFormation.map(act => `<li class="popup-activity-list-item">${act}</li>`).join('')}
+          </ul>
+      </div>
+    </div>
+      <div>
         Formations de cette structure à cette adresse :
       </div>
       ${formationsHTML}
+    </div>
+    <div class="popup-btn">
+      <a
+        class="readon"
+        href="${struct.urlCoordination}"
+        target="_blank"
+      >
+        Voir la structure
+      </a>
     </div>
   `;
 
         const hasPlaces = formations.some(f => f.placeDisponible);
         const iconUrl = hasPlaces
-          ? '/icones/marker_yellow.png'
-          : '/icones/marker_gray.png';
+          ? '/icons/marker_yellow.png'
+          : '/icons/marker_gray.png';
 
 
         // Création du marqueur
@@ -352,16 +402,34 @@ function addMarkers() {
     // Permanences
     for (const p of adresse.permanences || []) {
       // Construction du contenu du popup
-      const popup = `<div>
-    <strong>${p.nom} PERMANENCE</strong><br>
-    <ul style="padding-left:16px; margin:4px 0;">
-      ${p.activitesCoordination.map(act => `<li>${act}</li>`).join('')}
-    </ul>
+      const logoHtml = p.logo
+        ? `<div class="popup-img"><img src="${p.logo}" alt="${p.nom}" /></div>`
+        : '';
+
+      const popup = `<div class="popup-container">
+    <div class="popup-description">
+      ${logoHtml}
+      <div class="popup-text-container">
+          <p><strong class="popup-title">${p.nom}</strong></p>
+          <ul class="popup-activity-list">
+              ${p.activitesCoordination.map(act => `<li class="popup-activity-list-item">${act}</li>`).join('')}
+          </ul>
+      </div>
+    </div>
+    <div class="popup-btn">
+      <a
+        class="readon"
+        href="${p.urlCoordination}"
+        target="_blank"
+      >
+        Voir la permanence
+      </a>
+    </div>
   </div>`;
 
       const m = L.marker([latitude, longitude], {
         icon: L.icon({
-          iconUrl: '/icones/marker_black.png',
+          iconUrl: '/icons/marker_black.png',
           iconSize: [41, 41],
           iconAnchor: [22, 0]
         }),
@@ -383,7 +451,7 @@ function addMarkers() {
 
   }
 
-  const { latitude, longitude } = route.query;
+  const {latitude, longitude} = route.query;
   const hasLatLngInUrl = latitude !== undefined && longitude !== undefined;
   // recentrage automatique
   const layers = markers.getLayers() as L.Marker[];
@@ -608,10 +676,10 @@ function addLegend() {
       <button class="legend-toggle" aria-label="Afficher la légende">Légende</button>
       <div class="legend-content">
         <h4>Légende</h4>
-        <div><img class="ico-legend" src="/icones/marker_blue.png" alt="marqueur rouge structures"> Structures</div>
-        <div><img class="ico-legend" src="/icones/marker_black.png" alt="marqueur noir permanences"> Permanences</div>
-        <div><img class="ico-legend" src="/icones/marker_yellow.png" alt="marqueur bleu formations"> Formations avec place disponible</div>
-        <div><img class="ico-legend" src="/icones/marker_gray.png" alt="marqueur bleu formations"> Formations sans place disponible</div>
+        <div><img class="ico-legend" src="/icons/marker_blue.png" alt="marqueur rouge structures"> Structures</div>
+        <div><img class="ico-legend" src="/icons/marker_black.png" alt="marqueur noir permanences"> Permanences</div>
+        <div><img class="ico-legend" src="/icons/marker_yellow.png" alt="marqueur bleu formations"> Formations avec place disponible</div>
+        <div><img class="ico-legend" src="/icons/marker_gray.png" alt="marqueur bleu formations"> Formations sans place disponible</div>
       </div>
     `;
     const btn = c.querySelector<HTMLButtonElement>('.legend-toggle')!;
@@ -748,6 +816,10 @@ watch(
   height: 100%;
 }
 
+.leaflet-container a {
+  color: #fff;
+}
+
 /* Style custom pour les clusters #0F7ECB */
 .custom-cluster {
   background: rgba(15, 126, 203, 0.6);
@@ -806,6 +878,53 @@ watch(
 .ico-legend {
   width: 30px;
   height: 30px;
+}
+
+.popup-activity-list {
+  padding: 10px;
+}
+
+.popup-activity-list-item {
+  list-style-type: circle;
+}
+
+.popup-title {
+  font-size: 13px;
+  margin-top: 20px;
+  font-weight: 600;
+}
+
+.popup-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.popup-img img {
+  object-fit: contain;
+  width: 60px;
+  height: 60px;
+}
+
+.popup-text-container p {
+  text-align: center;
+}
+
+.popup-description {
+  display: flex;
+}
+
+.popup-btn {
+  justify-content: center;
+  display: flex;
+}
+
+.popup-formation-list {
+  padding: 0 0 0 10px;
+}
+
+.popup-formation-list-none {
+  margin: 10px;
+  font-style: italic;
 }
 
 @media (max-width: 810px) {

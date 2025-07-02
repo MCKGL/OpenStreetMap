@@ -9,12 +9,13 @@ const router = useRouter();
 const route = useRoute();
 const isOpen = ref(true);
 const filters = useParsedFilters();
+const openDescriptions = ref<Record<string, boolean>>({});
 
 const props = defineProps<{
   formations: FormationModel[];
 }>();
 
-const filteredStructures = computed(() =>
+const filteredFormations = computed(() =>
   formationsFiltered(props.formations, filters.value)
 );
 
@@ -60,6 +61,20 @@ function isHighlighted(formation: FormationModel): boolean {
   );
 }
 
+function numberOfPlacesAvailable(formations: FormationModel[]): number {
+  return formations.reduce((acc, formation) => {
+    return acc + (formation.placeDisponible ? 1 : 0);
+  }, 0);
+}
+
+function toggleDescription(slug: string) {
+  openDescriptions.value[slug] = !openDescriptions.value[slug];
+}
+
+function isDescriptionOpened(slug: string): boolean {
+  return !!openDescriptions.value[slug];
+}
+
 onMounted(() => {
   const slug = route.query.slug;
   if (route.query.type === 'formation' && typeof slug === 'string') {
@@ -89,61 +104,71 @@ watch(
 
 <template>
   <div class="list-header">
-    <h2>Liste des Formations {{filteredStructures.length}}</h2>
+    <h2>{{filteredFormations.length}} Formations
+      <br />
+      (dont {{ numberOfPlacesAvailable(filteredFormations) }} avec places disponibles)
+    </h2>
     <button class="toggle-btn" @click="toggleList" :aria-label="isOpen ? 'Fermer la liste' : 'Ouvrir la liste'">
-      {{ isOpen ? '«' : '»' }}
+      <img
+        v-if="isOpen"
+        src="/icons/expand_up.svg"
+        alt="Fermer la liste"
+        width="20"
+        height="20"
+      />
+      <img
+        v-else
+        src="/icons/expand_down.svg"
+        alt="Ouvrir la liste"
+        width="20"
+        height="20"
+      />
     </button>
   </div>
-  <ul v-show="isOpen">
+  <ul v-show="isOpen" class="ul-list">
     <li
-      v-for="formation in filteredStructures"
+      class="li-list"
+      v-for="formation in filteredFormations"
       :key="formation.id"
-      @click="navigateTo(formation)"
       :id="`formation-${formation.slug}`"
       :class="{ highlighted: isHighlighted(formation) }"
     >
-      {{ formation.nom }} - {{ formation.placeDisponible ? "Places disponibles" : "Pas de places disponibles" }}
-      – Nombre d'adresses : {{ formation.adresses.length }}
-      <em>{{ formation.structure? formation.structure.nom : formation.permanence?.nom }}</em>
+      <div class="section-title" @click.stop="toggleDescription(formation.slug)" @click="navigateTo(formation)">
+        <h3>
+          <a href="javascript:void(0)">
+            <div>
+              <span class="accordion-icon">{{ isDescriptionOpened(formation.slug) ? '−' : '+' }}</span>
+            </div>
+            <div>
+              {{ formation.nom }} – {{ formation.placeDisponible ? "Places disponibles" : "Pas de places disponibles" }}
+              <br />
+              <em>{{ formation.structure? formation.structure.nom : formation.permanence?.nom }}</em>
+            </div>
+          </a>
+        </h3>
+      </div>
+
+      <div v-if="isDescriptionOpened(formation.slug)">
+        <p>Description de la formation {{ formation.nom }}…</p>
+        <div class="more-btn">
+          <a
+            class="readon"
+            :href="formation.url"
+            target="_blank"
+          >
+            En savoir plus
+          </a>
+        </div>
+      </div>
     </li>
   </ul>
 </template>
 
 <style scoped>
-.list-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.toggle-btn {
-  background: transparent;
-  border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 0;
-}
-
-.toggle-btn:focus {
-  outline: 2px solid #007acc;
-}
-
-li {
-  list-style: inside;
-  padding: 5px;
-  cursor: pointer;
-}
-
-li:hover {
-  background-color: #f0f0f0;
-}
-
 em {
-  color: gray;
-}
-
-.highlighted {
-  background-color: #e0f7fa;
-  font-weight: bold;
+  font-weight: 400;
+  line-height: 1;
+  color: #777;
+  font-size: 9px;
 }
 </style>

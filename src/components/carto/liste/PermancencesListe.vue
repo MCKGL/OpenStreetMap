@@ -9,6 +9,7 @@ const router = useRouter();
 const route = useRoute();
 const isOpen = ref(true);
 const filters = useParsedFilters();
+const openDescriptions = ref<Record<string, boolean>>({});
 
 const props = defineProps<{
   permanences: PermanenceModel[];
@@ -53,6 +54,20 @@ function isHighlighted(permanence: PermanenceModel): boolean {
   );
 }
 
+function numberOfAdresses(permanences: PermanenceModel[]): number {
+  return permanences.reduce((acc, permanence) => {
+    return acc + (permanence.adresses ? permanence.adresses.length : 0);
+  }, 0);
+}
+
+function toggleDescription(slug: string) {
+  openDescriptions.value[slug] = !openDescriptions.value[slug];
+}
+
+function isDescriptionOpened(slug: string): boolean {
+  return !!openDescriptions.value[slug];
+}
+
 onMounted(() => {
   const slug = route.query.slug;
   if (route.query.type === 'permanence' && typeof slug === 'string') {
@@ -82,59 +97,66 @@ watch(
 
 <template>
   <div class="list-header">
-    <h2>Liste des Permanences {{filteredPermanences.length}}</h2>
+    <h2>{{ numberOfAdresses(filteredPermanences) }} Permanences</h2>
     <button
       class="toggle-btn"
       @click="toggleList"
       :aria-label="isOpen ? 'Fermer la liste' : 'Ouvrir la liste'"
     >
-      {{ isOpen ? '«' : '»' }}
+      <img
+        v-if="isOpen"
+        src="/icons/expand_up.svg"
+        alt="Fermer la liste"
+        width="20"
+        height="20"
+      />
+      <img
+        v-else
+        src="/icons/expand_down.svg"
+        alt="Ouvrir la liste"
+        width="20"
+        height="20"
+      />
     </button>
   </div>
-  <ul v-show="isOpen">
+  <ul v-show="isOpen" class="ul-list">
     <li
+      class="li-list"
       v-for="permanence in filteredPermanences"
       :key="permanence.id"
-      @click="navigateTo(permanence)"
       :id="`permanence-${permanence.slug}`"
       :class="{ highlighted: isHighlighted(permanence) }"
     >
-      {{ permanence.nom }} – Nombre d'adresses : {{ permanence.adresses.length }}
+      <div class="section-title" @click.stop="toggleDescription(permanence.slug)" @click="navigateTo(permanence)">
+        <h3>
+          <a href="javascript:void(0)">
+            <div>
+              <span class="accordion-icon">{{ isDescriptionOpened(permanence.slug) ? '−' : '+' }}</span>
+            </div>
+            <div>
+              {{ permanence.nom }} – {{ permanence.adresses.length }} Permanence{{ permanence.adresses.length > 1 ? 's' : '' }}
+            </div>
+          </a>
+        </h3>
+      </div>
+
+      <div v-if="isDescriptionOpened(permanence.slug)">
+        <p>Description de la permanence {{ permanence.nom }}…</p>
+        <div class="more-btn">
+          <a
+            class="readon"
+            :href="permanence.urlCoordination"
+            target="_blank"
+          >
+            En savoir plus
+          </a>
+        </div>
+      </div>
+
     </li>
   </ul>
 </template>
 
 <style scoped>
-.list-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
 
-.toggle-btn {
-  background: transparent;
-  border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 0;
-}
-
-.toggle-btn:focus {
-  outline: 2px solid #007acc;
-}
-
-li {
-  list-style: inside;
-  padding: 5px;
-  cursor: pointer;
-}
-
-li:hover {
-  background-color: #f0f0f0;
-}
-
-.highlighted {
-  background-color: #e0f7fa;
-  font-weight: bold;
-}
 </style>
