@@ -6,7 +6,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import type {AdresseModel} from "@/models/Adresse.model.ts";
 import type {FormationModel} from "@/models/Formation.model.ts";
-import {onMounted, ref, watch, computed, onBeforeUnmount} from 'vue';
+import {onMounted, ref, watch, computed, onBeforeUnmount, nextTick} from 'vue';
 import {useRoute, useRouter} from "vue-router";
 import type {Router} from 'vue-router';
 import {useParsedFilters} from "@/composables/useParsedFilters.ts";
@@ -690,6 +690,9 @@ watch(
   () => {
     markers.clearLayers();
     addMarkers();
+    nextTick(() => {
+      map.invalidateSize();
+    });
   },
   {deep: true}
 );
@@ -699,6 +702,9 @@ watch(
   () => {
     markers.clearLayers();
     addMarkers();
+    nextTick(() => {
+      map.invalidateSize();
+    });
     focusOnTargetMarker(map, markers, router);
     highlightMultiPoints({
       map,
