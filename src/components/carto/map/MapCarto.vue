@@ -95,11 +95,11 @@ function addMarkers() {
           f.adresses.some(ad => ad.latitude === latitude && ad.longitude === longitude)
         );
         // Choix de l'icône : bleu par défaut, jaune si au moins une place dispo, gris sinon
-        let iconUrl = '/icones/marker_blue.png';
+        let iconUrl = '/icons/marker_blue.png';
         if (atThisAddress.length) {
           iconUrl = atThisAddress.some(f => f.placeDisponible)
-            ? '/icones/marker_yellow.png'
-            : '/icones/marker_gray.png';
+            ? '/icons/marker_yellow.png'
+            : '/icons/marker_gray.png';
         }
 
         // Construction du contenu du popup
@@ -202,8 +202,8 @@ function addMarkers() {
 
         // Choix de l'icône : jaune si au moins une place dispo, gris sinon
         const iconUrl = formations.some(f => f.placeDisponible)
-          ? '/icones/marker_yellow.png'
-          : '/icones/marker_gray.png';
+          ? '/icons/marker_yellow.png'
+          : '/icons/marker_gray.png';
 
         // Création du marqueur
         const m = L.marker([latitude, longitude], {
@@ -299,8 +299,8 @@ function addMarkers() {
 
         const hasPlaces = formations.some(f => f.placeDisponible);
         const iconUrl = hasPlaces
-          ? '/icones/marker_yellow.png'
-          : '/icones/marker_gray.png';
+          ? '/icons/marker_yellow.png'
+          : '/icons/marker_gray.png';
 
 
         // Création du marqueur
@@ -361,7 +361,7 @@ function addMarkers() {
 
       const m = L.marker([latitude, longitude], {
         icon: L.icon({
-          iconUrl: '/icones/marker_black.png',
+          iconUrl: '/icons/marker_black.png',
           iconSize: [41, 41],
           iconAnchor: [22, 0]
         }),
@@ -608,10 +608,10 @@ function addLegend() {
       <button class="legend-toggle" aria-label="Afficher la légende">Légende</button>
       <div class="legend-content">
         <h4>Légende</h4>
-        <div><img class="ico-legend" src="/icones/marker_blue.png" alt="marqueur rouge structures"> Structures</div>
-        <div><img class="ico-legend" src="/icones/marker_black.png" alt="marqueur noir permanences"> Permanences</div>
-        <div><img class="ico-legend" src="/icones/marker_yellow.png" alt="marqueur bleu formations"> Formations avec place disponible</div>
-        <div><img class="ico-legend" src="/icones/marker_gray.png" alt="marqueur bleu formations"> Formations sans place disponible</div>
+        <div><img class="ico-legend" src="/icons/marker_blue.png" alt="marqueur rouge structures"> Structures</div>
+        <div><img class="ico-legend" src="/icons/marker_black.png" alt="marqueur noir permanences"> Permanences</div>
+        <div><img class="ico-legend" src="/icons/marker_yellow.png" alt="marqueur bleu formations"> Formations avec place disponible</div>
+        <div><img class="ico-legend" src="/icons/marker_gray.png" alt="marqueur bleu formations"> Formations sans place disponible</div>
       </div>
     `;
     const btn = c.querySelector<HTMLButtonElement>('.legend-toggle')!;

@@ -489,14 +489,6 @@ hr {
   background: #ddd;
 }
 
-h3 a {
-  color: #f14b51;
-  text-transform: uppercase;
-  font-size: 14px;
-  font-family: 'Noticia Text', serif;
-  text-decoration: none;
-}
-
 .section-title {
   margin: 0.5em;
 }
