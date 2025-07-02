@@ -109,16 +109,16 @@ watch(
       />
     </button>
   </div>
-  <ul v-show="isOpen" class="structures-list">
+  <ul v-show="isOpen" class="ul-list">
     <li
+      class="li-list"
       v-for="structure in filteredStructures"
       :key="structure.id"
-      @click="navigateTo(structure)"
       :id="`structure-${structure.slug}`"
       :class="{ highlighted: isHighlighted(structure) }"
     >
 
-      <div class="section-title" @click.stop="toggleDescription(structure.slug)">
+      <div class="section-title" @click.stop="toggleDescription(structure.slug)" @click="navigateTo(structure)">
         <h3>
           <a href="javascript:void(0)">
             <div>

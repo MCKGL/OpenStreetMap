@@ -119,15 +119,15 @@ watch(
       />
     </button>
   </div>
-  <ul v-show="isOpen">
+  <ul v-show="isOpen" class="ul-list">
     <li
+      class="li-list"
       v-for="permanence in filteredPermanences"
       :key="permanence.id"
-      @click="navigateTo(permanence)"
       :id="`permanence-${permanence.slug}`"
       :class="{ highlighted: isHighlighted(permanence) }"
     >
-      <div class="section-title" @click.stop="toggleDescription(permanence.slug)">
+      <div class="section-title" @click.stop="toggleDescription(permanence.slug)" @click="navigateTo(permanence)">
         <h3>
           <a href="javascript:void(0)">
             <div>

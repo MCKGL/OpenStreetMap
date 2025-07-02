@@ -125,15 +125,15 @@ watch(
       />
     </button>
   </div>
-  <ul v-show="isOpen">
+  <ul v-show="isOpen" class="ul-list">
     <li
+      class="li-list"
       v-for="formation in filteredFormations"
       :key="formation.id"
-      @click="navigateTo(formation)"
       :id="`formation-${formation.slug}`"
       :class="{ highlighted: isHighlighted(formation) }"
     >
-      <div class="section-title" @click.stop="toggleDescription(formation.slug)">
+      <div class="section-title" @click.stop="toggleDescription(formation.slug)" @click="navigateTo(formation)">
         <h3>
           <a href="javascript:void(0)">
             <div>
