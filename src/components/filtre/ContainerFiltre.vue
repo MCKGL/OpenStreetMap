@@ -507,20 +507,6 @@ label {
   font-weight: 400;
 }
 
-.accordion-icon {
-  display: inline-block;
-  width: 27px;
-  height: 27px;
-  font-size: 21px;
-  background: #f14b51;
-  border-radius: 50%;
-  color: #fff;
-  text-align: center;
-  line-height: 27px;
-  margin-right: 10px;
-  font-family: 'Open Sans', sans-serif;
-}
-
 .filter-button-mobile-container {
   width: auto;
   padding: 0.5em;
