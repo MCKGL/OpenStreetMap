@@ -98,18 +98,18 @@ export class FormationModel {
   permanence?: PermanenceModel;
 }
 
-export interface ObjectifViseModel {
-  objectifVise: string;
-  objectifViseDescription: string;
+export class ObjectifViseModel {
+  objectifVise!: string;
+  objectifViseDescription!: string;
 }
 
-export interface publicsSpecifiqueModel {
-  publicSpecifique	: string;
-  publicSpecifiqueDescription: string;
-  publicSpecifiquePrioritaire	: string;
+export class publicsSpecifiqueModel {
+  publicSpecifique!: string;
+  publicSpecifiqueDescription!: string;
+  publicSpecifiquePrioritaire!: string;
 }
 
-export interface programmeModel {
-  id: number;
-  nom: string;
+export class programmeModel {
+  id!: number;
+  nom!: string;
 }

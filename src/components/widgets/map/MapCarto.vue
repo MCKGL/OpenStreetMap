@@ -816,10 +816,6 @@ watch(
   height: 100%;
 }
 
-.leaflet-container a {
-  color: #fff;
-}
-
 /* Style custom pour les clusters #0F7ECB */
 .custom-cluster {
   background: rgba(15, 126, 203, 0.6);
@@ -860,7 +856,6 @@ watch(
 .legend-container.open .legend-content {
   display: block;
 }
-
 
 .legend-toggle {
   display: block;
@@ -925,6 +920,10 @@ watch(
 .popup-formation-list-none {
   margin: 10px;
   font-style: italic;
+}
+
+.leaflet-popup-content .popup-btn a {
+  color: #fff;
 }
 
 @media (max-width: 810px) {
