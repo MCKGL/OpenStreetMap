@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import MapCarto from "@/components/carto/map/MapCarto.vue";
+import MapCarto from "@/components/widgets/map/MapCarto.vue";
 import {computed, nextTick, onBeforeUnmount, onMounted, ref, watch} from "vue";
 import {StructureModel} from "@/models/Structure.model.ts";
 import {PermanenceModel} from "@/models/Permanence.model.ts";
@@ -11,10 +11,10 @@ import {
   getPermanences,
   getStructures
 } from "@/services/StructurePermanence.service.ts";
-import StructuresListe from "@/components/carto/liste/StructuresListe.vue";
-import PermancencesListe from "@/components/carto/liste/PermancencesListe.vue";
-import FormationsListe from "@/components/carto/liste/FormationsListe.vue";
-import ContainerFiltre from "@/components/filtre/ContainerFiltre.vue";
+import StructuresListe from "@/components/widgets/liste/StructuresListe.vue";
+import PermancencesListe from "@/components/widgets/liste/PermancencesListe.vue";
+import FormationsListe from "@/components/widgets/liste/FormationsListe.vue";
+import ContainerFiltre from "@/components/widgets/filtre/ContainerFiltre.vue";
 
 const structures = ref<StructureModel[]>([]);
 const permanences = ref<PermanenceModel[]>([]);

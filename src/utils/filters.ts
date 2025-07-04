@@ -44,17 +44,68 @@ function normalizeCompetence(c: string): string {
   return c.toLowerCase().replace(/\s*\(.*?\)/g, '').trim();
 }
 
-function parseLieuFilter(lieu: string): { ville: string; codePostal: string | null } {
-  const match = lieu.match(/\((\d{2,5})\)$/);
-  const codePostal = match ? match[1] : null;
-  const ville = lieu.replace(/\s*\(\d{2,5}\)$/, '').trim();
-  return {ville, codePostal};
+function parseLieuFilter(lieu: string): { ville: string; codePostaux: string[]; departement: string | null } {
+  // Le regex permet de capturer le nom de la ville et le code postal ou département entre parenthèses
+  const match = lieu.match(/^(.+?)\s*\(([^)]+)\)$/);
+
+  if (match) {
+    const ville = match[1].trim();
+    const code = match[2].trim();
+
+    // Si code = 2 chiffres → c’est un département
+    if (/^\d{2}$/.test(code)) {
+      return { ville, codePostaux: [], departement: code };
+    }
+
+    // Sinon, ce sont des codes postaux précis (ex: 95000,95800)
+    const codePostaux = code
+      .split(',')
+      .map(cp => cp.replace(/[^\d]/g, '').trim())
+      .filter(Boolean);
+
+    return { ville, codePostaux, departement: null };
+  }
+
+  // Si jamais le lieu est mal formé, on ignore
+  return { ville: '', codePostaux: [], departement: null };
 }
 
 type ArrayKeys = 'activites' | 'lieux' | 'publics' | 'objectifs' | 'joursHoraires';
 type StringKeys = 'scolarisation' | 'competence' | 'programmes' | 'keyword';
 type BooleanKeys = 'gardeEnfants' | 'coursEte';
 
+/**
+ * Cette fonction permet de découper une chaîne de caractères en respectant les parenthèses.
+ * Utilisée pour gérer les lieux avec des parenthèses (ex: "Ableiges (95450), Paris (75000)").
+ * @param input
+ */
+function splitRespectingParentheses(input: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let depth = 0;
+
+  for (let i = 0; i < input.length; i++) {
+    const char = input[i];
+
+    if (char === ',' && depth === 0) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      if (char === '(') depth++;
+      if (char === ')') depth--;
+      current += char;
+    }
+  }
+
+  if (current) result.push(current.trim());
+
+  return result;
+}
+
+/**
+ * Cette fonction permet de parser une chaîne de filtres au format "key:value".
+ * @param filters
+ */
 export function parseFilters(filters: string[]): FiltreModel {
   const result: FiltreModel = {};
 
@@ -66,13 +117,22 @@ export function parseFilters(filters: string[]): FiltreModel {
 
     if ((['gardeEnfants', 'coursEte'] as BooleanKeys[]).includes(key as BooleanKeys)) {
       result[key as BooleanKeys] = valueRaw.trim() === 'true';
+
     } else if ((['activites', 'lieux', 'publics', 'objectifs', 'joursHoraires'] as ArrayKeys[]).includes(key as ArrayKeys)) {
-      const values = valueRaw.split(',').map(v => v.trim());
+      let values: string[];
+
+      if (key === 'lieux') {
+        values = splitRespectingParentheses(valueRaw);
+      } else {
+        values = valueRaw.split(',').map(v => v.trim());
+      }
+
       if (key === 'joursHoraires') {
         result[key as ArrayKeys] = values.map(normalizeFilterJourHoraire);
       } else {
         result[key as ArrayKeys] = values;
       }
+
     } else if ((['scolarisation', 'competence', 'programmes', 'keyword'] as StringKeys[]).includes(key as StringKeys)) {
       result[key as StringKeys] = valueRaw.trim();
     }
@@ -99,15 +159,19 @@ function matchLieux(adresses: AdresseModel[] = [], filter: FiltreModel): boolean
   const lieuxFiltres = filter.lieux.map(parseLieuFilter);
 
   return adresses.some(adresse =>
-    lieuxFiltres.some(({ville, codePostal}) => {
-      if (!adresse) return false;
+    lieuxFiltres.some(({ ville, codePostaux, departement }) => {
+      if (!adresse?.codePostal || !adresse.ville) return false;
 
-      if (codePostal && codePostal.length === 2) {
-        return adresse.codePostal?.startsWith(codePostal);
-      } else if (ville) {
-        return adresse.ville?.toLowerCase() === ville.toLowerCase();
+      // Cas département (ex: 95)
+      if (departement) {
+        return adresse.codePostal.startsWith(departement);
       }
-      return false;
+
+      // Cas ville + codePostal complet
+      const matchesVille = adresse.ville.toLowerCase() === ville.toLowerCase();
+      const matchesCodePostal = codePostaux.includes(adresse.codePostal);
+
+      return matchesVille && matchesCodePostal;
     })
   );
 }
@@ -185,9 +249,7 @@ function matchCompetence(competences: string[] = [], filter: FiltreModel): boole
 
 export function permanencesFiltered(permanences: PermanenceModel[], filter: FiltreModel): PermanenceModel[] {
   return permanences.filter(p =>
-    matchActivites(p.activitesFormation, filter) &&
-    matchLieux(p.adresses, filter) &&
-    matchKeyword(p, filter)
+    matchLieux(p.adresses, filter)
   );
 }
 

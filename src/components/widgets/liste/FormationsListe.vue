@@ -15,9 +15,15 @@ const props = defineProps<{
   formations: FormationModel[];
 }>();
 
-const filteredFormations = computed(() =>
-  formationsFiltered(props.formations, filters.value)
-);
+const filteredFormations = computed(() => {
+  const filtered = formationsFiltered(props.formations, filters.value);
+
+  // Formations avec places disponibles en premier
+  return [...filtered].sort((a, b) => {
+    return (b.placeDisponible ? 1 : 0) - (a.placeDisponible ? 1 : 0);
+  });
+});
+
 
 function navigateTo(formation: FormationModel) {
   const adresses = formation.adresses || [];
