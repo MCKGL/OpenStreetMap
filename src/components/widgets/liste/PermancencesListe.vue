@@ -96,7 +96,7 @@ watch(
 </script>
 
 <template>
-  <div class="list-header">
+  <div class="list-header" v-if="filteredPermanences.length > 0">
     <h2>{{ numberOfAdresses(filteredPermanences) }} Permanences</h2>
     <button
       class="toggle-btn"

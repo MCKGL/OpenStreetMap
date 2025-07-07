@@ -109,7 +109,7 @@ watch(
 </script>
 
 <template>
-  <div class="list-header">
+  <div class="list-header" v-if="formationsFiltered.length > 0">
     <h2>{{filteredFormations.length}} Formations
       <br />
       (dont {{ numberOfPlacesAvailable(filteredFormations) }} avec places disponibles)
