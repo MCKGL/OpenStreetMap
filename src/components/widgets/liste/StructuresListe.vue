@@ -90,7 +90,7 @@ watch(
 </script>
 
 <template>
-  <div class="list-header">
+  <div class="list-header" v-if="filteredStructures.length > 0">
     <h2>{{filteredStructures.length}} Structures</h2>
     <button class="toggle-btn" @click="toggleList" :aria-label="isOpen ? 'Fermer la liste' : 'Ouvrir la liste'">
       <img
