@@ -9,5 +9,6 @@ export class FiltreModel {
   joursHoraires?: string[];
   gardeEnfants?: boolean;
   coursEte?: boolean;
+  formationDispo?: boolean;
   keyword?: string;
 }

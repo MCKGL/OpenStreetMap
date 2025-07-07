@@ -44,6 +44,7 @@ const objectifVise = Object.values(OBJECTIF_VISE);
 const programmes = ref<string[]>([]);
 const gardeEnfantsChecked = ref(false);
 const coursEteChecked = ref(false);
+const formaDispoChecked = ref(false);
 
 const horairesGeneraux = Object.values(HORAIRES);
 const joursSemaine = Object.values(JOURS_SEMAINE);
@@ -107,6 +108,7 @@ function applyFilters() {
   }
   if (gardeEnfantsChecked.value) filtersPayload.gardeEnfants = true;
   if (coursEteChecked.value) filtersPayload.coursEte = true;
+  if (formaDispoChecked.value) filtersPayload.formationDispo = true;
   if (keyword.length > 0) filtersPayload.keyword = keyword;
 
   isAdvancedOpen.value = false;
@@ -180,6 +182,7 @@ onMounted(async () => {
 
   gardeEnfantsChecked.value = (params.get('gardeEnfants') === 'true');
   coursEteChecked.value = (params.get('coursEte') === 'true');
+  formaDispoChecked.value = (params.get('formationDispo') === 'true');
 
   const keyword = params.get('keyword');
   if (keyword) {
@@ -343,6 +346,11 @@ onBeforeUnmount(() => {
                 <input type="checkbox" id="checkbox-summer" v-model="coursEteChecked" />
                 Cours d'été
               </label>
+
+              <label for="checkbox" class="label">
+                <input type="checkbox" id="checkbox-only-forma-available" v-model="formaDispoChecked" />
+                Afficher uniquement les formations avec places disponibles
+              </label>
             </div>
           </div>
 
@@ -457,6 +465,7 @@ onBeforeUnmount(() => {
   margin: 0.5em;
   display: flex;
   align-items: center;
+  gap: 10px;
 }
 
 #advanced-section-jours-horaires {

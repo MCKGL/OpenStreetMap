@@ -12,8 +12,12 @@ import {
 export const FILTER_KEYS = [
   'activites', 'lieux', 'scolarisation', 'competence',
   'programmes', 'publics', 'objectifs', 'joursHoraires',
-  'gardeEnfants', 'coursEte', 'keyword',
+  'gardeEnfants', 'coursEte', 'formationDispo', 'keyword',
 ] as const;
+
+type ArrayKeys = 'activites' | 'lieux' | 'publics' | 'objectifs' | 'joursHoraires';
+type StringKeys = 'scolarisation' | 'competence' | 'programmes' | 'keyword';
+type BooleanKeys = 'gardeEnfants' | 'coursEte' | 'formationDispo';
 
 export function hasAdvancedFilters(filters: FiltreModel): boolean {
   return (
@@ -24,7 +28,8 @@ export function hasAdvancedFilters(filters: FiltreModel): boolean {
     (filters.objectifs && filters.objectifs.length > 0) ||
     (filters.joursHoraires && filters.joursHoraires.length > 0) ||
     filters.gardeEnfants === true ||
-    filters.coursEte === true
+    filters.coursEte === true ||
+    filters.formationDispo === true
   );
 }
 
@@ -70,10 +75,6 @@ function parseLieuFilter(lieu: string): { ville: string; codePostaux: string[]; 
   return { ville: '', codePostaux: [], departement: null };
 }
 
-type ArrayKeys = 'activites' | 'lieux' | 'publics' | 'objectifs' | 'joursHoraires';
-type StringKeys = 'scolarisation' | 'competence' | 'programmes' | 'keyword';
-type BooleanKeys = 'gardeEnfants' | 'coursEte';
-
 /**
  * Cette fonction permet de découper une chaîne de caractères en respectant les parenthèses.
  * Utilisée pour gérer les lieux avec des parenthèses (ex: "Ableiges (95450), Paris (75000)").
@@ -115,7 +116,7 @@ export function parseFilters(filters: string[]): FiltreModel {
 
     const key = keyRaw.trim();
 
-    if ((['gardeEnfants', 'coursEte'] as BooleanKeys[]).includes(key as BooleanKeys)) {
+    if ((['gardeEnfants', 'coursEte', "formationDispo"] as BooleanKeys[]).includes(key as BooleanKeys)) {
       result[key as BooleanKeys] = valueRaw.trim() === 'true';
 
     } else if ((['activites', 'lieux', 'publics', 'objectifs', 'joursHoraires'] as ArrayKeys[]).includes(key as ArrayKeys)) {
@@ -215,6 +216,10 @@ function matchCoursEte(coursEte: boolean, filter: FiltreModel): boolean {
   return !filter.coursEte || coursEte;
 }
 
+function matchFormationDispo(formationDispo: boolean, filter: FiltreModel): boolean {
+  return !filter.formationDispo || formationDispo;
+}
+
 function matchJoursHoraires(horaires: string[] = [], filter: FiltreModel): boolean {
   if (!filter.joursHoraires?.length) return true;
 
@@ -248,6 +253,8 @@ function matchCompetence(competences: string[] = [], filter: FiltreModel): boole
 }
 
 export function permanencesFiltered(permanences: PermanenceModel[], filter: FiltreModel): PermanenceModel[] {
+  if (filter.formationDispo) return [];
+
   return permanences.filter(p =>
     matchLieux(p.adresses, filter)
   );
@@ -258,6 +265,7 @@ export function structuresFiltered(structures: StructureModel[], filter: FiltreM
     !!filter.competence ||
     !!filter.coursEte ||
     !!filter.gardeEnfants ||
+    !!filter.formationDispo ||
     !!filter.joursHoraires?.length ||
     !!filter.objectifs?.length ||
     !!filter.programmes ||
@@ -284,6 +292,7 @@ export function formationsFiltered(formations: FormationModel[], filter: FiltreM
     matchProgrammes(f.programmes, filter) &&
     matchGardeEnfants(f.gardeEnfants, filter) &&
     matchCoursEte(f.coursEte, filter) &&
+    matchFormationDispo(f.placeDisponible, filter) &&
     matchCompetence(f.competencesLinguistiquesVisees, filter) &&
     matchJoursHoraires(f.joursHoraires, filter)
   );
