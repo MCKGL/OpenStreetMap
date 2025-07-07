@@ -42,3 +42,12 @@
   display: flex;
   justify-content: end;
 }
+
+.list-elem-description {
+  margin: 20px;
+}
+
+.list-description-s-p-font * {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 14px;
+}

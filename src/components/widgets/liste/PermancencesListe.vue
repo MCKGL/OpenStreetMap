@@ -4,6 +4,7 @@ import {useRoute, useRouter} from "vue-router";
 import { PermanenceModel } from '@/models/Permanence.model.ts';
 import {useParsedFilters} from "@/composables/useParsedFilters.ts";
 import {permanencesFiltered} from "@/utils/filters.ts";
+import {truncateHtmlSimple} from "@/utils/formatText.ts";
 
 const router = useRouter();
 const route = useRoute();
@@ -141,7 +142,11 @@ watch(
       </div>
 
       <div v-if="isDescriptionOpened(permanence.slug)">
-        <p>Description de la permanence {{ permanence.nom }}…</p>
+
+        <div class="list-elem-description">
+          <div class="list-description-s-p-font" v-html="truncateHtmlSimple(permanence.description)"></div>
+        </div>
+
         <div class="more-btn">
           <a
             class="readon"
