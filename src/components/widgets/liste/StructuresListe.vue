@@ -4,6 +4,7 @@ import { StructureModel } from '@/models/Structure.model.ts';
 import {useRoute, useRouter} from 'vue-router';
 import {structuresFiltered} from "@/utils/filters.ts";
 import {useParsedFilters} from "@/composables/useParsedFilters.ts";
+import {truncateHtmlSimple} from "@/utils/formatText.ts";
 
 const router = useRouter();
 const route = useRoute();
@@ -132,7 +133,11 @@ watch(
       </div>
 
       <div v-if="isDescriptionOpen(structure.slug)">
-        <p>Description de la structure {{ structure.nom }}…</p>
+
+        <div class="list-elem-description">
+          <div class="list-description-s-p-font" v-html="truncateHtmlSimple(structure.description)"></div>
+        </div>
+
         <div class="more-btn">
           <a
             class="readon"

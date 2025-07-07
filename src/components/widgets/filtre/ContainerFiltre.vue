@@ -15,6 +15,7 @@ import * as VilleDepartementService from '@/services/VilleDepartement.service.ts
 import * as ProgrammeService from '@/services/Programme.service.ts'
 import router from "@/router";
 import type {LocationQueryRaw} from "vue-router";
+import {capitalize} from "@/utils/formatText.ts";
 
 const isFilterOpen = ref(false);
 const isMobile = ref(window.innerWidth <= 810);
@@ -70,10 +71,6 @@ const groupedJoursHoraires = [
     };
   })
 ];
-
-function capitalize(str: string) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
 
 function toggleFilter() {
   isFilterOpen.value = !isFilterOpen.value

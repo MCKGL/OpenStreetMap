@@ -90,6 +90,8 @@ export class FormationModel {
   publicsSpecifiques!: publicsSpecifiqueModel[];
   adresses!: AdresseModel[];
   joursHoraires!: string[];
+  dateDebut!: string;
+  dateFin!: string;
   programmes!: programmeModel[];
   coursEte!: boolean;
   placeDisponible!: boolean;

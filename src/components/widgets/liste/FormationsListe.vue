@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import {computed, nextTick, onMounted, ref, watch} from "vue";
 import {useRoute, useRouter} from "vue-router";
-import type { FormationModel } from "@/models/Formation.model.ts";
+import type {FormationModel} from "@/models/Formation.model.ts";
 import {useParsedFilters} from "@/composables/useParsedFilters.ts";
 import {formationsFiltered, hasAdvancedFilters} from "@/utils/filters.ts";
+import {formatDate} from "@/utils/formatText.ts";
 
 const router = useRouter();
 const route = useRoute();
@@ -48,12 +49,12 @@ function navigateTo(formation: FormationModel) {
     }
 
     if (!hasAdvFilters && formation.structure?.adresses?.some(sa =>
-        sa.latitude === a.latitude && sa.longitude === a.longitude)) {
+      sa.latitude === a.latitude && sa.longitude === a.longitude)) {
       query.structureSlug = formation.structure.slug;
     }
   }
 
-  router.push({ query });
+  router.push({query});
 }
 
 function toggleList() {
@@ -86,7 +87,7 @@ onMounted(() => {
   if (route.query.type === 'formation' && typeof slug === 'string') {
     nextTick(() => {
       const el = document.getElementById(`formation-${slug}`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (el) el.scrollIntoView({behavior: 'smooth', block: 'center'});
     });
   }
 });
@@ -98,23 +99,24 @@ watch(
       nextTick(() => {
         const el = document.getElementById(`formation-${query.slug}`);
         if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.scrollIntoView({behavior: 'smooth', block: 'center'});
         }
       });
     }
   },
-  { immediate: true }
+  {immediate: true}
 );
 
 </script>
 
 <template>
   <div class="list-header" v-if="formationsFiltered.length > 0">
-    <h2>{{filteredFormations.length}} Formations
-      <br />
+    <h2>{{ filteredFormations.length }} Formations
+      <br/>
       (dont {{ numberOfPlacesAvailable(filteredFormations) }} avec places disponibles)
     </h2>
-    <button class="toggle-btn" @click="toggleList" :aria-label="isOpen ? 'Fermer la liste' : 'Ouvrir la liste'">
+    <button class="toggle-btn" @click="toggleList"
+            :aria-label="isOpen ? 'Fermer la liste' : 'Ouvrir la liste'">
       <img
         v-if="isOpen"
         src="/icons/expand_up.svg"
@@ -139,23 +141,69 @@ watch(
       :id="`formation-${formation.slug}`"
       :class="{ highlighted: isHighlighted(formation) }"
     >
-      <div class="section-title" @click.stop="toggleDescription(formation.slug)" @click="navigateTo(formation)">
+      <div class="section-title" @click.stop="toggleDescription(formation.slug)"
+           @click="navigateTo(formation)">
         <h3>
           <a href="javascript:void(0)">
             <div>
-              <span class="accordion-icon">{{ isDescriptionOpened(formation.slug) ? '−' : '+' }}</span>
+              <span class="accordion-icon">{{
+                  isDescriptionOpened(formation.slug) ? '−' : '+'
+                }}</span>
             </div>
             <div>
-              {{ formation.nom }} – {{ formation.placeDisponible ? "Places disponibles" : "Pas de places disponibles" }}
-              <br />
-              <em>{{ formation.structure? formation.structure.nom : formation.permanence?.nom }}</em>
+              {{ formation.nom }} –
+              {{ formation.placeDisponible ? "Places disponibles" : "Pas de places disponibles" }}
+              <br/>
+              <em>{{
+                  formation.structure ? formation.structure.nom : formation.permanence?.nom
+                }}</em>
             </div>
           </a>
         </h3>
       </div>
 
       <div v-if="isDescriptionOpened(formation.slug)">
-        <p>Description de la formation {{ formation.nom }}…</p>
+
+        <div class="list-elem-description">
+          <div class="forma-descr-section" v-if="formation.objectifsVises.length > 0">
+            <strong class="descr-section-name">Objectifs visés : </strong>
+            <ul>
+              <li v-for="(objectif, idx) in formation.objectifsVises" :key="idx">
+                {{ objectif.objectifVise }}
+              </li>
+            </ul>
+          </div>
+
+          <div class="forma-descr-section" v-if="formation.competencesLinguistiquesVisees.length > 0">
+            <strong class="descr-section-name">Niveau de langue et de compétences visé par la formation : </strong>
+            <ul>
+              <li>
+                CECRL : <span>{{ formation.competencesLinguistiquesVisees.join(', ') }}</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="forma-descr-section" v-if="formation.criteresScolarisation.length > 0 || formation.publicsSpecifiques.length > 0">
+            <strong class="descr-section-name">Public attendu : </strong>
+            <ul v-if="formation.criteresScolarisation.length > 0">
+              <li v-for="(critere, idx) in formation.criteresScolarisation	" :key="idx">
+                {{ critere }}
+              </li>
+            </ul>
+            <ul v-if="formation.publicsSpecifiques.length > 0">
+              <li v-for="(publicSpe, idx) in formation.publicsSpecifiques" :key="idx">
+                {{ publicSpe.publicSpecifique }}
+              </li>
+            </ul>
+          </div>
+
+          <div class="forma-descr-section" v-if="formation.dateFin || formation.dateDebut">
+            <strong class="descr-section-name">Étendue de la formation : </strong>
+            {{formatDate(formation.dateDebut)}} - {{formatDate(formation.dateFin)}}
+          </div>
+
+        </div>
+
         <div class="more-btn">
           <a
             class="readon"
@@ -176,5 +224,15 @@ em {
   line-height: 1;
   color: #777;
   font-size: 9px;
+}
+
+.forma-descr-section {
+  margin-bottom: 10px;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 14px;
+}
+
+strong {
+  text-decoration: underline;
 }
 </style>
