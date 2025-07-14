@@ -30,6 +30,7 @@ let map: L.Map;
 let markers: L.MarkerClusterGroup;
 const router = useRouter();
 const route = useRoute();
+let uniqueCloneMarker: L.Marker | null = null;
 let highlightLayer: L.LayerGroup | null = null;
 let infoMulti: L.Control | null = null;
 const filters = useParsedFilters();
@@ -50,6 +51,7 @@ function initMap() {
 
   map.createPane('highlightPane');
   map.getPane('highlightPane')!.style.zIndex = '650';
+  map.getPane('highlightPane')!.style.pointerEvents = 'auto';
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
@@ -491,26 +493,32 @@ function bindFormationButtons(marker: L.Marker, slugStructure?: string) {
 }
 
 /**
- * Focalise la carte sur le marqueur cible si les paramètres de la route sont présents.
- * @param map La carte Leaflet
- * @param markers Le groupe de marqueurs
- * @param router Le routeur Vue
+ * Met en évidence un marqueur cible en fonction des paramètres de la route.
+ * Si un marqueur correspondant est trouvé, il est cloné pour éviter les problèmes de cluster et
+ * de zoom.
  */
 function focusOnTargetMarker(map: L.Map, markers: L.MarkerClusterGroup, router: Router) {
   const {latitude, longitude, type, slug, structureSlug} = router.currentRoute.value.query;
   if (!(latitude && longitude && type && slug)) return;
+
+  clearTargetClone()
+
+  if (uniqueCloneMarker) {
+    map.removeLayer(uniqueCloneMarker);
+    uniqueCloneMarker = null;
+  }
 
   const lat = parseFloat(latitude as string);
   const lng = parseFloat(longitude as string);
   const latLngStr = `${lat.toFixed(5)},${lng.toFixed(5)}`;
   const layers = markers.getLayers() as L.Marker[];
 
+  let target: L.Marker | undefined;
+
   const candidates = layers.filter(m => {
     const pos = m.getLatLng();
     return `${pos.lat.toFixed(5)},${pos.lng.toFixed(5)}` === latLngStr;
   });
-
-  let target: L.Marker | undefined;
 
   for (const m of candidates) {
     const customData = (m.options as MarkerOptions).customData;
@@ -532,7 +540,6 @@ function focusOnTargetMarker(map: L.Map, markers: L.MarkerClusterGroup, router: 
           break;
         }
       } else {
-        // formations orphelines : pas besoin de customData, chercher dans popup
         const popup = m.getPopup()?.getContent() as string;
         if (popup && popup.includes(slug as string)) {
           target = m;
@@ -542,17 +549,33 @@ function focusOnTargetMarker(map: L.Map, markers: L.MarkerClusterGroup, router: 
     }
   }
 
-  if (target) {
-    const latlng = target.getLatLng();
-    // Centrer la carte sur le marqueur
-    map.setView(latlng, 16, {animate: true});
-    // Eclater le cluster si nécessaire
-    markers.zoomToShowLayer(target, () => {
-      map.setView(latlng, 20, {animate: true});
-      target?.openPopup();
-      bindFormationButtons(target, router.currentRoute.value.query.structureSlug as string);
-    });
+  if (!target) return;
+
+  const latlng = target.getLatLng();
+
+  // Créer un clone temporaire pour contourner les clusters et permettre un zoom plus large
+  const origIcon = target.getIcon() as L.Icon;
+  const origUrl = origIcon.options.iconUrl as string;
+  const cloneUrl = origUrl.replace(/(marker_[a-z]+)\.png$/, '$1_clone.png');
+
+  const cloneIcon = L.icon({
+    ...origIcon.options,
+    iconUrl: cloneUrl
+  });
+
+  uniqueCloneMarker = L.marker(latlng, {
+    icon: cloneIcon,
+    pane: 'highlightPane'
+  }).addTo(map);
+
+  const popupContent = target.getPopup()?.getContent();
+  if (popupContent) {
+    uniqueCloneMarker.bindPopup(popupContent).openPopup();
   }
+
+  bindFormationButtons(uniqueCloneMarker, structureSlug as string);
+
+  map.setView(latlng, 15, {animate: true});
 }
 
 /**
@@ -566,6 +589,16 @@ function clearHighlight() {
   if (infoMulti) {
     infoMulti.remove();
     infoMulti = null;
+  }
+}
+
+/**
+ * Supprime le marqueur cloné unique utilisé pour mettre en évidence un marqueur cible.
+ */
+function clearTargetClone() {
+  if (uniqueCloneMarker) {
+    map.removeLayer(uniqueCloneMarker);
+    uniqueCloneMarker = null;
   }
 }
 
