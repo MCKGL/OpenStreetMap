@@ -130,7 +130,8 @@ function addMarkers() {
                     <ul class="popup-formation-list">
                         ${atThisAddress.map(f =>
             `<li>
-                         <button class="formation-link formation-list" data-slug="${f.slug}">
+                         <button class="formation-link formation-list ${!f.placeDisponible ? 'noDispo' : ''}"
+                                 data-slug="${f.slug}">
                            ${f.nom}
                          </button>
                        </li>`
@@ -198,7 +199,7 @@ function addMarkers() {
     ${formations.map(f => `
       <li>
         <button
-          class="orphan-link formation-list"
+          class="orphan-link formation-list ${!f.placeDisponible ? 'noDispo' : ''}"
           data-slug="${f.slug}">
           ${f.nom}
         </button>
@@ -310,7 +311,7 @@ function addMarkers() {
     ${formations.map(f => `
       <li>
         <button
-          class="orphan-link formation-list"
+          class="orphan-link formation-list ${!f.placeDisponible ? 'noDispo' : ''}"
           data-slug="${f.slug}">
           ${f.nom}
         </button>
@@ -738,10 +739,17 @@ function addLegend() {
       <button class="legend-toggle" aria-label="Afficher la légende">Légende</button>
       <div class="legend-content">
         <h4>Légende</h4>
-        <div><img class="ico-legend" src="/icons/marker_blue.png" alt="marqueur rouge structures"> Structures</div>
+        <div><img class="ico-legend" src="/icons/marker_blue.png" alt="marqueur bleu structures"> Structures</div>
         <div><img class="ico-legend" src="/icons/marker_black.png" alt="marqueur noir permanences"> Permanences</div>
-        <div><img class="ico-legend" src="/icons/marker_yellow.png" alt="marqueur bleu formations"> Formations avec place disponible</div>
-        <div><img class="ico-legend" src="/icons/marker_gray.png" alt="marqueur bleu formations"> Formations sans place disponible</div>
+        <div><img class="ico-legend" src="/icons/marker_yellow.png" alt="marqueur jaune formations place dispo"> Formations avec place disponible</div>
+        <div><img class="ico-legend" src="/icons/marker_gray.png" alt="marqueur gris formations sans place"> Formations sans place disponible</div>
+        <div>
+            <img class="ico-legend" src="/icons/marker_blue_clone.png" alt="marqueur bleu focus structures">
+            <img class="ico-legend" src="/icons/marker_black_clone.png" alt="marqueur noir focus permanences">
+            <img class="ico-legend" src="/icons/marker_yellow_clone.png" alt="marqueur jaune focus formations place dispo">
+            <img class="ico-legend" src="/icons/marker_gray_clone.png" alt="marqueur gris focus formations sans place dispo">
+            Votre sélection
+        </div>
       </div>
     `;
     const btn = c.querySelector<HTMLButtonElement>('.legend-toggle')!;
@@ -755,26 +763,23 @@ function addLegend() {
 }
 
 /**
- * Ajoute un bouton pour recentrer la carte sur l'Île-de-France et reset les paramètres d'URL
+ * Ajoute un bouton pour recentrer la carte sur les marqueurs visibles et reset les paramètres d'URL
  * typ, slug, latitude, longitude.
  */
 function addRecenterButton() {
-  const ileDeFranceBounds: L.LatLngBounds = L.latLngBounds([48.0, 1.6], [49.1, 3.6]);
-
   const ctrl = (L.control as unknown as (options: L.ControlOptions) => L.Control)({
     position: 'topright'
   });
 
   ctrl.onAdd = () => {
     const btn = L.DomUtil.create('button', 'recenter-btn');
-    btn.title = 'Recentrer sur Île-de-France';
+    btn.title = 'Recentrer sur la sélection';
     btn.innerHTML = '📍';
 
     L.DomEvent.disableClickPropagation(btn);
 
     btn.onclick = () => {
       map.closePopup();
-      map.fitBounds(ileDeFranceBounds, {animate: true});
 
       // Reset des paramètres d'URL slug, type, latitude, longitude
       const query = {...router.currentRoute.value.query};
@@ -785,6 +790,8 @@ function addRecenterButton() {
       delete query.longitude;
 
       router.replace({query});
+
+      fitVisibleMarkers(map, markers, router);
     };
     return btn;
   };
@@ -986,6 +993,10 @@ watch(
 
 .leaflet-popup-content .popup-btn a {
   color: #fff;
+}
+
+.popup-formation-list li .noDispo {
+  color: darkgrey;
 }
 
 @media (max-width: 810px) {
