@@ -81,6 +81,7 @@ function initMap() {
 function addMarkers() {
   if (!props.adresses) return;
   markers.clearLayers();
+  clearTargetClone();
 
   for (const adresse of filteredAdresses.value) {
     const {latitude, longitude} = adresse;
@@ -460,6 +461,9 @@ function addMarkers() {
     const fg = L.featureGroup(layers);
     map.fitBounds(fg.getBounds(), {padding: [50, 50]});
   }
+
+  // Focus sur le groupe de marqueurs
+  fitVisibleMarkers(map, markers, router);
 }
 
 /**
@@ -496,6 +500,9 @@ function bindFormationButtons(marker: L.Marker, slugStructure?: string) {
  * Met en évidence un marqueur cible en fonction des paramètres de la route.
  * Si un marqueur correspondant est trouvé, il est cloné pour éviter les problèmes de cluster et
  * de zoom.
+ * @param map La carte Leaflet
+ * @param markers Le groupe de marqueurs (MarkerClusterGroup)
+ * @param router Le routeur Vue Router
  */
 function focusOnTargetMarker(map: L.Map, markers: L.MarkerClusterGroup, router: Router) {
   const {latitude, longitude, type, slug, structureSlug} = router.currentRoute.value.query;
@@ -692,6 +699,29 @@ function highlightMultiPoints({map, markers, markerRefs, adresses, route}: {
   };
   infoMulti = newInfo;
   newInfo.addTo(map);
+}
+
+/**
+ * Ajuste la vue de la carte pour encadrer tous les marqueurs visibles.
+ * @param map
+ * @param markers
+ * @param router
+ */
+function fitVisibleMarkers(map: L.Map, markers: L.MarkerClusterGroup, router: Router) {
+  const { slug } = router.currentRoute.value.query;
+
+  if (slug) return;
+
+  const visibleLayers = markers.getLayers() as L.Marker[];
+
+  if (!visibleLayers.length) return;
+
+  const bounds = L.latLngBounds(visibleLayers.map(m => m.getLatLng()));
+  map.fitBounds(bounds, {
+    padding: [50, 50],
+    maxZoom: 15,
+    animate: true
+  });
 }
 
 /**
