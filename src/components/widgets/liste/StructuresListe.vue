@@ -134,7 +134,7 @@ watch(
         <div class="more-btn">
           <a
             class="readon"
-            :href="structure.urlCoordination"
+            :href="structure.url"
             target="_blank"
           >
             En savoir plus
