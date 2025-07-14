@@ -11,7 +11,7 @@ const router = useRouter();
 const route = useRoute();
 const isListOpen = ref(true);
 const filters = useParsedFilters();
-const { toggleDescription, isDescriptionOpen } = useOpenDescription();
+const { toggleDescription, isDescriptionOpen, openDescription } = useOpenDescription();
 
 const props = defineProps<{
   structures: StructureModel[];
@@ -62,6 +62,8 @@ onMounted(() => {
     nextTick(() => {
       const el = document.getElementById(`structure-${slug}`);
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      toggleDescription(slug);
     });
   }
 });
@@ -72,9 +74,9 @@ watch(
     if (query.type === 'structure' && typeof query.slug === 'string') {
       nextTick(() => {
         const el = document.getElementById(`structure-${query.slug}`);
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        openDescription(query.slug as string);
       });
     }
   },
@@ -112,7 +114,7 @@ watch(
       :class="{ highlighted: isHighlighted(structure) }"
     >
 
-      <div class="section-title" @click.stop="toggleDescription(structure.slug)" @click="navigateTo(structure)">
+      <div class="section-title" @click="navigateTo(structure)">
         <h3>
           <a href="javascript:void(0)">
             <div>
