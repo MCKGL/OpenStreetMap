@@ -259,7 +259,7 @@ watch(mobileView, (newView) => {
   }
 
   .list-content {
-    margin-top: 20px;
+    margin-top: 40px;
   }
 
   .list-panel,

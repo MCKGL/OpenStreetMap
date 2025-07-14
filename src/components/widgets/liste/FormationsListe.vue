@@ -5,12 +5,13 @@ import type {FormationModel} from "@/models/Formation.model.ts";
 import {useParsedFilters} from "@/composables/useParsedFilters.ts";
 import {formationsFiltered, hasAdvancedFilters} from "@/utils/filters.ts";
 import {formatDate} from "@/utils/formatText.ts";
+import {useOpenDescription} from "@/composables/useOpenDescription.ts";
 
 const router = useRouter();
 const route = useRoute();
-const isOpen = ref(true);
+const isListOpen = ref(true);
 const filters = useParsedFilters();
-const openDescriptions = ref<Record<string, boolean>>({});
+const { toggleDescription, isDescriptionOpen } = useOpenDescription();
 
 const props = defineProps<{
   formations: FormationModel[];
@@ -24,7 +25,6 @@ const filteredFormations = computed(() => {
     return (b.placeDisponible ? 1 : 0) - (a.placeDisponible ? 1 : 0);
   });
 });
-
 
 function navigateTo(formation: FormationModel) {
   const adresses = formation.adresses || [];
@@ -58,7 +58,7 @@ function navigateTo(formation: FormationModel) {
 }
 
 function toggleList() {
-  isOpen.value = !isOpen.value;
+  isListOpen.value = !isListOpen.value;
 }
 
 function isHighlighted(formation: FormationModel): boolean {
@@ -72,14 +72,6 @@ function numberOfPlacesAvailable(formations: FormationModel[]): number {
   return formations.reduce((acc, formation) => {
     return acc + (formation.placeDisponible ? 1 : 0);
   }, 0);
-}
-
-function toggleDescription(slug: string) {
-  openDescriptions.value[slug] = !openDescriptions.value[slug];
-}
-
-function isDescriptionOpened(slug: string): boolean {
-  return !!openDescriptions.value[slug];
 }
 
 onMounted(() => {
@@ -116,9 +108,9 @@ watch(
       (dont {{ numberOfPlacesAvailable(filteredFormations) }} avec places disponibles)
     </h2>
     <button class="toggle-btn" @click="toggleList"
-            :aria-label="isOpen ? 'Fermer la liste' : 'Ouvrir la liste'">
+            :aria-label="isListOpen ? 'Fermer la liste' : 'Ouvrir la liste'">
       <img
-        v-if="isOpen"
+        v-if="isListOpen"
         src="/icons/expand_up.svg"
         alt="Fermer la liste"
         width="20"
@@ -133,7 +125,7 @@ watch(
       />
     </button>
   </div>
-  <ul v-show="isOpen" class="ul-list">
+  <ul v-show="isListOpen" class="ul-list">
     <li
       class="li-list"
       v-for="formation in filteredFormations"
@@ -147,7 +139,7 @@ watch(
           <a href="javascript:void(0)">
             <div>
               <span class="accordion-icon">{{
-                  isDescriptionOpened(formation.slug) ? '−' : '+'
+                  isDescriptionOpen(formation.slug) ? '−' : '+'
                 }}</span>
             </div>
             <div>
@@ -162,7 +154,7 @@ watch(
         </h3>
       </div>
 
-      <div v-if="isDescriptionOpened(formation.slug)">
+      <div v-if="isDescriptionOpen(formation.slug)">
 
         <div class="list-elem-description">
           <div class="forma-descr-section" v-if="formation.objectifsVises.length > 0">
@@ -199,6 +191,7 @@ watch(
 
           <div class="forma-descr-section" v-if="formation.dateFin || formation.dateDebut">
             <strong class="descr-section-name">Étendue de la formation : </strong>
+            <br>
             {{formatDate(formation.dateDebut)}} - {{formatDate(formation.dateFin)}}
           </div>
 
