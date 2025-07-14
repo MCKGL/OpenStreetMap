@@ -5,12 +5,13 @@ import {useRoute, useRouter} from 'vue-router';
 import {structuresFiltered} from "@/utils/filters.ts";
 import {useParsedFilters} from "@/composables/useParsedFilters.ts";
 import {truncateHtmlSimple} from "@/utils/formatText.ts";
+import {useOpenDescription} from "@/composables/useOpenDescription.ts";
 
 const router = useRouter();
 const route = useRoute();
-const isOpen = ref(true);
+const isListOpen = ref(true);
 const filters = useParsedFilters();
-const openDescriptions = ref<Record<string, boolean>>({});
+const { toggleDescription, isDescriptionOpen } = useOpenDescription();
 
 const props = defineProps<{
   structures: StructureModel[];
@@ -45,7 +46,7 @@ function navigateTo(structure: StructureModel) {
 }
 
 function toggleList() {
-  isOpen.value = !isOpen.value;
+  isListOpen.value = !isListOpen.value;
 }
 
 function isHighlighted(structure: StructureModel): boolean {
@@ -53,14 +54,6 @@ function isHighlighted(structure: StructureModel): boolean {
     route.query.type === 'structure' &&
     route.query.slug === structure.slug
   );
-}
-
-function toggleDescription(slug: string) {
-  openDescriptions.value[slug] = !openDescriptions.value[slug];
-}
-
-function isDescriptionOpen(slug: string): boolean {
-  return openDescriptions.value[slug] || false;
 }
 
 onMounted(() => {
@@ -93,9 +86,9 @@ watch(
 <template>
   <div class="list-header" v-if="filteredStructures.length > 0">
     <h2>{{filteredStructures.length}} Structures</h2>
-    <button class="toggle-btn" @click="toggleList" :aria-label="isOpen ? 'Fermer la liste' : 'Ouvrir la liste'">
+    <button class="toggle-btn" @click="toggleList" :aria-label="isListOpen ? 'Fermer la liste' : 'Ouvrir la liste'">
       <img
-        v-if="isOpen"
+        v-if="isListOpen"
         src="/icons/expand_up.svg"
         alt="Fermer la liste"
         width="20"
@@ -110,7 +103,7 @@ watch(
       />
     </button>
   </div>
-  <ul v-show="isOpen" class="ul-list">
+  <ul v-show="isListOpen" class="ul-list">
     <li
       class="li-list"
       v-for="structure in filteredStructures"

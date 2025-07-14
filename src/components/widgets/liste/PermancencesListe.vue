@@ -5,12 +5,13 @@ import { PermanenceModel } from '@/models/Permanence.model.ts';
 import {useParsedFilters} from "@/composables/useParsedFilters.ts";
 import {permanencesFiltered} from "@/utils/filters.ts";
 import {truncateHtmlSimple} from "@/utils/formatText.ts";
+import {useOpenDescription} from "@/composables/useOpenDescription.ts";
 
 const router = useRouter();
 const route = useRoute();
-const isOpen = ref(true);
+const isListOpen = ref(true);
 const filters = useParsedFilters();
-const openDescriptions = ref<Record<string, boolean>>({});
+const { toggleDescription, isDescriptionOpen } = useOpenDescription();
 
 const props = defineProps<{
   permanences: PermanenceModel[];
@@ -45,7 +46,7 @@ function navigateTo(permanence: PermanenceModel) {
 }
 
 function toggleList() {
-  isOpen.value = !isOpen.value;
+  isListOpen.value = !isListOpen.value;
 }
 
 function isHighlighted(permanence: PermanenceModel): boolean {
@@ -59,14 +60,6 @@ function numberOfAdresses(permanences: PermanenceModel[]): number {
   return permanences.reduce((acc, permanence) => {
     return acc + (permanence.adresses ? permanence.adresses.length : 0);
   }, 0);
-}
-
-function toggleDescription(slug: string) {
-  openDescriptions.value[slug] = !openDescriptions.value[slug];
-}
-
-function isDescriptionOpened(slug: string): boolean {
-  return !!openDescriptions.value[slug];
 }
 
 onMounted(() => {
@@ -102,10 +95,10 @@ watch(
     <button
       class="toggle-btn"
       @click="toggleList"
-      :aria-label="isOpen ? 'Fermer la liste' : 'Ouvrir la liste'"
+      :aria-label="isListOpen ? 'Fermer la liste' : 'Ouvrir la liste'"
     >
       <img
-        v-if="isOpen"
+        v-if="isListOpen"
         src="/icons/expand_up.svg"
         alt="Fermer la liste"
         width="20"
@@ -120,7 +113,7 @@ watch(
       />
     </button>
   </div>
-  <ul v-show="isOpen" class="ul-list">
+  <ul v-show="isListOpen" class="ul-list">
     <li
       class="li-list"
       v-for="permanence in filteredPermanences"
@@ -132,7 +125,7 @@ watch(
         <h3>
           <a href="javascript:void(0)">
             <div>
-              <span class="accordion-icon">{{ isDescriptionOpened(permanence.slug) ? '−' : '+' }}</span>
+              <span class="accordion-icon">{{ isDescriptionOpen(permanence.slug) ? '−' : '+' }}</span>
             </div>
             <div>
               {{ permanence.nom }} – {{ permanence.adresses.length }} Permanence{{ permanence.adresses.length > 1 ? 's' : '' }}
@@ -141,7 +134,7 @@ watch(
         </h3>
       </div>
 
-      <div v-if="isDescriptionOpened(permanence.slug)">
+      <div v-if="isDescriptionOpen(permanence.slug)">
 
         <div class="list-elem-description">
           <div class="list-description-s-p-font" v-html="truncateHtmlSimple(permanence.description)"></div>
