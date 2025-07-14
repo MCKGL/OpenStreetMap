@@ -138,7 +138,7 @@ function addMarkers() {
         popup += `<div class="popup-btn">
                     <a
                       class="readon"
-                      href="${s.urlCoordination}"
+                      href="${s.url}"
                       target="_blank"
                     >
                       Voir la structure
@@ -228,7 +228,7 @@ function addMarkers() {
     <div class="popup-btn">
       <a
         class="readon"
-        href="${struct.urlCoordination}"
+        href="${struct.url}"
         target="_blank"
       >
         Voir la structure
@@ -339,7 +339,7 @@ function addMarkers() {
     <div class="popup-btn">
       <a
         class="readon"
-        href="${struct.urlCoordination}"
+        href="${struct.url}"
         target="_blank"
       >
         Voir la structure
@@ -351,7 +351,6 @@ function addMarkers() {
         const iconUrl = hasPlaces
           ? '/icons/marker_yellow.png'
           : '/icons/marker_gray.png';
-
 
         // Création du marqueur
         const m = L.marker([latitude, longitude], {
