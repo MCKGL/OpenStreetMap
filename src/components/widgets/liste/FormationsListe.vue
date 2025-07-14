@@ -11,7 +11,7 @@ const router = useRouter();
 const route = useRoute();
 const isListOpen = ref(true);
 const filters = useParsedFilters();
-const { toggleDescription, isDescriptionOpen } = useOpenDescription();
+const { toggleDescription, isDescriptionOpen, openDescription } = useOpenDescription();
 
 const props = defineProps<{
   formations: FormationModel[];
@@ -80,6 +80,8 @@ onMounted(() => {
     nextTick(() => {
       const el = document.getElementById(`formation-${slug}`);
       if (el) el.scrollIntoView({behavior: 'smooth', block: 'center'});
+
+      toggleDescription(slug);
     });
   }
 });
@@ -90,13 +92,13 @@ watch(
     if (query.type === 'formation' && typeof query.slug === 'string') {
       nextTick(() => {
         const el = document.getElementById(`formation-${query.slug}`);
-        if (el) {
-          el.scrollIntoView({behavior: 'smooth', block: 'center'});
-        }
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        openDescription(query.slug as string);
       });
     }
   },
-  {immediate: true}
+  { immediate: true }
 );
 
 </script>
@@ -133,7 +135,7 @@ watch(
       :id="`formation-${formation.slug}`"
       :class="{ highlighted: isHighlighted(formation) }"
     >
-      <div class="section-title" @click.stop="toggleDescription(formation.slug)"
+      <div class="section-title"
            @click="navigateTo(formation)">
         <h3>
           <a href="javascript:void(0)">

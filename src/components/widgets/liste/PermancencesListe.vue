@@ -11,7 +11,7 @@ const router = useRouter();
 const route = useRoute();
 const isListOpen = ref(true);
 const filters = useParsedFilters();
-const { toggleDescription, isDescriptionOpen } = useOpenDescription();
+const { toggleDescription, isDescriptionOpen, openDescription } = useOpenDescription();
 
 const props = defineProps<{
   permanences: PermanenceModel[];
@@ -68,6 +68,8 @@ onMounted(() => {
     nextTick(() => {
       const el = document.getElementById(`permanence-${slug}`);
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      toggleDescription(slug);
     });
   }
 });
@@ -78,9 +80,9 @@ watch(
     if (query.type === 'permanence' && typeof query.slug === 'string') {
       nextTick(() => {
         const el = document.getElementById(`permanence-${query.slug}`);
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        openDescription(query.slug as string);
       });
     }
   },
@@ -121,7 +123,7 @@ watch(
       :id="`permanence-${permanence.slug}`"
       :class="{ highlighted: isHighlighted(permanence) }"
     >
-      <div class="section-title" @click.stop="toggleDescription(permanence.slug)" @click="navigateTo(permanence)">
+      <div class="section-title" @click="navigateTo(permanence)">
         <h3>
           <a href="javascript:void(0)">
             <div>
