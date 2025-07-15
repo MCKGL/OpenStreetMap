@@ -10,7 +10,7 @@ import {onMounted, ref, watch, computed, onBeforeUnmount, nextTick} from 'vue';
 import {useRoute, useRouter} from "vue-router";
 import type {Router} from 'vue-router';
 import {useParsedFilters} from "@/composables/useParsedFilters.ts";
-import {adressesFiltered, hasAdvancedFilters} from "@/utils/filters.ts";
+import {adressesFiltered, FILTER_KEYS, hasAdvancedFilters} from "@/utils/filters.ts";
 
 // Import des modèles pour éviter les erreurs de type
 declare module 'leaflet' {
@@ -42,6 +42,17 @@ const props = defineProps<{
 const filteredAdresses = computed(() =>
   adressesFiltered(props.adresses, filters.value)
 );
+
+const filterQuery = computed(() => {
+  const query = router.currentRoute.value.query;
+  return FILTER_KEYS.reduce((acc, key) => {
+    if (key in query) {
+      acc[key] = query[key];
+    }
+    return acc;
+  }, {} as Record<string, unknown>);
+});
+
 
 /**
  * Initialise la carte Leaflet avec les tuiles OpenStreetMap.
@@ -264,6 +275,18 @@ function addMarkers() {
           });
         }
 
+        if (formations.length > 1) {
+          m.on('click', () => {
+            const query = {...router.currentRoute.value.query} as QueryParams;
+            delete query.type;
+            delete query.slug;
+            query.latitude = latitude.toString();
+            query.longitude = longitude.toString();
+            delete query.structureSlug;
+            router.replace({query});
+          });
+        }
+
         // A l'ouverture du popup, rattache le click sur les boutons .orphan-link
         m.on('popupopen', () => {
           const container = m.getPopup()!.getElement()!;
@@ -477,25 +500,36 @@ function addMarkers() {
 function bindFormationButtons(marker: L.Marker, slugStructure?: string) {
   const container = marker.getPopup()?.getElement();
   if (!container) return;
-  container
-    .querySelectorAll<HTMLButtonElement>('.formation-link')
-    .forEach(btn => {
-      btn.addEventListener('click', () => {
-        const slug = btn.dataset.slug!;
-        router.replace({
-          query: {
-            ...router.currentRoute.value.query,
-            type: 'formation',
-            slug,
-            structureSlug: slugStructure,
-            latitude: marker.getLatLng().lat.toString(),
-            longitude: marker.getLatLng().lng.toString()
-          }
-        });
+
+  container.querySelectorAll<HTMLButtonElement>('.formation-link, .orphan-link').forEach(btn => {
+    btn.onclick = null;
+
+    btn.addEventListener('click', () => {
+      const slug = btn.dataset.slug!;
+      const current = router.currentRoute.value.query;
+
+      if (current.slug === slug) {
         marker.closePopup();
-      });
+        setTimeout(() => {
+          focusOnTargetMarker(map, markers, router);
+        }, 0);
+      } else {
+        const query = {
+          ...current,
+          type: 'formation',
+          slug,
+          structureSlug: slugStructure,
+          latitude: marker.getLatLng().lat.toString(),
+          longitude: marker.getLatLng().lng.toString(),
+        };
+
+        router.replace({ query });
+        marker.closePopup();
+      }
     });
+  });
 }
+
 
 /**
  * Met en évidence un marqueur cible en fonction des paramètres de la route.
@@ -506,10 +540,9 @@ function bindFormationButtons(marker: L.Marker, slugStructure?: string) {
  * @param router Le routeur Vue Router
  */
 function focusOnTargetMarker(map: L.Map, markers: L.MarkerClusterGroup, router: Router) {
+  clearTargetClone();
   const {latitude, longitude, type, slug, structureSlug} = router.currentRoute.value.query;
   if (!(latitude && longitude && type && slug)) return;
-
-  clearTargetClone()
 
   if (uniqueCloneMarker) {
     map.removeLayer(uniqueCloneMarker);
@@ -579,9 +612,8 @@ function focusOnTargetMarker(map: L.Map, markers: L.MarkerClusterGroup, router: 
   const popupContent = target.getPopup()?.getContent();
   if (popupContent) {
     uniqueCloneMarker.bindPopup(popupContent).openPopup();
+    bindFormationButtons(uniqueCloneMarker, structureSlug as string);
   }
-
-  bindFormationButtons(uniqueCloneMarker, structureSlug as string);
 
   map.setView(latlng, 15, {animate: true});
 }
@@ -743,12 +775,13 @@ function addLegend() {
         <div><img class="ico-legend" src="/icons/marker_black.png" alt="marqueur noir permanences"> Permanences</div>
         <div><img class="ico-legend" src="/icons/marker_yellow.png" alt="marqueur jaune formations place dispo"> Formations avec place disponible</div>
         <div><img class="ico-legend" src="/icons/marker_gray.png" alt="marqueur gris formations sans place"> Formations sans place disponible</div>
+        <br>
+        <span>Point sélectionné :</span>
         <div>
             <img class="ico-legend" src="/icons/marker_blue_clone.png" alt="marqueur bleu focus structures">
             <img class="ico-legend" src="/icons/marker_black_clone.png" alt="marqueur noir focus permanences">
             <img class="ico-legend" src="/icons/marker_yellow_clone.png" alt="marqueur jaune focus formations place dispo">
             <img class="ico-legend" src="/icons/marker_gray_clone.png" alt="marqueur gris focus formations sans place dispo">
-            Votre sélection
         </div>
       </div>
     `;
@@ -778,7 +811,7 @@ function addRecenterButton() {
 
     L.DomEvent.disableClickPropagation(btn);
 
-    btn.onclick = () => {
+    btn.onclick = async () => {
       map.closePopup();
 
       // Reset des paramètres d'URL slug, type, latitude, longitude
@@ -789,8 +822,8 @@ function addRecenterButton() {
       delete query.latitude;
       delete query.longitude;
 
-      router.replace({query});
-
+      await router.replace({query});
+      await nextTick();
       fitVisibleMarkers(map, markers, router);
     };
     return btn;
@@ -826,6 +859,7 @@ watch(
   () => [props.adresses],
   () => {
     markers.clearLayers();
+    clearTargetClone();
     addMarkers();
     nextTick(() => {
       map.invalidateSize();
@@ -834,11 +868,16 @@ watch(
   {deep: true}
 );
 
+watch(filterQuery, (newVal, oldVal) => {
+  if (JSON.stringify(newVal) !== JSON.stringify(oldVal)) {
+    markers.clearLayers();
+    addMarkers();
+  }
+});
+
 watch(
   () => router.currentRoute.value.query,
   () => {
-    markers.clearLayers();
-    addMarkers();
     nextTick(() => {
       map.invalidateSize();
     });
