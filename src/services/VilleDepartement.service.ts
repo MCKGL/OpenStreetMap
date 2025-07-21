@@ -3,7 +3,7 @@ import type { VilleModel } from '@/models/Ville.model.ts';
 
 const JSON_PATH = import.meta.env.DEV
   ? '/api/villes-departements.json'
-  : 'https://staging-www.reseau-alpha.org/villes-departements.json';
+  : 'https://www.reseau-alpha.org/villes-departements.json';
 
 // Cache partagé pour le JSON des villes et départements
 let _rawCache: { Départements: Record<string, DepartementModel>, Ville: Record<string, VilleModel> } | null = null;
