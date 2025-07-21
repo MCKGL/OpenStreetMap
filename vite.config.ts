@@ -18,19 +18,19 @@ export default defineConfig({
   server: {
     proxy: {
       '/api/cartographie.json': {
-        target: 'https://staging-www.reseau-alpha.org',
+        target: 'https://www.reseau-alpha.org',
         changeOrigin: true,
         secure: false,
         rewrite: path => path.replace(/^\/api/, ''),
       },
       '/api/programmes.json': {
-        target: 'https://staging-www.reseau-alpha.org',
+        target: 'https://www.reseau-alpha.org',
         changeOrigin: true,
         secure: false,
         rewrite: path => path.replace(/^\/api/, ''),
       },
       '/api/villes-departements.json': {
-        target: 'https://staging-www.reseau-alpha.org',
+        target: 'https://www.reseau-alpha.org',
         changeOrigin: true,
         secure: false,
         rewrite: path => path.replace(/^\/api/, ''),
