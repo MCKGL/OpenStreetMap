@@ -1,3 +1,4 @@
-export class ProgrammeModel {
-  programme!: string;
+export class programmeModel {
+  id!: number;
+  nom!: string;
 }

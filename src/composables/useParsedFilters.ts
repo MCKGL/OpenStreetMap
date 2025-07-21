@@ -1,12 +1,12 @@
 import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import {FILTER_KEYS, parseFilters} from '@/utils/filters'
-import type { FiltreModel } from '@/models/Filtre.model'
+import {parseFilters} from '@/utils/filters'
+import {FILTER_KEYS, type FilterModel} from "@/types/FilterType.ts";
 
 type FilterKey = typeof FILTER_KEYS[number];
 export function useParsedFilters() {
   const route = useRoute()
-  const parsedFilters = ref<FiltreModel>({})
+  const parsedFilters = ref<FilterModel>({})
 
   function update() {
     const raw = Object.entries(route.query)

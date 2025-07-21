@@ -4,8 +4,6 @@ import 'vue-multiselect/dist/vue-multiselect.min.css'
 import Multiselect from 'vue-multiselect'
 import {
   ACTIVITE_FORMATION,
-  PUBLICS_SPECIFIQUES,
-  OBJECTIF_VISE,
   CRITERES_SCOLARISATION,
   COMPETENCES_LINGUISTIQUES_VISEES,
   HORAIRES,
@@ -16,6 +14,8 @@ import * as ProgrammeService from '@/services/Programme.service.ts'
 import router from "@/router";
 import type {LocationQueryRaw} from "vue-router";
 import {capitalize} from "@/utils/formatText.ts";
+import {PUBLICS_SPECIFIQUES} from "@/models/PublicSpecifique.model.ts";
+import {OBJECTIF_VISE} from "@/models/ObjectifVise.model.ts";
 
 const isFilterOpen = ref(false);
 const isMobile = ref(window.innerWidth <= 810);
@@ -397,7 +397,7 @@ onBeforeUnmount(() => {
 
 <style>
 .multiselect__tag, .multiselect__option--highlight {
-  background-color: #0F7ECB;
+  background-color: var(--color-blue-alpha);
 }
 
 .section-title h3 {
@@ -479,7 +479,7 @@ onBeforeUnmount(() => {
 #keyword-section-input .input {
   width: 100%;
   padding: 0.5em;
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-background-highlight);
   border-radius: 4px;
   flex: 2;
 }
@@ -487,12 +487,12 @@ onBeforeUnmount(() => {
 hr {
   margin: 0.5em;
   width: auto;
-  border-top: 1px solid #ccc;
-  color: #ddd;
+  border-top: 1px solid var(--color-background-highlight);
+  color: var(--color-background-soft);
 }
 
 #filter-container {
-  background: #ddd;
+  background: var(--color-background-soft);
 }
 
 .section-title {
@@ -501,15 +501,13 @@ hr {
 
 p {
   margin: 0.5em;
-  font-family: 'Open Sans', sans-serif;
-  color: #333;
-  font-size: 12px;
+  color: var(--color-text-note);
+  font-size: var(--subtext-font-size);
 }
 
 label {
-  font-family: 'Open Sans', sans-serif;
-  font-size: 14px;
-  color: #444444;
+  font-size: var(--text-font-size);
+  color: var(--color-text-label);
   font-weight: 400;
 }
 
