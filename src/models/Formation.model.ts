@@ -1,7 +1,7 @@
 import type {AdresseModel} from "@/models/Adresse.model.ts";
 import type {StructureModel} from "@/models/Structure.model.ts";
 import type {PermanenceModel} from "@/models/Permanence.model.ts";
-import type {programmeModel} from "@/models/Programme.model.ts";
+import type {ProgrammeModel} from "@/models/Programme.model.ts";
 import type {ObjectifViseModel} from "@/models/ObjectifVise.model.ts";
 import type {publicSpecifiqueModel} from "@/models/PublicSpecifique.model.ts";
 
@@ -60,7 +60,7 @@ export class FormationModel {
   joursHoraires!: string[];
   dateDebut!: string;
   dateFin!: string;
-  programmes!: programmeModel[];
+  programmes!: ProgrammeModel[];
   coursEte!: boolean;
   placeDisponible!: boolean;
   url!: string;

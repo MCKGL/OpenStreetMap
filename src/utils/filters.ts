@@ -6,7 +6,7 @@ import {
 } from "@/models/Formation.model.ts";
 import type {publicSpecifiqueModel} from "@/models/PublicSpecifique.model.ts";
 import type {ObjectifViseModel} from "@/models/ObjectifVise.model.ts";
-import type {programmeModel} from "@/models/Programme.model.ts";
+import type {ProgrammeModel} from "@/models/Programme.model.ts";
 import type { FilterModel, ArrayKeys, StringKeys, BooleanKeys } from '@/types/FilterType.ts';
 
 export function hasAdvancedFilters(filters: FilterModel): boolean {
@@ -193,7 +193,7 @@ function matchObjectifs(objectifsVises: ObjectifViseModel[] = [], filter: Filter
   return objectifsVises.some(o => filter.objectifs!.includes(o.objectifVise));
 }
 
-function matchProgrammes(programmes: programmeModel[] = [], filter: FilterModel): boolean {
+function matchProgrammes(programmes: ProgrammeModel[] = [], filter: FilterModel): boolean {
   return (filter.programmes?.length ?? 0) === 0 ||
     programmes.some(p => filter.programmes!.includes(p.nom));
 }

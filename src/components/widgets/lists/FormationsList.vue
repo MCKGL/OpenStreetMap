@@ -7,7 +7,7 @@ import {formationsFiltered, hasAdvancedFilters} from "@/utils/filters.ts";
 import {formatDate} from "@/utils/formatText.ts";
 import {useOpenDescription} from "@/composables/useOpenDescription.ts";
 import LogoProgramme from "@/components/widgets/LogosProgrammes/LogoProgramme.vue";
-import type {programmeModel} from "@/models/Programme.model.ts";
+import type {ProgrammeModel} from "@/models/Programme.model.ts";
 import {type ProgrammeCode, programmeMap} from "@/types/ProgrammeType.ts";
 
 const router = useRouter();
@@ -77,7 +77,7 @@ function numberOfPlacesAvailable(formations: FormationModel[]): number {
   }, 0);
 }
 
-function getValidProgrammeCode(programmes: programmeModel[]): ProgrammeCode | null {
+function getValidProgrammeCode(programmes: ProgrammeModel[]): ProgrammeCode | null {
   if (!programmes?.length) return null;
 
   for (const p of programmes) {
