@@ -167,8 +167,8 @@ watch(
                 }}</em>
             </div>
             <LogoProgramme
-              v-if="getValidProgrammeCode(formation.programmes)"
-              :programme="getValidProgrammeCode(formation.programmes)"
+              v-if="(code => code !== null)(getValidProgrammeCode(formation.programmes))"
+              :programme="getValidProgrammeCode(formation.programmes)!"
             />
           </a>
         </h3>
