@@ -156,7 +156,7 @@ onMounted(async () => {
   ];
 
   const progData = await ProgrammeService.getProgrammes();
-  programmes.value = progData.map(p => p.programme);
+  programmes.value = progData.map(p => p.nom);
 
   const params = new URLSearchParams(window.location.search);
 
