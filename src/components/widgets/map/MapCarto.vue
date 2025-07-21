@@ -10,7 +10,8 @@ import {onMounted, ref, watch, computed, onBeforeUnmount, nextTick} from 'vue';
 import {useRoute, useRouter} from "vue-router";
 import type {Router} from 'vue-router';
 import {useParsedFilters} from "@/composables/useParsedFilters.ts";
-import {adressesFiltered, FILTER_KEYS, hasAdvancedFilters} from "@/utils/filters.ts";
+import {adressesFiltered, hasAdvancedFilters} from "@/utils/filters.ts";
+import {FILTER_KEYS} from "@/types/FilterType.ts";
 
 // Import des modèles pour éviter les erreurs de type
 declare module 'leaflet' {
@@ -911,7 +912,7 @@ watch(
   border: none;
   background: none;
   text-align: inherit;
-  color: #0F7ECB;
+  color: var(--color-blue-alpha);
   cursor: pointer;
 }
 
@@ -930,7 +931,7 @@ watch(
   border-radius: 50%;
   color: white;
   text-align: center;
-  font-size: 14px;
+  font-size: var(--text-font-size);
   font-weight: bold;
   display: flex;
   align-items: center;
@@ -953,11 +954,11 @@ watch(
 
 .legend-content {
   display: none;
-  background: white;
+  background: var(--color-background);
   padding: 10px;
   border-radius: 5px;
   line-height: 1.4;
-  font-size: 14px;
+  font-size: var(--text-font-size);
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
 }
 
@@ -967,7 +968,7 @@ watch(
 
 .legend-toggle {
   display: block;
-  background: white;
+  background: var(--color-background);;
   border: none;
   border-radius: 5px 5px 0 0;
   padding: 5px 10px;
@@ -992,7 +993,7 @@ watch(
 }
 
 .popup-title {
-  font-size: 13px;
+  font-size: var(--subtitle-font-size);
   margin-top: 20px;
   font-weight: 600;
 }
@@ -1031,11 +1032,11 @@ watch(
 }
 
 .leaflet-popup-content .popup-btn a {
-  color: #fff;
+  color: var(--color-text-on-hightlight);
 }
 
 .popup-formation-list li .noDispo {
-  color: darkgrey;
+  color: var(--color-text-disabled-link);
 }
 
 @media (max-width: 810px) {

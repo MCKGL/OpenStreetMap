@@ -1,25 +1,15 @@
-import type {FiltreModel} from '@/models/Filtre.model'
 import type {PermanenceModel} from "@/models/Permanence.model.ts";
 import type {StructureModel} from "@/models/Structure.model.ts";
 import type {AdresseModel} from "@/models/Adresse.model.ts";
 import {
   FormationModel,
-  type ObjectifViseModel,
-  type programmeModel,
-  type publicsSpecifiqueModel
 } from "@/models/Formation.model.ts";
+import type {publicSpecifiqueModel} from "@/models/PublicSpecifique.model.ts";
+import type {ObjectifViseModel} from "@/models/ObjectifVise.model.ts";
+import type {ProgrammeModel} from "@/models/Programme.model.ts";
+import type { FilterModel, ArrayKeys, StringKeys, BooleanKeys } from '@/types/FilterType.ts';
 
-export const FILTER_KEYS = [
-  'activites', 'lieux', 'scolarisation', 'competence',
-  'programmes', 'publics', 'objectifs', 'joursHoraires',
-  'gardeEnfants', 'coursEte', 'formationDispo', 'keyword',
-] as const;
-
-type ArrayKeys = 'activites' | 'lieux' | 'publics' | 'objectifs' | 'joursHoraires';
-type StringKeys = 'scolarisation' | 'competence' | 'programmes' | 'keyword';
-type BooleanKeys = 'gardeEnfants' | 'coursEte' | 'formationDispo';
-
-export function hasAdvancedFilters(filters: FiltreModel): boolean {
+export function hasAdvancedFilters(filters: FilterModel): boolean {
   return (
     (filters.scolarisation && filters.scolarisation.length > 0) ||
     (filters.competence && filters.competence.length > 0) ||
@@ -107,8 +97,8 @@ function splitRespectingParentheses(input: string): string[] {
  * Cette fonction permet de parser une chaîne de filtres au format "key:value".
  * @param filters
  */
-export function parseFilters(filters: string[]): FiltreModel {
-  const result: FiltreModel = {};
+export function parseFilters(filters: string[]): FilterModel {
+  const result: FilterModel = {};
 
   filters.forEach(filterStr => {
     const [keyRaw, valueRaw] = filterStr.split(':');
@@ -142,7 +132,7 @@ export function parseFilters(filters: string[]): FiltreModel {
   return result;
 }
 
-function matchActivites(activites: string[] | string, filter: FiltreModel): boolean {
+function matchActivites(activites: string[] | string, filter: FilterModel): boolean {
   if (!filter.activites?.length) return true;
 
   const listeActivites = typeof activites === 'string' ? [activites] : activites ?? [];
@@ -154,7 +144,7 @@ function matchActivites(activites: string[] | string, filter: FiltreModel): bool
   );
 }
 
-function matchLieux(adresses: AdresseModel[] = [], filter: FiltreModel): boolean {
+function matchLieux(adresses: AdresseModel[] = [], filter: FilterModel): boolean {
   if (!filter.lieux || filter.lieux.length === 0) return true;
 
   const lieuxFiltres = filter.lieux.map(parseLieuFilter);
@@ -177,50 +167,50 @@ function matchLieux(adresses: AdresseModel[] = [], filter: FiltreModel): boolean
   );
 }
 
-function matchKeyword(obj: { nom: string; description?: string }, filter: FiltreModel): boolean {
+function matchKeyword(obj: { nom: string; description?: string }, filter: FilterModel): boolean {
   if (!filter.keyword?.trim()) return true;
 
   const keyword = filter.keyword.toLowerCase().trim();
   return obj.nom.toLowerCase().includes(keyword) || obj.description?.toLowerCase().includes(keyword) === true;
 }
 
-function matchScolarisation(criteres: string[] = [], filter: FiltreModel): boolean {
+function matchScolarisation(criteres: string[] = [], filter: FilterModel): boolean {
   return (filter.scolarisation?.length ?? 0) === 0 ||
     criteres.some(c => filter.scolarisation!.includes(c));
 }
 
-function matchPublics(publicsSpecifiques: publicsSpecifiqueModel[] | undefined, filter: FiltreModel): boolean {
+function matchPublics(publicsSpecifiques: publicSpecifiqueModel[] | undefined, filter: FilterModel): boolean {
   if (!filter.publics?.length) return true;
   if (!Array.isArray(publicsSpecifiques)) return false;
 
   return publicsSpecifiques.some(p => filter.publics!.includes(p.publicSpecifique));
 }
 
-function matchObjectifs(objectifsVises: ObjectifViseModel[] = [], filter: FiltreModel): boolean {
+function matchObjectifs(objectifsVises: ObjectifViseModel[] = [], filter: FilterModel): boolean {
   if (!filter.objectifs?.length) return true;
   if (!Array.isArray(objectifsVises)) return false;
 
   return objectifsVises.some(o => filter.objectifs!.includes(o.objectifVise));
 }
 
-function matchProgrammes(programmes: programmeModel[] = [], filter: FiltreModel): boolean {
+function matchProgrammes(programmes: ProgrammeModel[] = [], filter: FilterModel): boolean {
   return (filter.programmes?.length ?? 0) === 0 ||
     programmes.some(p => filter.programmes!.includes(p.nom));
 }
 
-function matchGardeEnfants(garde: boolean, filter: FiltreModel): boolean {
+function matchGardeEnfants(garde: boolean, filter: FilterModel): boolean {
   return !filter.gardeEnfants || garde;
 }
 
-function matchCoursEte(coursEte: boolean, filter: FiltreModel): boolean {
+function matchCoursEte(coursEte: boolean, filter: FilterModel): boolean {
   return !filter.coursEte || coursEte;
 }
 
-function matchFormationDispo(formationDispo: boolean, filter: FiltreModel): boolean {
+function matchFormationDispo(formationDispo: boolean, filter: FilterModel): boolean {
   return !filter.formationDispo || formationDispo;
 }
 
-function matchJoursHoraires(horaires: string[] = [], filter: FiltreModel): boolean {
+function matchJoursHoraires(horaires: string[] = [], filter: FilterModel): boolean {
   if (!filter.joursHoraires?.length) return true;
 
   const formationHoraires = horaires.map(h => h.toLowerCase().trim());
@@ -243,7 +233,7 @@ function matchJoursHoraires(horaires: string[] = [], filter: FiltreModel): boole
   });
 }
 
-function matchCompetence(competences: string[] = [], filter: FiltreModel): boolean {
+function matchCompetence(competences: string[] = [], filter: FilterModel): boolean {
   if (!filter.competence?.trim()) return true;
 
   const normalizedFilter = normalizeCompetence(filter.competence);
@@ -252,7 +242,7 @@ function matchCompetence(competences: string[] = [], filter: FiltreModel): boole
   return normalizedFormation.includes(normalizedFilter);
 }
 
-export function permanencesFiltered(permanences: PermanenceModel[], filter: FiltreModel): PermanenceModel[] {
+export function permanencesFiltered(permanences: PermanenceModel[], filter: FilterModel): PermanenceModel[] {
   if (filter.formationDispo) return [];
 
   return permanences.filter(p =>
@@ -260,7 +250,7 @@ export function permanencesFiltered(permanences: PermanenceModel[], filter: Filt
   );
 }
 
-export function structuresFiltered(structures: StructureModel[], filter: FiltreModel): StructureModel[] {
+export function structuresFiltered(structures: StructureModel[], filter: FilterModel): StructureModel[] {
   const hasAdvancedFilter =
     !!filter.competence ||
     !!filter.coursEte ||
@@ -281,7 +271,7 @@ export function structuresFiltered(structures: StructureModel[], filter: FiltreM
   );
 }
 
-export function formationsFiltered(formations: FormationModel[], filter: FiltreModel): FormationModel[] {
+export function formationsFiltered(formations: FormationModel[], filter: FilterModel): FormationModel[] {
   return formations.filter(f =>
     matchActivites(f.activite, filter) &&
     matchLieux(f.adresses, filter) &&
@@ -298,7 +288,7 @@ export function formationsFiltered(formations: FormationModel[], filter: FiltreM
   );
 }
 
-export function adressesFiltered(adresses: AdresseModel[], filter: FiltreModel): AdresseModel[] {
+export function adressesFiltered(adresses: AdresseModel[], filter: FilterModel): AdresseModel[] {
   return adresses
     .filter(adresse => matchLieux([adresse], filter))
     .map(adresse => ({

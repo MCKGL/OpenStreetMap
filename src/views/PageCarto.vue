@@ -11,10 +11,10 @@ import {
   getPermanences,
   getStructures
 } from "@/services/StructurePermanence.service.ts";
-import StructuresListe from "@/components/widgets/liste/StructuresListe.vue";
-import PermancencesListe from "@/components/widgets/liste/PermancencesListe.vue";
-import FormationsListe from "@/components/widgets/liste/FormationsListe.vue";
-import ContainerFiltre from "@/components/widgets/filtre/ContainerFiltre.vue";
+import StructuresList from "@/components/widgets/lists/StructuresList.vue";
+import PermancencesList from "@/components/widgets/lists/PermancencesList.vue";
+import FormationsList from "@/components/widgets/lists/FormationsList.vue";
+import ContainerFilters from "@/components/widgets/filters/ContainerFilters.vue";
 
 const structures = ref<StructureModel[]>([]);
 const permanences = ref<PermanenceModel[]>([]);
@@ -85,7 +85,7 @@ watch(mobileView, (newView) => {
   <div v-if="loading" class="loading">Chargement…</div>
   <div v-else class="all-carto-container">
     <div class="container-filtre">
-      <ContainerFiltre @toggle-filter="onToggleFilter"/>
+      <ContainerFilters @toggle-filter="onToggleFilter"/>
     </div>
     <div class="carto-wrapper" :class="mobileClass">
       <div class="view-switch" v-show="isMobile && !isFilterOpen">
@@ -106,9 +106,9 @@ watch(mobileView, (newView) => {
             {{ isOpen ? '«' : '»' }}
           </button>
           <div class="list-content" ref="listContentRef">
-            <PermancencesListe :permanences="permanences"/>
-            <FormationsListe :formations="formations"/>
-            <StructuresListe :structures="structures"/>
+            <PermancencesList :permanences="permanences"/>
+            <FormationsList :formations="formations"/>
+            <StructuresList :structures="structures"/>
           </div>
           <button
             v-if="!isMobile || mobileView==='list'"
@@ -175,8 +175,8 @@ watch(mobileView, (newView) => {
 }
 
 .view-switch button.active {
-  background: #0F7ECB;
-  color: white;
+  background: var(--color-blue-alpha);
+  color: var(--color-text-on-hightlight);
 }
 
 .panels {
@@ -194,7 +194,7 @@ watch(mobileView, (newView) => {
   display: flex;
   flex-direction: column;
   width: 33.33%;
-  background: white;
+  background: var(--color-background);;
   transition: width 0.3s;
   box-shadow: 2px 0 5px rgba(0,0,0,0.1);
   overflow: hidden;
@@ -205,7 +205,7 @@ watch(mobileView, (newView) => {
   position: absolute;
   border: none;
   cursor: pointer;
-  background: #f14b51 none repeat scroll 0 0;
+  background: var(--color-hightlight) none repeat scroll 0 0;
   bottom: 20px;
   font-size: 30px;
   height: 50px;

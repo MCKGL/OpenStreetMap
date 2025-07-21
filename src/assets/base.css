@@ -1,6 +1,49 @@
+:root {
+  --vt-c-white: #fff;
+
+  --vt-c-gray-soft: #ddd;
+  --vt-c-gray: #ccc;
+
+  --vt-c-red: #f14b51;
+  --vt-c-red-darker: #e13a40;
+
+  --vt-c-blue: #0F7ECB;
+
+  --vt-c-gray-strong-softer: #777;
+  --vt-c-gray-strong: #444444;
+  --vt-c-gray-stronger: #333;
+
+  --font-title: 'Noticia Text', serif;
+  --font-body: 'Open Sans', sans-serif;
+
+  --text-font-size: 14px;
+  --subtext-font-size: 11px;
+  --subtitle-font-size: 13px;
+  --button-font-size: 14px;
+  --link-font-size: 14px;
+}
+
+:root {
+  --color-background: var(--vt-c-white);
+  --color-background-soft: var(--vt-c-gray-soft);
+  --color-background-highlight: var(--vt-c-gray);
+  --color-hightlight: var(--vt-c-red);
+  --color-hightlight-hover: var(--vt-c-red-darker);
+  --color-text-on-hightlight: var(--vt-c-white);
+  --color-text-label: var(--vt-c-gray-strong);
+  --color-text-note: var(--vt-c-gray-stronger);
+  --color-text-subtext: var(--vt-c-gray-strong-softer);
+  --color-text-disabled-link: var(--vt-c-gray-strong-softer);
+  --color-blue-alpha: var(--vt-c-blue);
+}
+
+h1, h2, h3 {
+  font-family: var(--font-title), serif;
+}
 html, body, #app {
   height: 100%;
   margin: 0;
+  font-family: var(--font-body), sans-serif;
 }
 #app {
   display: flex;

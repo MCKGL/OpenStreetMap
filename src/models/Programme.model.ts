@@ -1,3 +1,3 @@
 export class ProgrammeModel {
-  programme!: string;
+  nom!: string;
 }

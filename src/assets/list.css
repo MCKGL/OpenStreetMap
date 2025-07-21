@@ -4,7 +4,6 @@
 }
 
 .list-header h2 {
-  font-family: 'Noticia Text', serif;
   font-weight: 400;
   margin: 0 0 20px;
 }
@@ -48,6 +47,5 @@
 }
 
 .list-description-s-p-font * {
-  font-family: 'Open Sans', sans-serif;
-  font-size: 14px;
+  font-size: var(--text-font-size);
 }

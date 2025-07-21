@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import {computed, nextTick, onMounted, ref, watch} from "vue";
 import {useRoute, useRouter} from "vue-router";
-import type {FormationModel} from "@/models/Formation.model.ts";
+import {type FormationModel} from "@/models/Formation.model.ts";
 import {useParsedFilters} from "@/composables/useParsedFilters.ts";
 import {formationsFiltered, hasAdvancedFilters} from "@/utils/filters.ts";
 import {formatDate} from "@/utils/formatText.ts";
 import {useOpenDescription} from "@/composables/useOpenDescription.ts";
+import LogoProgramme from "@/components/widgets/LogosProgrammes/LogoProgramme.vue";
+import type {ProgrammeModel} from "@/models/Programme.model.ts";
+import {type ProgrammeCode, programmeMap} from "@/types/ProgrammeType.ts";
 
 const router = useRouter();
 const route = useRoute();
@@ -72,6 +75,17 @@ function numberOfPlacesAvailable(formations: FormationModel[]): number {
   return formations.reduce((acc, formation) => {
     return acc + (formation.placeDisponible ? 1 : 0);
   }, 0);
+}
+
+function getValidProgrammeCode(programmes: ProgrammeModel[]): ProgrammeCode | null {
+  if (!programmes?.length) return null;
+
+  for (const p of programmes) {
+    const code = programmeMap[p.nom];
+    if (code) return code;
+  }
+
+  return null;
 }
 
 onMounted(() => {
@@ -152,6 +166,10 @@ watch(
                   formation.structure ? formation.structure.nom : formation.permanence?.nom
                 }}</em>
             </div>
+            <LogoProgramme
+              v-if="(code => code !== null)(getValidProgrammeCode(formation.programmes))"
+              :programme="getValidProgrammeCode(formation.programmes)!"
+            />
           </a>
         </h3>
       </div>
@@ -217,14 +235,13 @@ watch(
 em {
   font-weight: 400;
   line-height: 1;
-  color: #777;
-  font-size: 9px;
+  color: var(--color-text-subtext);
+  font-size: var(--subtext-font-size);
 }
 
 .forma-descr-section {
   margin-bottom: 10px;
-  font-family: 'Open Sans', sans-serif;
-  font-size: 14px;
+  font-size: var(--text-font-size);
 }
 
 strong {

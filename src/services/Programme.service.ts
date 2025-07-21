@@ -34,7 +34,7 @@ function fetchAll(): Promise<Record<string, string>> {
 export function getProgrammes(): Promise<ProgrammeModel[]> {
   return fetchAll().then(data =>
     Object.entries(data).map(([key, value]) => {
-      return { programme: value };
+      return { nom: value };
     })
   );
 }

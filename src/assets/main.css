@@ -3,29 +3,28 @@
 
 .readon {
   display: inline-block;
-  border: 2px solid #f14b51;
-  background: #f14b51;
+  border: 2px solid var(--color-hightlight);
+  background: var(--color-hightlight);
   text-align: center;
   text-decoration: none;
   transition: all 0.3s ease-in-out 0s;
   border-radius: 5px;
   padding: 6px 20px;
-  color: #fff;
+  color: var(--color-text-on-hightlight);
   height: fit-content;
-  font-size: 14px;
+  font-size: var(--button-font-size);
   cursor: pointer;
 }
 
 .readon:hover {
-  background: #e13a40 none repeat scroll 0 0;
-  border-color: #e13a40;
+  background: var(--color-hightlight-hover) none repeat scroll 0 0;
+  border-color: var(--color-hightlight-hover);
 }
 
 h3 a {
-  color: #f14b51;
+  color: var(--color-hightlight);
   text-transform: uppercase;
-  font-size: 14px;
-  font-family: 'Noticia Text', serif;
+  font-size: var(--link-font-size);
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -36,11 +35,11 @@ h3 a {
   width: 27px;
   height: 27px;
   font-size: 21px;
-  background: #f14b51;
+  background: var(--color-hightlight);
   border-radius: 50%;
-  color: #fff;
+  color: var(--color-text-on-hightlight);
+  font-family: var(--font-body), sans-serif;
   text-align: center;
   line-height: 27px;
   margin-right: 10px;
-  font-family: 'Open Sans', sans-serif;
 }
