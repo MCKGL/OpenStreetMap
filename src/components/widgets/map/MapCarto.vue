@@ -276,6 +276,7 @@ function addMarkers() {
           });
         }
 
+        // Si plusieurs formations, clic = reset des paramètres d'URL
         if (formations.length > 1) {
           m.on('click', () => {
             const query = {...router.currentRoute.value.query} as QueryParams;
@@ -335,7 +336,7 @@ function addMarkers() {
     ${formations.map(f => `
       <li>
         <button
-          class="orphan-link formation-list ${!f.placeDisponible ? 'noDispo' : ''}"
+          class="formation-link formation-list ${!f.placeDisponible ? 'noDispo' : ''}"
           data-slug="${f.slug}">
           ${f.nom}
         </button>
@@ -399,6 +400,19 @@ function addMarkers() {
           });
         }
 
+        // Si plusieurs formations : clic = reset des paramètres d'URL
+        if (formations.length > 1) {
+          m.on('click', () => {
+            const query = {...router.currentRoute.value.query} as QueryParams;
+            delete query.type;
+            delete query.slug;
+            query.latitude = latitude.toString();
+            query.longitude = longitude.toString();
+            delete query.structureSlug;
+            router.replace({query});
+          });
+        }
+
         // Sinon : clics dans popup
         m.on('popupopen', () => {
           const container = m.getPopup()!.getElement()!;
@@ -416,9 +430,7 @@ function addMarkers() {
             });
           });
         });
-
         markers.addLayer(m);
-
         for (const f of formations) {
           const key = `formation-${f.slug}-${latitude}-${longitude}`;
           markerRefs[key] = m;
@@ -477,18 +489,6 @@ function addMarkers() {
     }
 
   }
-
-  const {latitude, longitude} = route.query;
-  const hasLatLngInUrl = latitude !== undefined && longitude !== undefined;
-  // recentrage automatique
-  const layers = markers.getLayers() as L.Marker[];
-  if (layers.length && hasLatLngInUrl) {
-    const fg = L.featureGroup(layers);
-    map.fitBounds(fg.getBounds(), {padding: [50, 50]});
-  }
-
-  // Focus sur le groupe de marqueurs
-  fitVisibleMarkers(map, markers, router);
 }
 
 /**
@@ -616,7 +616,25 @@ function focusOnTargetMarker(map: L.Map, markers: L.MarkerClusterGroup, router: 
     bindFormationButtons(uniqueCloneMarker, structureSlug as string);
   }
 
-  map.setView(latlng, 15, {animate: true});
+  // Calcul du décalage basé sur la hauteur de la fenêtre
+  const screenHeight = window.innerHeight;
+  let offset = 0.005;
+
+  // a ajuster selon la résolution de l'écran (déjà testé mais a voir selon retour utilisateur)
+  if (screenHeight <= 720) {
+    offset = 0.004;
+  } else if (screenHeight <= 900) {
+    offset = 0.005;
+  } else if (screenHeight <= 1080) {
+    offset = 0.005;
+  } else if (screenHeight <= 1440) {
+    offset = 0.005;
+  } else {
+    offset = 0.005;
+  }
+
+  const offsetLatLng = L.latLng(latlng.lat + offset, latlng.lng);
+  map.setView(offsetLatLng, 15, { animate: true });
 }
 
 /**
@@ -899,7 +917,6 @@ watch(
 </template>
 
 <style>
-
 #map {
   height: 100%;
 }
@@ -1031,6 +1048,12 @@ watch(
   font-style: italic;
 }
 
+.leaflet-popup-content {
+  max-width: 300px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
 .leaflet-popup-content .popup-btn a {
   color: var(--color-text-on-hightlight);
 }
@@ -1046,6 +1069,22 @@ watch(
 
   .leaflet-control-container .leaflet-top .recenter-btn {
     margin-top: 50px;
+  }
+}
+
+@media (max-width: 600px) {
+  .leaflet-popup-content {
+    max-width: 300px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+}
+
+@media screen and (max-height: 900px), screen and (max-width: 1440px) {
+  .leaflet-popup-content {
+    max-width: 300px;
+    max-height: 300px;
+    overflow-y: auto;
   }
 }
 </style>
