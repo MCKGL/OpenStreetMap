@@ -223,7 +223,7 @@ onBeforeUnmount(() => {
             :deselect-label="''"
           />
         </div>
-        <div id="fist-section-place" class="global-input">
+        <div id="first-section-place" class="global-input">
           <label for="lieux-select" class="label">Ville ou code postal :</label>
           <Multiselect
             id="lieux-select"
@@ -240,7 +240,11 @@ onBeforeUnmount(() => {
             :deselect-label="''"
           />
         </div>
-        <div id="fist-section-button">
+        <div id="first-section-button">
+          <a href="https://www.reseau-alpha.org/pdf/recherche_reseau-alpha_francais.pdf" target="_blank">
+            <img class="icon-instruction" src="/icons/question.svg" alt="Instructions de la recherche" />
+          </a>
+
           <button class="readon" @click="applyFilters">Trouver</button>
         </div>
 
@@ -249,13 +253,33 @@ onBeforeUnmount(() => {
       <hr />
 
       <section class="advanced-section">
-        <div class="section-title" @click="isAdvancedOpen = !isAdvancedOpen">
-          <h3>
+        <div class="section-title filter-advanced-title">
+          <h3 @click="isAdvancedOpen = !isAdvancedOpen">
             <a href="javascript:void(0)">
               <span class="accordion-icon">{{ isAdvancedOpen ? '−' : '+' }}</span>
               Recherche Avancée
             </a>
           </h3>
+          <div class="instructions-links">
+            <a href="https://www.reseau-alpha.org/pdf/recherche_reseau-alpha_anglais.pdf" target="_blank">
+              English <span>|</span>
+            </a>
+            <a href="https://www.reseau-alpha.org/pdf/recherche_reseau-alpha_arabe.pdf" target="_blank">
+              العَرَبيّة <span>|</span>
+            </a>
+            <a href="https://www.reseau-alpha.org/pdf/recherche_reseau-alpha_chinois.pdf" target="_blank">
+              中文 <span>|</span>
+            </a>
+            <a href="https://www.reseau-alpha.org/pdf/recherche_reseau-alpha_espagnol.pdf" target="_blank">
+              Español <span>|</span>
+            </a>
+            <a href="https://www.reseau-alpha.org/pdf/recherche_reseau-alpha_roumain.pdf" target="_blank">
+              Român <span>|</span>
+            </a>
+            <a href="https://www.reseau-alpha.org/pdf/recherche_reseau-alpha_russe.pdf" target="_blank">
+              Русский
+            </a>
+          </div>
         </div>
         <section v-show="isAdvancedOpen" class="advanced-section">
           <p>Ces critères ne s’appliquent qu’aux formations publiées. Certaines structures
@@ -402,6 +426,25 @@ onBeforeUnmount(() => {
 
 .section-title h3 {
   margin: 0;
+  flex: 2;
+}
+
+.filter-advanced-title {
+  display: flex;
+}
+
+.instructions-links a {
+  text-decoration: none;
+  color: var(--color-blue-alpha);
+  font-size: var(--text-font-size);
+}
+
+.instructions-links a:hover {
+  text-decoration: underline;
+}
+
+.icon-instruction{
+  width: 30px;
 }
 
 #filter-container {
@@ -425,14 +468,15 @@ onBeforeUnmount(() => {
   flex: 2;
 }
 
-#fist-section-place {
+#first-section-place {
   flex: 3;
 }
 
-#fist-section-button {
+#first-section-button {
   flex: 1;
   margin: 0.5em;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
 }
