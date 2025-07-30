@@ -788,9 +788,12 @@ function addLegend() {
   });
 
   legend.onAdd = () => {
-    const c = L.DomUtil.create('div', 'legend-container');
+    const c = L.DomUtil.create('div', 'legend-container open');
+
     c.innerHTML = `
-      <button class="legend-toggle" aria-label="Afficher la légende">Légende</button>
+      <button class="legend-toggle" aria-label="Fermer la légende">
+        <img class="btn-legend" src="/icons/expand_up.svg" alt="Fermer la légende">
+      </button>
       <div class="legend-content">
         <h4>Légende</h4>
         <div><img class="ico-legend" src="/icons/marker_blue.png" alt="marqueur bleu structures"> Structures</div>
@@ -807,10 +810,14 @@ function addLegend() {
         </div>
       </div>
     `;
+
     const btn = c.querySelector<HTMLButtonElement>('.legend-toggle')!;
     btn.onclick = () => {
       const isOpen = c.classList.toggle('open');
-      btn.textContent = isOpen ? '✕' : 'Légende';
+      btn.innerHTML = isOpen
+        ? `<img class="btn-legend" src="/icons/expand_up.svg" alt="Fermer la légende">`
+        : `Légende <img class="btn-legend" src="/icons/expand_down.svg" alt="Ouvrir la légende">`;
+      btn.setAttribute('aria-label', isOpen ? 'Fermer la légende' : 'Ouvrir la légende');
     };
     return c;
   };
@@ -925,7 +932,17 @@ watch(
 }
 
 .legend-toggle {
-  display: none;
+  display: flex;
+  background: var(--color-background);;
+  border: none;
+  border-radius: 5px 5px 0 0;
+  padding: 5px 10px;
+  cursor: pointer;
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  transform: translateY(50%);
+  align-items: center;
 }
 
 .formation-list {
@@ -986,22 +1003,14 @@ watch(
   display: block;
 }
 
-.legend-toggle {
-  display: block;
-  background: var(--color-background);;
-  border: none;
-  border-radius: 5px 5px 0 0;
-  padding: 5px 10px;
-  cursor: pointer;
-  position: absolute;
-  bottom: 100%;
-  right: 0;
-  transform: translateY(50%);
-}
-
 .ico-legend {
   width: 30px;
   height: 30px;
+}
+
+.btn-legend{
+  width: 20px;
+  height: 20px;
 }
 
 .popup-activity-list {

@@ -87,6 +87,10 @@ watch(mobileView, (newView) => {
     <div class="container-filtre">
       <ContainerFilters @toggle-filter="onToggleFilter"/>
     </div>
+
+    <div class="container-reminder">Pour rappel, l’annuaire est collaboratif, les formations sont renseignées par
+      les structures elles-mêmes</div>
+
     <div class="carto-wrapper" :class="mobileClass">
       <div class="view-switch" v-show="isMobile && !isFilterOpen">
         <button
@@ -146,6 +150,13 @@ watch(mobileView, (newView) => {
   z-index: 10;
 }
 
+.container-reminder{
+  display: flex;
+  justify-content: center;
+  font-size: var(--text-font-size);
+  padding: 10px;
+}
+
 .carto-wrapper {
   flex: 1 1 auto;
   display: flex;
@@ -156,7 +167,7 @@ watch(mobileView, (newView) => {
 .view-switch {
   display: none;
   position: absolute;
-  top: 80px;
+  top: 140px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
