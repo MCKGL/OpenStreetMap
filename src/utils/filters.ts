@@ -144,18 +144,19 @@ function matchActivites(activites: string[] | string, filter: FilterModel): bool
   );
 }
 
-function matchLieux(adresses: AdresseModel[] = [], filter: FilterModel): boolean {
-  if (!filter.lieux || filter.lieux.length === 0) return true;
+function matchLieux(adresses: AdresseModel[] = [], filter: FilterModel): AdresseModel[] {
+  if (!filter.lieux || filter.lieux.length === 0) return adresses;
 
   const lieuxFiltres = filter.lieux.map(parseLieuFilter);
 
-  return adresses.some(adresse =>
+  return adresses.filter(adresse =>
     lieuxFiltres.some(({ ville, codePostaux, departement }) => {
       if (!adresse?.codePostal || !adresse.ville) return false;
 
       // Cas département (ex: 95)
       if (departement) {
-        return adresse.codePostal.startsWith(departement);
+        const codeDepAdresse = adresse.codePostal.slice(0, 2);
+        return codeDepAdresse === departement;
       }
 
       // Cas ville + codePostal complet
@@ -245,9 +246,18 @@ function matchCompetence(competences: string[] = [], filter: FilterModel): boole
 export function permanencesFiltered(permanences: PermanenceModel[], filter: FilterModel): PermanenceModel[] {
   if (filter.formationDispo) return [];
 
-  return permanences.filter(p =>
-    matchLieux(p.adresses, filter)
-  );
+  return permanences
+    .map(p => {
+      const matchingAdresses = matchLieux(p.adresses, filter);
+
+      if (matchingAdresses.length === 0) return null;
+
+      return {
+        ...p,
+        adresses: matchingAdresses,
+      };
+    })
+    .filter((p): p is PermanenceModel => p !== null);
 }
 
 export function structuresFiltered(structures: StructureModel[], filter: FilterModel): StructureModel[] {
@@ -264,42 +274,73 @@ export function structuresFiltered(structures: StructureModel[], filter: FilterM
 
   if (hasAdvancedFilter) return [];
 
-  return structures.filter(s =>
-    matchActivites(s.activitesFormation, filter) &&
-    matchLieux(s.adresses, filter) &&
-    matchKeyword(s, filter)
-  );
+  return structures
+    .map(s => {
+      const matchingAdresses = matchLieux(s.adresses, filter);
+
+      if (matchingAdresses.length === 0) return null;
+
+      return {
+        ...s,
+        adresses: matchingAdresses,
+      };
+    })
+    .filter(s =>
+      s !== null &&
+      matchActivites(s.activitesFormation, filter) &&
+      matchKeyword(s, filter)
+    ) as StructureModel[];
 }
 
 export function formationsFiltered(formations: FormationModel[], filter: FilterModel): FormationModel[] {
-  return formations.filter(f =>
-    matchActivites(f.activite, filter) &&
-    matchLieux(f.adresses, filter) &&
-    matchKeyword(f, filter) &&
-    matchScolarisation(f.criteresScolarisation, filter) &&
-    matchPublics(f.publicsSpecifiques, filter) &&
-    matchObjectifs(f.objectifsVises, filter) &&
-    matchProgrammes(f.programmes, filter) &&
-    matchGardeEnfants(f.gardeEnfants, filter) &&
-    matchCoursEte(f.coursEte, filter) &&
-    matchFormationDispo(f.placeDisponible, filter) &&
-    matchCompetence(f.competencesLinguistiquesVisees, filter) &&
-    matchJoursHoraires(f.joursHoraires, filter)
-  );
+  return formations
+    .map(f => {
+      const matchingAdresses = matchLieux(f.adresses, filter);
+
+      if (matchingAdresses.length === 0) {
+        return null;
+      }
+
+      return {
+        ...f,
+        adresses: matchingAdresses,
+      };
+    })
+    .filter(f =>
+      f !== null &&
+      matchActivites(f.activite, filter) &&
+      matchKeyword(f, filter) &&
+      matchScolarisation(f.criteresScolarisation, filter) &&
+      matchPublics(f.publicsSpecifiques, filter) &&
+      matchObjectifs(f.objectifsVises, filter) &&
+      matchProgrammes(f.programmes, filter) &&
+      matchGardeEnfants(f.gardeEnfants, filter) &&
+      matchCoursEte(f.coursEte, filter) &&
+      matchFormationDispo(f.placeDisponible, filter) &&
+      matchCompetence(f.competencesLinguistiquesVisees, filter) &&
+      matchJoursHoraires(f.joursHoraires, filter)
+    ) as FormationModel[];
 }
 
 export function adressesFiltered(adresses: AdresseModel[], filter: FilterModel): AdresseModel[] {
   return adresses
-    .filter(adresse => matchLieux([adresse], filter))
-    .map(adresse => ({
-      ...adresse,
-      formations: formationsFiltered(adresse.formations ?? [], filter),
-      structures: structuresFiltered(adresse.structures ?? [], filter),
-      permanences: permanencesFiltered(adresse.permanences ?? [], filter)
-    }))
+    .map(adresse => {
+      const matching = matchLieux([adresse], filter);
+      if (matching.length === 0) return null;
+
+      const a = matching[0];
+
+      return {
+        ...a,
+        formations: formationsFiltered(a.formations ?? [], filter),
+        structures: structuresFiltered(a.structures ?? [], filter),
+        permanences: permanencesFiltered(a.permanences ?? [], filter),
+      };
+    })
     .filter(adresse =>
-      adresse.formations.length > 0 ||
-      adresse.structures.length > 0 ||
-      adresse.permanences.length > 0
-    );
+      adresse &&
+      (adresse.formations.length > 0 ||
+        adresse.structures.length > 0 ||
+        adresse.permanences.length > 0)
+    ) as AdresseModel[];
 }

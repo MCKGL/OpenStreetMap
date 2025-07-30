@@ -237,8 +237,6 @@ watch(mobileView, (newView) => {
   right:10px;
   width: 30px;
   height:30px;
-  background: #fafafa;
-  border-radius:50%;
   z-index: 8;
 }
 

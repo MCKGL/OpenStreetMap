@@ -42,6 +42,9 @@ function fetchAll(): Promise<ApiResponse> {
       return res.json() as Promise<ApiResponse>;
     })
     .then(data => {
+      data.structures = data.structures?.filter(s => s.slug !== 'test-reseau-alpha') ?? [];
+      data.permanences = data.permanences?.filter(p => p.slug !== 'test-reseau-alpha') ?? [];
+
       _rawCache = data;
       _cacheTimestamp = Date.now();
       return data;

@@ -49,6 +49,11 @@ function toggleList() {
   isListOpen.value = !isListOpen.value;
 }
 
+function onClickPermanence(permanence: PermanenceModel) {
+  toggleDescription(permanence.slug);
+  navigateTo(permanence);
+}
+
 function isHighlighted(permanence: PermanenceModel): boolean {
   return (
     route.query.type === 'permanence' &&
@@ -123,7 +128,7 @@ watch(
       :id="`permanence-${permanence.slug}`"
       :class="{ highlighted: isHighlighted(permanence) }"
     >
-      <div class="section-title" @click="navigateTo(permanence)">
+      <div class="section-title" @click="onClickPermanence(permanence)">
         <h3>
           <a href="javascript:void(0)">
             <div>
