@@ -241,10 +241,6 @@ onBeforeUnmount(() => {
           />
         </div>
         <div id="first-section-button">
-          <a href="https://www.reseau-alpha.org/pdf/recherche_reseau-alpha_francais.pdf" target="_blank">
-            <img class="icon-instruction" src="/icons/question.svg" alt="Instructions de la recherche" />
-          </a>
-
           <button class="readon" @click="applyFilters">Trouver</button>
         </div>
 
@@ -261,6 +257,10 @@ onBeforeUnmount(() => {
             </a>
           </h3>
           <div class="instructions-links">
+            <img class="icon-instruction" src="/icons/question.svg" alt="Instructions de la recherche" />
+            <a href="https://www.reseau-alpha.org/pdf/recherche_reseau-alpha_francais.pdf" target="_blank">
+              Français <span>|</span>
+            </a>
             <a href="https://www.reseau-alpha.org/pdf/recherche_reseau-alpha_anglais.pdf" target="_blank">
               English <span>|</span>
             </a>
@@ -570,6 +570,10 @@ label {
   }
   .filter-button-mobile-container {
     display: block;
+  }
+
+  .section-title {
+    flex-direction: column-reverse;
   }
 }
 
