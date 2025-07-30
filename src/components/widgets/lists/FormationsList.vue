@@ -64,6 +64,11 @@ function toggleList() {
   isListOpen.value = !isListOpen.value;
 }
 
+function onClickFormation(formation: FormationModel) {
+  toggleDescription(formation.slug);
+  navigateTo(formation);
+}
+
 function isHighlighted(formation: FormationModel): boolean {
   return (
     route.query.type === 'formation' &&
@@ -150,7 +155,7 @@ watch(
       :class="{ highlighted: isHighlighted(formation) }"
     >
       <div class="section-title"
-           @click="navigateTo(formation)">
+           @click="onClickFormation(formation)">
         <h3>
           <a href="javascript:void(0)">
             <div>

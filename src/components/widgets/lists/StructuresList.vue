@@ -19,6 +19,7 @@ const props = defineProps<{
 
 const filteredStructures = computed(() =>
   structuresFiltered(props.structures, filters.value)
+    .sort((a, b) => a.nom.localeCompare(b.nom))
 );
 
 function navigateTo(structure: StructureModel) {
@@ -47,6 +48,11 @@ function navigateTo(structure: StructureModel) {
 
 function toggleList() {
   isListOpen.value = !isListOpen.value;
+}
+
+function onClickStructure(structure: StructureModel) {
+  toggleDescription(structure.slug);
+  navigateTo(structure);
 }
 
 function isHighlighted(structure: StructureModel): boolean {
@@ -114,7 +120,7 @@ watch(
       :class="{ highlighted: isHighlighted(structure) }"
     >
 
-      <div class="section-title" @click="navigateTo(structure)">
+      <div class="section-title" @click="onClickStructure(structure)">
         <h3>
           <a href="javascript:void(0)">
             <div>

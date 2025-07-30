@@ -73,6 +73,7 @@ function initMap() {
     spiderfyOnMaxZoom: true,
     showCoverageOnHover: false,
     zoomToBoundsOnClick: true,
+    maxClusterRadius: 40,
     iconCreateFunction: cluster => {
       const count = cluster.getChildCount();
       return L.divIcon({
@@ -489,6 +490,8 @@ function addMarkers() {
     }
 
   }
+  // Recentrer sur les marqueurs visibles et ajuster la vue
+  fitVisibleMarkers(map, markers, router);
 }
 
 /**
@@ -1049,7 +1052,7 @@ watch(
 }
 
 .leaflet-popup-content {
-  max-width: 300px;
+  max-width: 350px;
   max-height: 500px;
   overflow-y: auto;
 }
