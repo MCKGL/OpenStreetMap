@@ -9,8 +9,9 @@ import {useOpenDescription} from "@/composables/useOpenDescription.ts";
 
 const router = useRouter();
 const route = useRoute();
-const isListOpen = ref(true);
 const filters = useParsedFilters();
+const hasQuerySlug = route.query.type === 'permanence' && typeof route.query.slug === 'string';
+const isListOpen = ref(hasQuerySlug);
 const { toggleDescription, isDescriptionOpen, openDescription } = useOpenDescription();
 
 const props = defineProps<{
@@ -70,11 +71,13 @@ function numberOfAdresses(permanences: PermanenceModel[]): number {
 onMounted(() => {
   const slug = route.query.slug;
   if (route.query.type === 'permanence' && typeof slug === 'string') {
+    isListOpen.value = true;
     nextTick(() => {
-      const el = document.getElementById(`permanence-${slug}`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-      toggleDescription(slug);
+      nextTick(() => {
+        const el = document.getElementById(`permanence-${slug}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        openDescription(slug);
+      });
     });
   }
 });
@@ -83,6 +86,7 @@ watch(
   () => route.query,
   (query) => {
     if (query.type === 'permanence' && typeof query.slug === 'string') {
+      isListOpen.value = true;
       nextTick(() => {
         const el = document.getElementById(`permanence-${query.slug}`);
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });

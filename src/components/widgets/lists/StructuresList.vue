@@ -9,8 +9,9 @@ import {useOpenDescription} from "@/composables/useOpenDescription.ts";
 
 const router = useRouter();
 const route = useRoute();
-const isListOpen = ref(true);
 const filters = useParsedFilters();
+const hasQuerySlug = route.query.type === 'structure' && typeof route.query.slug === 'string';
+const isListOpen = ref(hasQuerySlug);
 const { toggleDescription, isDescriptionOpen, openDescription } = useOpenDescription();
 
 const props = defineProps<{
@@ -65,11 +66,13 @@ function isHighlighted(structure: StructureModel): boolean {
 onMounted(() => {
   const slug = route.query.slug;
   if (route.query.type === 'structure' && typeof slug === 'string') {
+    isListOpen.value = true;
     nextTick(() => {
-      const el = document.getElementById(`structure-${slug}`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-      toggleDescription(slug);
+      nextTick(() => {
+        const el = document.getElementById(`structure-${slug}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        openDescription(slug);
+      });
     });
   }
 });
@@ -78,6 +81,7 @@ watch(
   () => route.query,
   (query) => {
     if (query.type === 'structure' && typeof query.slug === 'string') {
+      isListOpen.value = true;
       nextTick(() => {
         const el = document.getElementById(`structure-${query.slug}`);
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });

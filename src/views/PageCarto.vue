@@ -41,7 +41,11 @@ const onResize = () => {
 function togglePanel() {
   if (!isMobile.value) {
     isOpen.value = !isOpen.value;
-    setTimeout(() => mapRef.value?.resizeMap?.(), 310);
+    nextTick(() => {
+      setTimeout(() => {
+        mapRef.value?.handleResize?.();
+      }, 350);
+    });
   }
 }
 
@@ -167,7 +171,7 @@ watch(mobileView, (newView) => {
 .view-switch {
   display: none;
   position: absolute;
-  top: 140px;
+  top: 160px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
@@ -258,6 +262,10 @@ watch(mobileView, (newView) => {
 }
 
 @media (max-width: 810px) {
+  .container-filtre {
+    margin: 10px;
+  }
+
   .view-switch {
     display: block;
   }

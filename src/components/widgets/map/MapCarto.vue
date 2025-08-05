@@ -872,6 +872,10 @@ function handleResize() {
   map?.invalidateSize();
 }
 
+defineExpose({
+  handleResize
+});
+
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize);
 });
