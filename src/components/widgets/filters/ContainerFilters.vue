@@ -119,9 +119,55 @@ function applyFilters() {
 
 }
 
+/**
+ * Réinitialise tous les filtres et remet l'URL à son état initial.
+ */
+function resetFilters() {
+  keyword.value = '';
+  selectedActivites.value = [];
+  selectedLieux.value = [];
+  selectedCriteresScrolarisation.value = null;
+  selectedCompetencesLinguistiquesVisees.value = null;
+  selectedProgrammes.value = null;
+  selectedPublics.value = [];
+  selectedObjectifs.value = [];
+  selectedJoursHoraires.value = [];
+  gardeEnfantsChecked.value = false;
+  coursEteChecked.value = false;
+  formaDispoChecked.value = false;
+
+  router.replace({ query: {} });
+
+  isAdvancedOpen.value = false;
+  isKeywordOpen.value = false;
+}
+
+/**
+ * Permet de parser un paramètre de type string en un tableau de chaînes de caractères. Ne prend pas
+ * en compte les ',' dans les parenthèses (le cas Cergy par exemple).
+ * @param param
+ */
 function parseArrayParam(param: string | null): string[] {
   if (!param) return [];
-  return param.split(',').map(s => decodeURIComponent(s.trim())).filter(Boolean);
+
+  const result: string[] = [];
+  let current = '';
+  let depth = 0;
+
+  for (const char of param) {
+    if (char === ',' && depth === 0) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      if (char === '(') depth++;
+      if (char === ')') depth--;
+      current += char;
+    }
+  }
+
+  if (current) result.push(current.trim());
+
+  return result.map(s => decodeURIComponent(s)).filter(Boolean);
 }
 
 function parseJoursHorairesParam(param: string | null): (string | {label: string, value: string})[] {
@@ -132,6 +178,10 @@ function parseJoursHorairesParam(param: string | null): (string | {label: string
   }).filter(Boolean);
 }
 
+/**
+ * Au chargement du composant, on initialise les données nécessaires pour les filtres en recupérant
+ * les paramètres de l'URL et en les transformant en valeurs utilisables par les filtres.
+ */
 onMounted(async () => {
   window.addEventListener('resize', updateIsMobile);
   updateIsMobile();
@@ -242,6 +292,7 @@ onBeforeUnmount(() => {
         </div>
         <div id="first-section-button">
           <button class="readon" @click="applyFilters">Trouver</button>
+          <button class="btn-reset" @click="resetFilters">Effacer la recherche</button>
         </div>
 
       </section>
@@ -560,6 +611,18 @@ label {
   width: auto;
   padding: 0.5em;
   display: none;
+}
+
+.btn-reset {
+  border: none;
+  background: none;
+  color: var(--color-blue-alpha);
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.btn-reset:hover {
+  text-decoration: underline;
 }
 
 @media (max-width: 810px) {
