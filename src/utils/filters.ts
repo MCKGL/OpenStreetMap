@@ -333,7 +333,10 @@ export function adressesFiltered(adresses: AdresseModel[], filter: FilterModel):
       return {
         ...a,
         formations: formationsFiltered(a.formations ?? [], filter),
-        structures: structuresFiltered(a.structures ?? [], filter),
+        structures: structuresFiltered(a.structures ?? [], filter).map(structure => ({
+          ...structure,
+          formations: formationsFiltered(structure.formations ?? [], filter),
+        })),
         permanences: permanencesFiltered(a.permanences ?? [], filter),
       };
     })
