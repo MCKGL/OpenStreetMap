@@ -98,7 +98,7 @@ watch(
 
 <template>
   <div class="list-header" v-if="filteredPermanences.length > 0">
-    <h2>{{ numberOfAdresses(filteredPermanences) }} Permanences</h2>
+    <h2>Permanences ({{ numberOfAdresses(filteredPermanences) }})</h2>
     <button
       class="toggle-btn"
       @click="toggleList"

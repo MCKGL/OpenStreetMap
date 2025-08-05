@@ -124,7 +124,7 @@ watch(
 
 <template>
   <div class="list-header" v-if="formationsFiltered.length > 0">
-    <h2>{{ filteredFormations.length }} Formations
+    <h2>Formations ({{ filteredFormations.length }})
       <br/>
       (dont {{ numberOfPlacesAvailable(filteredFormations) }} avec places disponibles)
     </h2>

@@ -27,6 +27,8 @@ const emit = defineEmits<{
 const isAdvancedOpen = ref(false);
 const isKeywordOpen = ref(false);
 
+const keyword = ref('');
+
 const selectedActivites = ref<string[]>([]);
 const selectedLieux = ref<{ label: string; value: string }[]>([]);
 const selectedCriteresScrolarisation = ref<string | null>(null);
@@ -83,8 +85,7 @@ function updateIsMobile() {
 }
 
 function applyFilters() {
-  const keywordInput = document.getElementById('keyword') as HTMLInputElement | null;
-  const keyword = keywordInput?.value.trim() ?? '';
+  const keywordTrimmed = keyword.value.trim();
 
   const filtersPayload: Record<string, unknown> = {};
 
@@ -106,7 +107,7 @@ function applyFilters() {
   if (gardeEnfantsChecked.value) filtersPayload.gardeEnfants = true;
   if (coursEteChecked.value) filtersPayload.coursEte = true;
   if (formaDispoChecked.value) filtersPayload.formationDispo = true;
-  if (keyword.length > 0) filtersPayload.keyword = keyword;
+  if (keywordTrimmed.length > 0) filtersPayload.keyword = keywordTrimmed;
 
   isAdvancedOpen.value = false;
   isKeywordOpen.value = false;
@@ -181,10 +182,9 @@ onMounted(async () => {
   coursEteChecked.value = (params.get('coursEte') === 'true');
   formaDispoChecked.value = (params.get('formationDispo') === 'true');
 
-  const keyword = params.get('keyword');
-  if (keyword) {
-    const inputKeyword = document.getElementById('keyword') as HTMLInputElement | null;
-    if (inputKeyword) inputKeyword.value = keyword;
+  const keywordParam = params.get('keyword');
+  if (keywordParam) {
+    keyword.value = keywordParam;
     isKeywordOpen.value = true;
   }
 });
@@ -412,6 +412,7 @@ onBeforeUnmount(() => {
             id="keyword"
             type="text"
             class="input"
+            v-model="keyword"
           />
         </div>
       </section>

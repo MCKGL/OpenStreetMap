@@ -780,7 +780,8 @@ function fitVisibleMarkers(map: L.Map, markers: L.MarkerClusterGroup, router: Ro
 }
 
 /**
- * Ajoute la légende au coin inférieur droit de la carte.
+ * Ajoute la légende au coin inférieur droit de la carte. La légende garde en mémoire son état (ouverte ou fermée)
+ * temps qu'on ne ferme pas l'onglet du navigateur (sessionStorage).
  */
 function addLegend() {
   const legend = (L.control as unknown as (options: L.ControlOptions) => L.Control)({
@@ -788,11 +789,16 @@ function addLegend() {
   });
 
   legend.onAdd = () => {
-    const c = L.DomUtil.create('div', 'legend-container open');
+    const storedState = sessionStorage.getItem('legendState');
+    const isOpenInitially = storedState !== 'closed';
+
+    const c = L.DomUtil.create('div', `legend-container ${isOpenInitially ? 'open' : ''}`);
 
     c.innerHTML = `
-      <button class="legend-toggle" aria-label="Fermer la légende">
-        <img class="btn-legend" src="/icons/expand_up.svg" alt="Fermer la légende">
+      <button class="legend-toggle" aria-label="${isOpenInitially ? 'Fermer' : 'Ouvrir'} la légende">
+        ${isOpenInitially
+      ? `<img class="btn-legend" src="/icons/expand_up.svg" alt="Fermer la légende">`
+      : `Légende <img class="btn-legend" src="/icons/expand_down.svg" alt="Ouvrir la légende">`}
       </button>
       <div class="legend-content">
         <h4>Légende</h4>
@@ -814,6 +820,8 @@ function addLegend() {
     const btn = c.querySelector<HTMLButtonElement>('.legend-toggle')!;
     btn.onclick = () => {
       const isOpen = c.classList.toggle('open');
+      sessionStorage.setItem('legendState', isOpen ? 'open' : 'closed');
+
       btn.innerHTML = isOpen
         ? `<img class="btn-legend" src="/icons/expand_up.svg" alt="Fermer la légende">`
         : `Légende <img class="btn-legend" src="/icons/expand_down.svg" alt="Ouvrir la légende">`;
