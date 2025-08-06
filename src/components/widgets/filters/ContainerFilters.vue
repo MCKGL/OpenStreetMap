@@ -17,7 +17,7 @@ import {capitalize} from "@/utils/formatText.ts";
 import {PUBLICS_SPECIFIQUES} from "@/models/PublicSpecifique.model.ts";
 import {OBJECTIF_VISE} from "@/models/ObjectifVise.model.ts";
 
-const isFilterOpen = ref(false);
+const isFilterOpen = ref(window.location.search.length === 0);
 const isMobile = ref(window.innerWidth <= 810);
 
 const emit = defineEmits<{
