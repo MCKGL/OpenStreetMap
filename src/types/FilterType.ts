@@ -1,5 +1,5 @@
-export type ArrayKeys = 'activites' | 'lieux' | 'publics' | 'objectifs' | 'joursHoraires';
-export type StringKeys = 'scolarisation' | 'competence' | 'programmes' | 'keyword';
+export type ArrayKeys = 'activites' | 'lieux' | 'publics' | 'objectifs' | 'joursHoraires' | 'scolarisation' | 'competence' | 'programmes';
+export type StringKeys = 'keyword';
 export type BooleanKeys = 'gardeEnfants' | 'coursEte' | 'formationDispo';
 
 export const FILTER_KEYS = [
@@ -11,9 +11,9 @@ export const FILTER_KEYS = [
 export interface FilterModel {
   activites?: string[];
   lieux?: string[];
-  scolarisation?: string;
-  competence?: string;
-  programmes?: string;
+  scolarisation?: string[];
+  competence?: string[];
+  programmes?: string[];
   publics?: string[];
   objectifs?: string[];
   joursHoraires?: string[];

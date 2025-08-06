@@ -31,9 +31,9 @@ const keyword = ref('');
 
 const selectedActivites = ref<string[]>([]);
 const selectedLieux = ref<{ label: string; value: string }[]>([]);
-const selectedCriteresScrolarisation = ref<string | null>(null);
-const selectedCompetencesLinguistiquesVisees = ref<string | null>(null);
-const selectedProgrammes = ref<string | null>(null);
+const selectedCriteresScrolarisation = ref<string[]>([]);
+const selectedCompetencesLinguistiquesVisees = ref<string[]>([]);
+const selectedProgrammes = ref<string[]>([]);
 const selectedPublics = ref<string[]>([]);
 const selectedObjectifs = ref<string[]>([]);
 const selectedJoursHoraires = ref<(string | {label: string; value: string})[]>([]);
@@ -93,9 +93,9 @@ function applyFilters() {
   if (selectedLieux.value.length) {
     filtersPayload.lieux = selectedLieux.value.map(l => l.value).join(',');
   }
-  if (selectedCriteresScrolarisation.value) filtersPayload.scolarisation = selectedCriteresScrolarisation.value;
-  if (selectedCompetencesLinguistiquesVisees.value) filtersPayload.competence = selectedCompetencesLinguistiquesVisees.value;
-  if (selectedProgrammes.value) filtersPayload.programmes = selectedProgrammes.value;
+  if (selectedCriteresScrolarisation.value.length) filtersPayload.scolarisation = selectedCriteresScrolarisation.value.join(',');
+  if (selectedCompetencesLinguistiquesVisees.value.length) filtersPayload.competence = selectedCompetencesLinguistiquesVisees.value.join(',');
+  if (selectedProgrammes.value.length) filtersPayload.programmes = selectedProgrammes.value.join(',');
   if (selectedPublics.value.length) filtersPayload.publics = selectedPublics.value.join(',');
   if (selectedObjectifs.value.length) filtersPayload.objectifs = selectedObjectifs.value.join(',');
   if (selectedJoursHoraires.value.length) {
@@ -126,9 +126,9 @@ function resetFilters() {
   keyword.value = '';
   selectedActivites.value = [];
   selectedLieux.value = [];
-  selectedCriteresScrolarisation.value = null;
-  selectedCompetencesLinguistiquesVisees.value = null;
-  selectedProgrammes.value = null;
+  selectedCriteresScrolarisation.value = [];
+  selectedCompetencesLinguistiquesVisees.value = [];
+  selectedProgrammes.value = [];
   selectedPublics.value = [];
   selectedObjectifs.value = [];
   selectedJoursHoraires.value = [];
@@ -216,11 +216,11 @@ onMounted(async () => {
   const lieuxParam = parseArrayParam(params.get('lieux'));
   selectedLieux.value = lieuxParam.map(val => ({label: val, value: val}));
 
-  selectedCriteresScrolarisation.value = params.get('scolarisation');
+  selectedCriteresScrolarisation.value = parseArrayParam(params.get('scolarisation'));
 
-  selectedCompetencesLinguistiquesVisees.value = params.get('competence');
+  selectedCompetencesLinguistiquesVisees.value = parseArrayParam(params.get('competence'));
 
-  selectedProgrammes.value = params.get('programmes');
+  selectedProgrammes.value = parseArrayParam(params.get('programmes'));
 
   selectedPublics.value = parseArrayParam(params.get('publics'));
 
@@ -345,6 +345,7 @@ onBeforeUnmount(() => {
                 v-model="selectedCriteresScrolarisation"
                 :options="criteresScolarisation"
                 placeholder=""
+                :multiple="true"
                 :taggable="true"
                 :select-label="''"
                 :deselect-label="''"
@@ -358,6 +359,7 @@ onBeforeUnmount(() => {
                 v-model="selectedCompetencesLinguistiquesVisees"
                 :options="competencesLinguistiquesVisees"
                 placeholder=""
+                :multiple="true"
                 :taggable="true"
                 :select-label="''"
                 :deselect-label="''"
@@ -403,6 +405,7 @@ onBeforeUnmount(() => {
                 v-model="selectedProgrammes"
                 :options="programmes"
                 placeholder=""
+                :multiple="true"
                 :taggable="true"
                 :select-label="''"
                 :deselect-label="''"

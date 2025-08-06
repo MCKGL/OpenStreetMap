@@ -109,7 +109,7 @@ export function parseFilters(filters: string[]): FilterModel {
     if ((['gardeEnfants', 'coursEte', "formationDispo"] as BooleanKeys[]).includes(key as BooleanKeys)) {
       result[key as BooleanKeys] = valueRaw.trim() === 'true';
 
-    } else if ((['activites', 'lieux', 'publics', 'objectifs', 'joursHoraires'] as ArrayKeys[]).includes(key as ArrayKeys)) {
+    } else if ((['activites', 'lieux', 'publics', 'objectifs', 'joursHoraires', 'scolarisation', 'competence', 'programmes'] as ArrayKeys[]).includes(key as ArrayKeys)) {
       let values: string[];
 
       if (key === 'lieux') {
@@ -124,7 +124,7 @@ export function parseFilters(filters: string[]): FilterModel {
         result[key as ArrayKeys] = values;
       }
 
-    } else if ((['scolarisation', 'competence', 'programmes', 'keyword'] as StringKeys[]).includes(key as StringKeys)) {
+    } else if ((['keyword'] as StringKeys[]).includes(key as StringKeys)) {
       result[key as StringKeys] = valueRaw.trim();
     }
   });
@@ -235,12 +235,14 @@ function matchJoursHoraires(horaires: string[] = [], filter: FilterModel): boole
 }
 
 function matchCompetence(competences: string[] = [], filter: FilterModel): boolean {
-  if (!filter.competence?.trim()) return true;
+  if (!filter.competence || filter.competence.length === 0) return true;
 
-  const normalizedFilter = normalizeCompetence(filter.competence);
-  const normalizedFormation = competences.map(normalizeCompetence);
+  const normalizedFilterCompetences = filter.competence.map(normalizeCompetence);
+  const normalizedFormationCompetences = competences.map(normalizeCompetence);
 
-  return normalizedFormation.includes(normalizedFilter);
+  return normalizedFilterCompetences.some(fc =>
+    normalizedFormationCompetences.includes(fc)
+  );
 }
 
 export function permanencesFiltered(permanences: PermanenceModel[], filter: FilterModel): PermanenceModel[] {

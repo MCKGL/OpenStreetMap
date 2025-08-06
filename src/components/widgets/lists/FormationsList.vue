@@ -128,9 +128,8 @@ watch(
 
 <template>
   <div class="list-header" v-if="formationsFiltered.length > 0">
-    <h2>Formations ({{ filteredFormations.length }})
-      <br/>
-      (dont {{ numberOfPlacesAvailable(filteredFormations) }} avec places disponibles)
+    <h2>
+      Formations ({{ filteredFormations.length }} dont {{ numberOfPlacesAvailable(filteredFormations) }} avec places disponibles)
     </h2>
     <button class="toggle-btn" @click="toggleList"
             :aria-label="isListOpen ? 'Fermer la liste' : 'Ouvrir la liste'">
