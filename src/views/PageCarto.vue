@@ -25,7 +25,6 @@ const isOpen = ref(true);
 const mobileView = ref<'list' | 'map'>('list');
 const isMobile = ref(window.innerWidth <= 810);
 const mapRef = ref();
-const isFilterOpen = ref(false)
 const listContentRef = ref<HTMLElement|null>(null);
 
 const mobileClass = computed(() => {
