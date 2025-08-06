@@ -92,11 +92,11 @@ watch(mobileView, (newView) => {
       <ContainerFilters @toggle-filter="onToggleFilter"/>
     </div>
 
-    <div class="container-reminder">L’annuaire de Réseau Alpha est collaboratif, les formations
-      sont renseignées par les structures elles-mêmes</div>
-
-    <div class="carto-wrapper" :class="mobileClass">
-      <div class="view-switch" v-show="isMobile && !isFilterOpen">
+    <div class="container-reminder">
+      <p>
+        L’annuaire de Réseau Alpha est collaboratif, les formations sont renseignées par les structures elles-mêmes
+      </p>
+      <div class="view-switch" v-show="isMobile">
         <button
           :class="{ active: mobileView==='list' }"
           @click="mobileView = 'list'"
@@ -106,7 +106,9 @@ watch(mobileView, (newView) => {
           @click="mobileView = 'map'"
         >Carte</button>
       </div>
+    </div>
 
+    <div class="carto-wrapper" :class="mobileClass">
       <div class="panels">
         <div class="panel list-panel" :class="{ closed: !isOpen }"
              v-if="!isMobile || mobileView==='list'">
@@ -170,14 +172,6 @@ watch(mobileView, (newView) => {
 
 .view-switch {
   display: none;
-  position: absolute;
-  top: 160px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1000;
-  border-radius: 34px;
-  background-color: #fafafa;
-  padding: 5px;
 }
 
 .view-switch button {
@@ -266,8 +260,21 @@ watch(mobileView, (newView) => {
     margin: 10px;
   }
 
+  .container-reminder {
+    position: relative;
+  }
+
   .view-switch {
-    display: block;
+    position: absolute;
+    top: 70px;
+    right: 10px;
+    z-index: 20;
+    display: flex;
+    gap: 5px;
+    background-color: #fafafa;
+    padding: 5px 10px;
+    border-radius: 34px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   }
 
   .panels {
