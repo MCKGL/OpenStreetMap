@@ -10,8 +10,7 @@ import type {ProgrammeModel} from "@/models/Programme.model.ts";
 import type { FilterModel, ArrayKeys, StringKeys, BooleanKeys } from '@/types/FilterType.ts';
 
 export function hasAdvancedFilters(filters: FilterModel): boolean {
-  return (
-    (filters.scolarisation && filters.scolarisation.length > 0) ||
+  return ((filters.scolarisation && filters.scolarisation.length > 0) ||
     (filters.competence && filters.competence.length > 0) ||
     (filters.programmes && filters.programmes.length > 0) ||
     (filters.publics && filters.publics.length > 0) ||
@@ -19,8 +18,19 @@ export function hasAdvancedFilters(filters: FilterModel): boolean {
     (filters.joursHoraires && filters.joursHoraires.length > 0) ||
     filters.gardeEnfants === true ||
     filters.coursEte === true ||
-    filters.formationDispo === true
-  );
+    filters.formationDispo === true || onlyFormations(filters));
+}
+
+/**
+ * On retournera true uniquement si on affiche que les formations (sans structures).
+ * A le même effet qu'un filtre avancé, donc on l'utilise dans hasAdvancedFilters.
+ * @param filter
+ */
+function onlyFormations(filter: FilterModel): boolean {
+  if (filter.formationsSeules) {
+    if (!filter.structuresSeules) return true;
+  }
+  return false;
 }
 
 function normalizeFilterJourHoraire(str: string): string {
@@ -106,7 +116,7 @@ export function parseFilters(filters: string[]): FilterModel {
 
     const key = keyRaw.trim();
 
-    if ((['gardeEnfants', 'coursEte', "formationDispo"] as BooleanKeys[]).includes(key as BooleanKeys)) {
+    if ((['gardeEnfants', 'coursEte', "formationDispo", "permanencesSeules", "formationsSeules", "structuresSeules"] as BooleanKeys[]).includes(key as BooleanKeys)) {
       result[key as BooleanKeys] = valueRaw.trim() === 'true';
 
     } else if ((['activites', 'lieux', 'publics', 'objectifs', 'joursHoraires', 'scolarisation', 'competence', 'programmes'] as ArrayKeys[]).includes(key as ArrayKeys)) {
@@ -247,6 +257,9 @@ function matchCompetence(competences: string[] = [], filter: FilterModel): boole
 
 export function permanencesFiltered(permanences: PermanenceModel[], filter: FilterModel): PermanenceModel[] {
   if (filter.formationDispo) return [];
+  if (!filter.permanencesSeules) {
+    if (filter.structuresSeules || filter.formationsSeules) return [];
+  }
 
   return permanences
     .map(p => {
@@ -275,6 +288,9 @@ export function structuresFiltered(structures: StructureModel[], filter: FilterM
     !!filter.scolarisation;
 
   if (hasAdvancedFilter) return [];
+  if (!filter.structuresSeules) {
+    if (filter.permanencesSeules || filter.formationsSeules) return [];
+  }
 
   return structures
     .map(s => {
@@ -295,6 +311,10 @@ export function structuresFiltered(structures: StructureModel[], filter: FilterM
 }
 
 export function formationsFiltered(formations: FormationModel[], filter: FilterModel): FormationModel[] {
+  if (!filter.formationsSeules) {
+    if (filter.permanencesSeules || filter.structuresSeules) return [];
+  }
+
   return formations
     .map(f => {
       const matchingAdresses = matchLieux(f.adresses, filter);

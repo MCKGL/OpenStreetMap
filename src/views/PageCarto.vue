@@ -92,8 +92,8 @@ watch(mobileView, (newView) => {
       <ContainerFilters @toggle-filter="onToggleFilter"/>
     </div>
 
-    <div class="container-reminder">Pour rappel, l’annuaire est collaboratif, les formations sont renseignées par
-      les structures elles-mêmes</div>
+    <div class="container-reminder">L’annuaire de Réseau Alpha est collaboratif, les formations
+      sont renseignées par les structures elles-mêmes</div>
 
     <div class="carto-wrapper" :class="mobileClass">
       <div class="view-switch" v-show="isMobile && !isFilterOpen">

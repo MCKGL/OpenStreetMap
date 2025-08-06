@@ -45,6 +45,9 @@ const competencesLinguistiquesVisees = Object.values(COMPETENCES_LINGUISTIQUES_V
 const publicsSpecifiques = Object.values(PUBLICS_SPECIFIQUES);
 const objectifVise = Object.values(OBJECTIF_VISE);
 const programmes = ref<string[]>([]);
+const permanencesSeulesChecked = ref(false);
+const structuresSeulesChecked = ref(false);
+const formationsSeulesChecked = ref(false);
 const gardeEnfantsChecked = ref(false);
 const coursEteChecked = ref(false);
 const formaDispoChecked = ref(false);
@@ -104,6 +107,11 @@ function applyFilters() {
     );
     filtersPayload.joursHoraires = joursHorairesValues.join(',');
   }
+
+  if (permanencesSeulesChecked.value) filtersPayload.permanencesSeules = true;
+  if (structuresSeulesChecked.value) filtersPayload.structuresSeules = true;
+  if (formationsSeulesChecked.value) filtersPayload.formationsSeules = true;
+
   if (gardeEnfantsChecked.value) filtersPayload.gardeEnfants = true;
   if (coursEteChecked.value) filtersPayload.coursEte = true;
   if (formaDispoChecked.value) filtersPayload.formationDispo = true;
@@ -132,6 +140,9 @@ function resetFilters() {
   selectedPublics.value = [];
   selectedObjectifs.value = [];
   selectedJoursHoraires.value = [];
+  permanencesSeulesChecked.value = false;
+  structuresSeulesChecked.value = false;
+  formationsSeulesChecked.value = false;
   gardeEnfantsChecked.value = false;
   coursEteChecked.value = false;
   formaDispoChecked.value = false;
@@ -228,6 +239,10 @@ onMounted(async () => {
 
   selectedJoursHoraires.value = parseJoursHorairesParam(params.get('joursHoraires'));
 
+  permanencesSeulesChecked.value = (params.get('permanencesSeules') === 'true');
+  structuresSeulesChecked.value = (params.get('structuresSeules') === 'true');
+  formationsSeulesChecked.value = (params.get('formationsSeules') === 'true');
+
   gardeEnfantsChecked.value = (params.get('gardeEnfants') === 'true');
   coursEteChecked.value = (params.get('coursEte') === 'true');
   formaDispoChecked.value = (params.get('formationDispo') === 'true');
@@ -295,6 +310,25 @@ onBeforeUnmount(() => {
           <button class="btn-reset" @click="resetFilters">Effacer la recherche</button>
         </div>
 
+      </section>
+
+      <section class="first-section">
+        <div id="first-section-checkbox">
+          <label for="checkbox" class="label">
+            <input type="checkbox" id="checkbox-only-permanence" v-model="permanencesSeulesChecked" />
+            Afficher uniquement les permanences
+          </label>
+
+          <label for="checkbox" class="label">
+            <input type="checkbox" id="checkbox-only-structure" v-model="structuresSeulesChecked" />
+            Afficher uniquement les structures
+          </label>
+
+          <label for="checkbox" class="label">
+            <input type="checkbox" id="checkbox-only-formation" v-model="formationsSeulesChecked" />
+            Afficher uniquement les formations
+          </label>
+        </div>
       </section>
 
       <hr />
@@ -556,7 +590,7 @@ onBeforeUnmount(() => {
   flex: 1;
 }
 
-#advanced-section-checkbox {
+#advanced-section-checkbox, #first-section-checkbox {
   flex: 1;
   margin: 0.5em;
   display: flex;
@@ -641,6 +675,11 @@ label {
 
   .section-title {
     flex-direction: column-reverse;
+  }
+
+  #first-section-checkbox {
+    flex-direction: column;
+    align-items: baseline;
   }
 }
 
