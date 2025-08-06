@@ -49,10 +49,6 @@ function togglePanel() {
   }
 }
 
-function onToggleFilter(open: boolean) {
-  isFilterOpen.value = open
-}
-
 function scrollToTop() {
   if (listContentRef.value) {
     listContentRef.value.scrollTop = 0;
@@ -89,13 +85,11 @@ watch(mobileView, (newView) => {
   <div v-if="loading" class="loading">Chargement…</div>
   <div v-else class="all-carto-container">
     <div class="container-filtre">
-      <ContainerFilters @toggle-filter="onToggleFilter"/>
+      <ContainerFilters />
     </div>
 
     <div class="container-reminder">
-      <p>
-        L’annuaire de Réseau Alpha est collaboratif, les formations sont renseignées par les structures elles-mêmes
-      </p>
+      L’annuaire de Réseau Alpha est collaboratif, les formations sont renseignées par les structures elles-mêmes
       <div class="view-switch" v-show="isMobile">
         <button
           :class="{ active: mobileView==='list' }"
@@ -266,7 +260,7 @@ watch(mobileView, (newView) => {
 
   .view-switch {
     position: absolute;
-    top: 70px;
+    top: 85px;
     right: 10px;
     z-index: 20;
     display: flex;
