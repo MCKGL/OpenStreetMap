@@ -74,8 +74,20 @@ onMounted(() => {
     isListOpen.value = true;
     nextTick(() => {
       nextTick(() => {
-        const el = document.getElementById(`permanence-${slug}`);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const element = document.getElementById(`permanence-${slug}`);
+        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        setTimeout(() => {
+          const container = document.querySelector('.list-content');
+          if (container && element) {
+            const containerTop = container.getBoundingClientRect().top;
+            const elementTop = element.getBoundingClientRect().top;
+            const offset = elementTop - containerTop;
+            const correction = offset - container.clientHeight / 2 + element.clientHeight / 2;
+            container.scrollTop += correction;
+          }
+        }, 500);
+
         openDescription(slug);
       });
     });
@@ -88,8 +100,19 @@ watch(
     if (query.type === 'permanence' && typeof query.slug === 'string') {
       isListOpen.value = true;
       nextTick(() => {
-        const el = document.getElementById(`permanence-${query.slug}`);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const element = document.getElementById(`permanence-${query.slug}`);
+        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        setTimeout(() => {
+          const container = document.querySelector('.list-content');
+          if (container && element) {
+            const containerTop = container.getBoundingClientRect().top;
+            const elementTop = element.getBoundingClientRect().top;
+            const offset = elementTop - containerTop;
+            const correction = offset - container.clientHeight / 2 + element.clientHeight / 2;
+            container.scrollTop += correction;
+          }
+        }, 500);
 
         openDescription(query.slug as string);
       });

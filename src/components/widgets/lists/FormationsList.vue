@@ -100,8 +100,20 @@ onMounted(() => {
     isListOpen.value = true;
     nextTick(() => {
       nextTick(() => {
-        const el = document.getElementById(`formation-${slug}`);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const element = document.getElementById(`formation-${slug}`);
+        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        setTimeout(() => {
+          const container = document.querySelector('.list-content');
+          if (container && element) {
+            const containerTop = container.getBoundingClientRect().top;
+            const elementTop = element.getBoundingClientRect().top;
+            const offset = elementTop - containerTop;
+            const correction = offset - container.clientHeight / 2 + element.clientHeight / 2;
+            container.scrollTop += correction;
+          }
+        }, 500);
+
         openDescription(slug);
       });
     });
@@ -114,8 +126,19 @@ watch(
     if (query.type === 'formation' && typeof query.slug === 'string') {
       isListOpen.value = true;
       nextTick(() => {
-        const el = document.getElementById(`formation-${query.slug}`);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const element = document.getElementById(`formation-${query.slug}`);
+        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        setTimeout(() => {
+          const container = document.querySelector('.list-content');
+          if (container && element) {
+            const containerTop = container.getBoundingClientRect().top;
+            const elementTop = element.getBoundingClientRect().top;
+            const offset = elementTop - containerTop;
+            const correction = offset - container.clientHeight / 2 + element.clientHeight / 2;
+            container.scrollTop += correction;
+          }
+        }, 500);
 
         openDescription(query.slug as string);
       });
@@ -127,7 +150,7 @@ watch(
 </script>
 
 <template>
-  <div class="list-header" v-if="formationsFiltered.length > 0">
+  <div class="list-header" v-if="filteredFormations.length > 0">
     <h2>
       Formations ({{ filteredFormations.length }} dont {{ numberOfPlacesAvailable(filteredFormations) }} avec places disponibles)
     </h2>

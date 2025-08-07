@@ -15,6 +15,7 @@ import StructuresList from "@/components/widgets/lists/StructuresList.vue";
 import PermancencesList from "@/components/widgets/lists/PermancencesList.vue";
 import FormationsList from "@/components/widgets/lists/FormationsList.vue";
 import ContainerFilters from "@/components/widgets/filters/ContainerFilters.vue";
+import {useRoute} from "vue-router";
 
 const structures = ref<StructureModel[]>([]);
 const permanences = ref<PermanenceModel[]>([]);
@@ -26,6 +27,7 @@ const mobileView = ref<'list' | 'map'>('list');
 const isMobile = ref(window.innerWidth <= 810);
 const mapRef = ref();
 const listContentRef = ref<HTMLElement|null>(null);
+const route = useRoute();
 
 const mobileClass = computed(() => {
   if (!isMobile.value) return '';
@@ -77,6 +79,22 @@ watch(mobileView, (newView) => {
     });
   }
 });
+
+watch(
+  () => route.query,
+  (query) => {
+    if (
+      isMobile.value &&
+      query.type === 'formation' &&
+      query.slug &&
+      query.latitude &&
+      query.longitude
+    ) {
+      mobileView.value = 'list';
+    }
+  },
+  { immediate: true }
+);
 
 </script>
 
