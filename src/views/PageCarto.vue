@@ -16,6 +16,7 @@ import PermancencesList from "@/components/widgets/lists/PermancencesList.vue";
 import FormationsList from "@/components/widgets/lists/FormationsList.vue";
 import ContainerFilters from "@/components/widgets/filters/ContainerFilters.vue";
 import {useRoute} from "vue-router";
+import LoadingAnimation from "@/components/ui/LoadingAnimation.vue";
 
 const structures = ref<StructureModel[]>([]);
 const permanences = ref<PermanenceModel[]>([]);
@@ -99,7 +100,8 @@ watch(
 </script>
 
 <template>
-  <div v-if="loading" class="loading">Chargement…</div>
+  <LoadingAnimation class="loading" v-if="loading" />
+
   <div v-else class="all-carto-container">
     <div class="container-filtre">
       <ContainerFilters />
@@ -264,6 +266,11 @@ watch(
   left: auto;
   right: 10px;
   transform: none;
+}
+
+.loading {
+  width: 100vw;
+  height: 100vh;
 }
 
 @media (max-width: 810px) {
