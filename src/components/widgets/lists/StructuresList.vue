@@ -69,8 +69,20 @@ onMounted(() => {
     isListOpen.value = true;
     nextTick(() => {
       nextTick(() => {
-        const el = document.getElementById(`structure-${slug}`);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const element = document.getElementById(`structure-${slug}`);
+        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        setTimeout(() => {
+          const container = document.querySelector('.list-content');
+          if (container && element) {
+            const containerTop = container.getBoundingClientRect().top;
+            const elementTop = element.getBoundingClientRect().top;
+            const offset = elementTop - containerTop;
+            const correction = offset - container.clientHeight / 2 + element.clientHeight / 2;
+            container.scrollTop += correction;
+          }
+        }, 500);
+
         openDescription(slug);
       });
     });
@@ -83,8 +95,19 @@ watch(
     if (query.type === 'structure' && typeof query.slug === 'string') {
       isListOpen.value = true;
       nextTick(() => {
-        const el = document.getElementById(`structure-${query.slug}`);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const element = document.getElementById(`structure-${query.slug}`);
+        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        setTimeout(() => {
+          const container = document.querySelector('.list-content');
+          if (container && element) {
+            const containerTop = container.getBoundingClientRect().top;
+            const elementTop = element.getBoundingClientRect().top;
+            const offset = elementTop - containerTop;
+            const correction = offset - container.clientHeight / 2 + element.clientHeight / 2;
+            container.scrollTop += correction;
+          }
+        }, 500);
 
         openDescription(query.slug as string);
       });
