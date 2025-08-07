@@ -73,7 +73,7 @@ function initMap() {
     spiderfyOnMaxZoom: true,
     showCoverageOnHover: false,
     zoomToBoundsOnClick: true,
-    maxClusterRadius: 40,
+    maxClusterRadius: 30,
     iconCreateFunction: cluster => {
       const count = cluster.getChildCount();
       return L.divIcon({
