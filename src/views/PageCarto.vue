@@ -284,8 +284,8 @@ watch(
 
   .view-switch {
     position: absolute;
-    top: 45px;
     right: 10px;
+    bottom: -45px;
     z-index: 20;
     display: flex;
     gap: 5px;
@@ -308,24 +308,6 @@ watch(
   .map-panel {
     width: 100%;
     height: 100%;
-  }
-}
-
-@media (max-width: 722px) {
-  .view-switch {
-    top: 65px;
-  }
-}
-
-@media (max-width: 402px) {
-  .view-switch {
-    top: 85px;
-  }
-}
-
-@media (max-width: 304px) {
-  .view-switch {
-    top: 105px;
   }
 }
 </style>
