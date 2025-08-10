@@ -797,8 +797,8 @@ function addLegend() {
     c.innerHTML = `
       <button class="legend-toggle" aria-label="${isOpenInitially ? 'Fermer' : 'Ouvrir'} la légende">
         ${isOpenInitially
-      ? `<img class="btn-legend" src="/icons/expand_up.svg" alt="Fermer la légende">`
-      : `Légende <img class="btn-legend" src="/icons/expand_down.svg" alt="Ouvrir la légende">`}
+      ? `<img class="btn-legend" src="/icons/expand_down.svg" alt="Fermer la légende">`
+      : `Légende <img class="btn-legend" src="/icons/expand_up.svg" alt="Ouvrir la légende">`}
       </button>
       <div class="legend-content">
         <h4>Légende</h4>
@@ -823,8 +823,8 @@ function addLegend() {
       sessionStorage.setItem('legendState', isOpen ? 'open' : 'closed');
 
       btn.innerHTML = isOpen
-        ? `<img class="btn-legend" src="/icons/expand_up.svg" alt="Fermer la légende">`
-        : `Légende <img class="btn-legend" src="/icons/expand_down.svg" alt="Ouvrir la légende">`;
+        ? `<img class="btn-legend" src="/icons/expand_down.svg" alt="Fermer la légende">`
+        : `Légende <img class="btn-legend" src="/icons/expand_up.svg" alt="Ouvrir la légende">`;
       btn.setAttribute('aria-label', isOpen ? 'Fermer la légende' : 'Ouvrir la légende');
     };
     return c;
