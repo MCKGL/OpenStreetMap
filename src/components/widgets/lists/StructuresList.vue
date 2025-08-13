@@ -3,9 +3,9 @@ import {computed, nextTick, onMounted, ref, watch} from 'vue';
 import { StructureModel } from '@/models/Structure.model.ts';
 import {useRoute, useRouter} from 'vue-router';
 import {structuresFiltered} from "@/utils/filters.ts";
-import {useParsedFilters} from "@/composables/useParsedFilters.ts";
+import {useParsedFilters} from "@/composables/filter/useParsedFilters.ts";
 import {truncateHtmlSimple} from "@/utils/formatText.ts";
-import {useOpenDescription} from "@/composables/useOpenDescription.ts";
+import {useOpenDescription} from "@/composables/list/useOpenDescription.ts";
 
 const router = useRouter();
 const route = useRoute();

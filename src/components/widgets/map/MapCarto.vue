@@ -9,7 +9,7 @@ import type {FormationModel} from "@/models/Formation.model.ts";
 import {onMounted, ref, watch, computed, onBeforeUnmount, nextTick} from 'vue';
 import {useRoute, useRouter} from "vue-router";
 import type {Router} from 'vue-router';
-import {useParsedFilters} from "@/composables/useParsedFilters.ts";
+import {useParsedFilters} from "@/composables/filter/useParsedFilters.ts";
 import {adressesFiltered, hasAdvancedFilters} from "@/utils/filters.ts";
 import {FILTER_KEYS} from "@/types/FilterType.ts";
 
@@ -97,6 +97,7 @@ function addMarkers() {
   clearTargetClone();
 
   for (const adresse of filteredAdresses.value) {
+    const isMobile = () => window.innerWidth <= 810;
     const {latitude, longitude} = adresse;
     if (!latitude || !longitude) continue;
 
@@ -263,8 +264,8 @@ function addMarkers() {
           icon: L.icon({iconUrl, iconSize: [41, 41], iconAnchor: [22, 0]})
         }).bindPopup(popup);
 
-        // S'il n'y a qu'une formation, on navigue au clic du marqueur
-        if (formations.length === 1) {
+        // S'il n'y a qu'une formation, on navigue au clic du marqueur (uniquement en desktop)
+        if (!isMobile() && formations.length === 1) {
           m.on('click', () => {
             const f = formations[0];
             const query = {...router.currentRoute.value.query} as QueryParams;
@@ -277,8 +278,21 @@ function addMarkers() {
           });
         }
 
-        // Si plusieurs formations, clic = reset des paramètres d'URL
-        if (formations.length > 1) {
+        // Si plusieurs formations, clic = reset des paramètres d'URL (uniquement en desktop)
+        if (!isMobile() && formations.length > 1) {
+          m.on('click', () => {
+            const query = {...router.currentRoute.value.query} as QueryParams;
+            delete query.type;
+            delete query.slug;
+            query.latitude = latitude.toString();
+            query.longitude = longitude.toString();
+            delete query.structureSlug;
+            router.replace({query});
+          });
+        }
+
+        // En mobile, le clic sur le marqueur reset les paramètres d'URL
+        if(isMobile()) {
           m.on('click', () => {
             const query = {...router.currentRoute.value.query} as QueryParams;
             delete query.type;
@@ -387,8 +401,8 @@ function addMarkers() {
           icon: L.icon({iconUrl, iconSize: [41, 41], iconAnchor: [22, 0]})
         }).bindPopup(popup);
 
-        // Si une seule formation : clic = navigation
-        if (formations.length === 1) {
+        // Si une seule formation : clic = navigation (uniquement en desktop)
+        if (!isMobile() && formations.length === 1) {
           const f = formations[0];
           m.on('click', () => {
             const query = {...router.currentRoute.value.query} as QueryParams;
@@ -401,8 +415,21 @@ function addMarkers() {
           });
         }
 
-        // Si plusieurs formations : clic = reset des paramètres d'URL
-        if (formations.length > 1) {
+        // Si plusieurs formations : clic = reset des paramètres d'URL (uniquement en desktop)
+        if (!isMobile() && formations.length > 1) {
+          m.on('click', () => {
+            const query = {...router.currentRoute.value.query} as QueryParams;
+            delete query.type;
+            delete query.slug;
+            query.latitude = latitude.toString();
+            query.longitude = longitude.toString();
+            delete query.structureSlug;
+            router.replace({query});
+          });
+        }
+
+        // En mobile, le clic sur le marqueur reset les paramètres d'URL
+        if(isMobile()) {
           m.on('click', () => {
             const query = {...router.currentRoute.value.query} as QueryParams;
             delete query.type;

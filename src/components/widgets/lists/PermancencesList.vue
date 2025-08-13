@@ -2,10 +2,10 @@
 import {computed, nextTick, onMounted, ref, watch} from "vue";
 import {useRoute, useRouter} from "vue-router";
 import { PermanenceModel } from '@/models/Permanence.model.ts';
-import {useParsedFilters} from "@/composables/useParsedFilters.ts";
+import {useParsedFilters} from "@/composables/filter/useParsedFilters.ts";
 import {permanencesFiltered} from "@/utils/filters.ts";
 import {truncateHtmlSimple} from "@/utils/formatText.ts";
-import {useOpenDescription} from "@/composables/useOpenDescription.ts";
+import {useOpenDescription} from "@/composables/list/useOpenDescription.ts";
 
 const router = useRouter();
 const route = useRoute();
