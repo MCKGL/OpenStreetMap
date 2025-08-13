@@ -1,6 +1,6 @@
 import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import {parseFilters} from '@/utils/filters'
+import {parseFilters} from '@/utils/filters.ts'
 import {FILTER_KEYS, type FilterModel} from "@/types/FilterType.ts";
 
 type FilterKey = typeof FILTER_KEYS[number];

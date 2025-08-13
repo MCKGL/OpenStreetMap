@@ -2,10 +2,10 @@
 import {computed, nextTick, onMounted, ref, watch} from "vue";
 import {useRoute, useRouter} from "vue-router";
 import {type FormationModel} from "@/models/Formation.model.ts";
-import {useParsedFilters} from "@/composables/useParsedFilters.ts";
+import {useParsedFilters} from "@/composables/filter/useParsedFilters.ts";
 import {formationsFiltered, hasAdvancedFilters} from "@/utils/filters.ts";
 import {formatDate} from "@/utils/formatText.ts";
-import {useOpenDescription} from "@/composables/useOpenDescription.ts";
+import {useOpenDescription} from "@/composables/list/useOpenDescription.ts";
 import LogoProgramme from "@/components/widgets/LogosProgrammes/LogoProgramme.vue";
 import type {ProgrammeModel} from "@/models/Programme.model.ts";
 import {type ProgrammeCode, programmeMap} from "@/types/ProgrammeType.ts";
