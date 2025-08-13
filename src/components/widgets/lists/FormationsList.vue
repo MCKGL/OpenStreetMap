@@ -9,6 +9,7 @@ import {useOpenDescription} from "@/composables/list/useOpenDescription.ts";
 import LogoProgramme from "@/components/widgets/LogosProgrammes/LogoProgramme.vue";
 import type {ProgrammeModel} from "@/models/Programme.model.ts";
 import {type ProgrammeCode, programmeMap} from "@/types/ProgrammeType.ts";
+import {exportFormationsPDF} from "@/composables/pdf/exportFormationsPDF.ts";
 
 const router = useRouter();
 const route = useRoute();
@@ -147,6 +148,10 @@ watch(
   { immediate: true }
 );
 
+function onExportPDF() {
+  exportFormationsPDF(filteredFormations.value, filters.value);
+}
+
 </script>
 
 <template>
@@ -154,6 +159,7 @@ watch(
     <h2>
       Formations ({{ filteredFormations.length }} dont {{ numberOfPlacesAvailable(filteredFormations) }} avec places disponibles)
     </h2>
+    <button @click="onExportPDF">Exporter en PDF</button>
     <button class="toggle-btn" @click="toggleList"
             :aria-label="isListOpen ? 'Fermer la liste' : 'Ouvrir la liste'">
       <img
