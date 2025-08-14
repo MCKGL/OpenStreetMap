@@ -165,6 +165,11 @@ watch(
               {{ permanence.nom }} – {{ permanence.adresses.length }} Permanence{{ permanence.adresses.length > 1 ? 's' : '' }}
             </div>
           </a>
+          <router-link
+            :to="{ name: 'DetailMapPermanence', params: { slug: permanence.slug } }"
+          >
+            Voir détail
+          </router-link>
         </h3>
       </div>
 

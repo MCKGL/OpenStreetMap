@@ -157,6 +157,11 @@ watch(
               {{ structure.nom }}
             </div>
           </a>
+          <router-link
+            :to="{ name: 'DetailMapStructure', params: { slug: structure.slug } }"
+          >
+            Voir détail
+          </router-link>
         </h3>
       </div>
 

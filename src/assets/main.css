@@ -1,5 +1,6 @@
 @import './base.css';
 @import './list.css';
+@import './map.css';
 
 .readon {
   display: inline-block;

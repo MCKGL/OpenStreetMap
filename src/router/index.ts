@@ -1,14 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router';
-const Carto = () => import('@/views/PageCarto.vue');
+import DetailMap from "@/components/widgets/map/DetailMap.vue";
+const PageCarto = () => import('@/views/PageCarto.vue');
 
 const routes = [
-  { path: '/', name: 'Carto', component: Carto },
-
-  // redirection
-  {
-    path: '/:pathMatch(.*)*',
-    redirect: '/',
-  },
+  { path: '/', name: 'PageCarto', component: PageCarto },
+  { path: '/structure/coordination/:slug', name: 'DetailMapPermanence', component: DetailMap },
+  { path: '/structure/apprentissage-du-francais/:slug', name: 'DetailMapStructure', component: DetailMap },
+  { path: '/:pathMatch(.*)*', redirect: '/' },
 ];
 
 const router = createRouter({

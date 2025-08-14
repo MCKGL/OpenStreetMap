@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import MapCarto from "@/components/widgets/map/MapCarto.vue";
+import GeneralMap from "@/components/widgets/map/GeneralMap.vue";
 import {computed, nextTick, onBeforeUnmount, onMounted, ref, watch} from "vue";
 import {StructureModel} from "@/models/Structure.model.ts";
 import {PermanenceModel} from "@/models/Permanence.model.ts";
@@ -146,7 +146,7 @@ watch(
         </div>
 
         <div class="panel map-panel" v-if="!isMobile || mobileView==='map'">
-          <MapCarto
+          <GeneralMap
             ref="mapRef"
             :adresses="adresses"
           />

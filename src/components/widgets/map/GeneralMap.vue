@@ -190,19 +190,19 @@ function addMarkers() {
       }
 
       // Formations orphelines (formations hors sa structure)
-      const orphanMap = new Map<number, FormationModel[]>();
+      const orphanFormations = new Map<number, FormationModel[]>();
       for (const f of adresse.formations || []) {
         const sameAsStruct = f.structure?.adresses.some(a => a.latitude === latitude && a.longitude === longitude);
         const sameAsPerm = f.permanence?.adresses.some(a => a.latitude === latitude && a.longitude === longitude);
         if (!sameAsStruct && !sameAsPerm) {
           const key = f.structure?.id ?? f.id;
-          if (!orphanMap.has(key)) orphanMap.set(key, []);
-          orphanMap.get(key)!.push(f);
+          if (!orphanFormations.has(key)) orphanFormations.set(key, []);
+          orphanFormations.get(key)!.push(f);
         }
       }
 
       // Création des marqueurs pour les formations orphelines
-      for (const formations of orphanMap.values()) {
+      for (const formations of orphanFormations.values()) {
         // Récupération de la structure associée
         const struct = formations[0].structure!;
         const latitude = adresse.latitude, longitude = adresse.longitude;
@@ -966,176 +966,4 @@ watch(
 </template>
 
 <style>
-#map {
-  height: 100%;
-}
-
-.legend-toggle {
-  display: flex;
-  background: var(--color-background);;
-  border: none;
-  border-radius: 5px 5px 0 0;
-  padding: 5px 10px;
-  cursor: pointer;
-  position: absolute;
-  bottom: 100%;
-  right: 0;
-  transform: translateY(50%);
-  align-items: center;
-}
-
-.formation-list {
-  border: none;
-  background: none;
-  text-align: inherit;
-  color: var(--color-blue-alpha);
-  cursor: pointer;
-}
-
-.formation-list:hover {
-  text-decoration: underline;
-}
-
-.leaflet-container {
-  width: 100%;
-  height: 100%;
-}
-
-/* Style custom pour les clusters #0F7ECB */
-.custom-cluster {
-  background: rgba(15, 126, 203, 0.6);
-  border-radius: 50%;
-  color: white;
-  text-align: center;
-  font-size: var(--text-font-size);
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid white;
-}
-
-.cluster-icon {
-  line-height: 36px;
-}
-
-.legend-container {
-  position: relative;
-  transition: all 0.3s ease;
-}
-
-.legend-container h4 {
-  margin-top: 0;
-}
-
-.legend-content {
-  display: none;
-  background: var(--color-background);
-  padding: 10px;
-  border-radius: 5px;
-  line-height: 1.4;
-  font-size: var(--text-font-size);
-  box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
-}
-
-.legend-container.open .legend-content {
-  display: block;
-}
-
-.ico-legend {
-  width: 30px;
-  height: 30px;
-}
-
-.btn-legend{
-  width: 20px;
-  height: 20px;
-}
-
-.popup-activity-list {
-  padding: 10px;
-}
-
-.popup-activity-list-item {
-  list-style-type: circle;
-}
-
-.popup-title {
-  font-size: var(--subtitle-font-size);
-  margin-top: 20px;
-  font-weight: 600;
-}
-
-.popup-container {
-  display: flex;
-  flex-direction: column;
-}
-
-.popup-img img {
-  object-fit: contain;
-  width: 60px;
-  height: 60px;
-}
-
-.popup-text-container p {
-  text-align: center;
-}
-
-.popup-description {
-  display: flex;
-}
-
-.popup-btn {
-  justify-content: center;
-  display: flex;
-}
-
-.popup-formation-list {
-  padding: 0 0 0 10px;
-}
-
-.popup-formation-list-none {
-  margin: 10px;
-  font-style: italic;
-}
-
-.leaflet-popup-content {
-  max-width: 350px;
-  max-height: 500px;
-  overflow-y: auto;
-}
-
-.leaflet-popup-content .popup-btn a {
-  color: var(--color-text-on-hightlight);
-}
-
-.popup-formation-list li .noDispo {
-  color: var(--color-text-disabled-link);
-}
-
-@media (max-width: 810px) {
-  #map {
-    height: 100%;
-  }
-
-  .leaflet-control-container .leaflet-top .recenter-btn {
-    margin-top: 50px;
-  }
-}
-
-@media (max-width: 600px) {
-  .leaflet-popup-content {
-    max-width: 300px;
-    max-height: 300px;
-    overflow-y: auto;
-  }
-}
-
-@media screen and (max-height: 900px), screen and (max-width: 1440px) {
-  .leaflet-popup-content {
-    max-width: 300px;
-    max-height: 300px;
-    overflow-y: auto;
-  }
-}
 </style>

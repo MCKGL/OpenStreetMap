@@ -176,3 +176,65 @@ export async function getAdresses(): Promise<AdresseModel[]> {
 
   return Array.from(map.values());
 }
+
+/**
+ * Renvoie les adresses pour une structure donnée (slug)
+ */
+export async function getAdressesByStructureSlug(slug: string): Promise<AdresseModel[]> {
+  const structure = await getStructureBySlug(slug);
+  const map = new Map<string, AdresseModel>();
+
+  function addAdresse(a: AdresseModel, type: 'structure' | 'formation', ref: StructureModel | FormationModel) {
+    const key = `${a.latitude}-${a.longitude}-${type}`;
+    if (!map.has(key)) map.set(key, cloneAdresse(a));
+    const adresse = map.get(key)!;
+
+    if (type === 'structure') adresse.structures!.push(ref as StructureModel);
+    if (type === 'formation') adresse.formations!.push(ref as FormationModel);
+  }
+
+  // Adresses de la structure
+  for (const a of structure.adresses || []) {
+    addAdresse(a, 'structure', structure);
+  }
+
+  // Adresses des formations rattachées à la structure
+  for (const f of structure.formations || []) {
+    for (const a of f.adresses || []) {
+      addAdresse(a, 'formation', { ...f, structure });
+    }
+  }
+
+  return Array.from(map.values());
+}
+
+/**
+ * Renvoie les adresses pour une permanence donnée (slug)
+ */
+export async function getAdressesByPermanenceSlug(slug: string): Promise<AdresseModel[]> {
+  const permanence = await getPermanenceBySlug(slug);
+  const map = new Map<string, AdresseModel>();
+
+  function addAdresse(a: AdresseModel, type: 'permanence' | 'formation', ref: PermanenceModel | FormationModel) {
+    const key = `${a.latitude}-${a.longitude}-${type}`;
+    if (!map.has(key)) map.set(key, cloneAdresse(a));
+    const adresse = map.get(key)!;
+
+    if (type === 'permanence') adresse.permanences!.push(ref as PermanenceModel);
+    if (type === 'formation') adresse.formations!.push(ref as FormationModel);
+  }
+
+  // Adresses de la permanence
+  for (const a of permanence.adresses || []) {
+    addAdresse(a, 'permanence', permanence);
+  }
+
+  // Adresses des formations rattachées à la permanence
+  for (const f of permanence.formations || []) {
+    for (const a of f.adresses || []) {
+      addAdresse(a, 'formation', { ...f, permanence });
+    }
+  }
+
+  return Array.from(map.values());
+}
