@@ -17,7 +17,6 @@ const markerRefs: Record<string, L.Marker> = {};
 const route = useRoute();
 const adresses = ref<AdresseModel[]>([]);
 
-
 /**
  * Fonction initialisant la carte Leaflet simplement, sans cluster.
  */
@@ -32,6 +31,14 @@ function initMap() {
   map.addLayer(markers)
 
   map.setView([48.684, 2.502], 9)
+}
+
+function fitVisibleMarkers(map: L.Map, markers: L.LayerGroup) {
+  const layers = markers.getLayers() as L.Marker[];
+  if (!layers.length) return;
+
+  const bounds = L.latLngBounds(layers.map(m => m.getLatLng()));
+  map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15, animate: true });
 }
 
 function addMarkers() {
@@ -66,16 +73,12 @@ function addMarkers() {
           ${logoHtml}
           <div class="popup-text-container">
             <p><strong class="popup-title">${s.nom}</strong></p>
-            <ul class="popup-activity-list">
-              ${s.activitesFormation.map(act => `<li class="popup-activity-list-item">${act}</li>`).join('')}
-            </ul>
+            <p class="popup-activity-list">
+              Mettre l'adresse ici
+            </p>
           </div>
         </div>
-        <div class="popup-btn">
-          <a class="readon" href="${s.url}" target="_blank">Voir la structure</a>
-        </div>
       </div>`;
-
 
       const m = L.marker([latitude, longitude], {
         icon: L.divIcon({
@@ -143,16 +146,13 @@ function addMarkers() {
           ${logoHtml}
           <div class="popup-text-container">
             <p><strong class="popup-title">${struct.nom}</strong></p>
-            <ul class="popup-activity-list">
-              ${struct.activitesFormation.map(act => `<li class="popup-activity-list-item">${act}</li>`).join('')}
-            </ul>
+            <p class="popup-activity-list">
+              Mettre l'adresse ici
+            </p>
           </div>
         </div>
         <div>Formations de cette structure à cette adresse :</div>
         ${formationsHTML}
-        <div class="popup-btn">
-          <a class="readon" href="${struct.url}" target="_blank">Voir la structure</a>
-        </div>
       </div>`;
 
 
@@ -209,6 +209,7 @@ function addMarkers() {
       markerRefs[key] = m;
     }
   }
+  fitVisibleMarkers(map, markers);
 }
 
 function bindFormationButtons(marker: L.Marker) {
@@ -248,14 +249,14 @@ onMounted(async () => {
 .marker-structure-rotated img {
   width: 32px;
   height: 32px;
-  left: 1.3em;
+  left: 1.8em;
   top: 7px;
 }
 
 .marker-formation-rotated img {
   width: 32px;
   height: 32px;
-  left: -1.3em;
+  left: -0.8em;
   top: 7px;
 }
 </style>
