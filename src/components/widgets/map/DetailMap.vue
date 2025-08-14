@@ -129,9 +129,9 @@ function addMarkers() {
         <ul class="popup-formation-list">
           ${formations.map(f => `
             <li>
-              <button class="orphan-link formation-list ${!f.placeDisponible ? 'noDispo' : ''}" data-slug="${f.slug}">
+              <a href="${f.url}" target="_blank" class="orphan-link formation-list ${!f.placeDisponible ? 'noDispo' : ''}" data-slug="${f.slug}">
                 ${f.nom}
-              </button>
+              </a>
             </li>
           `).join('')}
         </ul>
