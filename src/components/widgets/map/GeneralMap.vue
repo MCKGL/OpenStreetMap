@@ -6,12 +6,13 @@ import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import type {AdresseModel} from "@/models/Adresse.model.ts";
 import type {FormationModel} from "@/models/Formation.model.ts";
-import {onMounted, ref, watch, computed, onBeforeUnmount, nextTick} from 'vue';
-import {useRoute, useRouter} from "vue-router";
+import {computed, nextTick, onBeforeUnmount, onMounted, ref, watch} from 'vue';
 import type {Router} from 'vue-router';
+import {useRoute, useRouter} from "vue-router";
 import {useParsedFilters} from "@/composables/filter/useParsedFilters.ts";
 import {adressesFiltered, hasAdvancedFilters} from "@/utils/filters.ts";
 import {FILTER_KEYS} from "@/types/FilterType.ts";
+import {type MapRoute, ROUTE_TYPE} from "@/types/RouteType.ts";
 
 // Import des modèles pour éviter les erreurs de type
 declare module 'leaflet' {
@@ -35,6 +36,7 @@ let uniqueCloneMarker: L.Marker | null = null;
 let highlightLayer: L.LayerGroup | null = null;
 let infoMulti: L.Control | null = null;
 const filters = useParsedFilters();
+const mapRoute = route.name as MapRoute;
 
 const props = defineProps<{
   adresses: AdresseModel[],
@@ -103,28 +105,30 @@ function addMarkers() {
 
     const hasAdvFilters = hasAdvancedFilters(filters.value);
 
-    // si on n'a pas de filtres avancés, on affiche les structures et formations 'orphelines' (c'est-à-dire pas à la même adresse que leurs structures)
-    if (!hasAdvFilters) {
-      // Structures
-      for (const s of adresse.structures || []) {
-        // Les formations de cette structure à cette adresse
-        const atThisAddress = (s.formations || []).filter(f =>
-          f.adresses.some(ad => ad.latitude === latitude && ad.longitude === longitude)
-        );
-        // Choix de l'icône : bleu par défaut, jaune si au moins une place dispo, gris sinon
-        let iconUrl = '/icons/marker_blue.png';
-        if (atThisAddress.length) {
-          iconUrl = atThisAddress.some(f => f.placeDisponible)
-            ? '/icons/marker_yellow.png'
-            : '/icons/marker_gray.png';
-        }
+    // Si on est sur la carte de recherche de formations, on affiche les formations et structures
+    if (mapRoute === ROUTE_TYPE.SEARCH_FORMATION) {
+      // si on n'a pas de filtres avancés, on affiche les structures et formations 'orphelines' (c'est-à-dire pas à la même adresse que leurs structures)
+      if (!hasAdvFilters) {
+        // Structures
+        for (const s of adresse.structures || []) {
+          // Les formations de cette structure à cette adresse
+          const atThisAddress = (s.formations || []).filter(f =>
+            f.adresses.some(ad => ad.latitude === latitude && ad.longitude === longitude)
+          );
+          // Choix de l'icône : bleu par défaut, jaune si au moins une place dispo, gris sinon
+          let iconUrl = '/icons/marker_blue.png';
+          if (atThisAddress.length) {
+            iconUrl = atThisAddress.some(f => f.placeDisponible)
+              ? '/icons/marker_yellow.png'
+              : '/icons/marker_gray.png';
+          }
 
-        // Construction du contenu du popup
-        const logoHtml = s.logo
-          ? `<div class="popup-img"><img src="${s.logo}" alt="${s.nom}" /></div>`
-          : '';
+          // Construction du contenu du popup
+          const logoHtml = s.logo
+            ? `<div class="popup-img"><img src="${s.logo}" alt="${s.nom}" /></div>`
+            : '';
 
-        let popup = `<div class="popup-container">
+          let popup = `<div class="popup-container">
     <div class="popup-description">
       ${logoHtml}
       <div class="popup-text-container">
@@ -135,25 +139,25 @@ function addMarkers() {
       </div>
     </div>`;
 
-        if (atThisAddress.length === 0) {
-          popup += `<div class="popup-formation-list-none">
+          if (atThisAddress.length === 0) {
+            popup += `<div class="popup-formation-list-none">
                         Aucune formation renseignée à cette adresse
                     </div>`;
-        } else {
-          popup += `<div><strong>Formations de cette structure à cette adresse :</strong></div>
+          } else {
+            popup += `<div><strong>Formations de cette structure à cette adresse :</strong></div>
                     <ul class="popup-formation-list">
                         ${atThisAddress.map(f =>
-            `<li>
+              `<li>
                          <button class="formation-link formation-list ${!f.placeDisponible ? 'noDispo' : ''}"
                                  data-slug="${f.slug}">
                            ${f.nom}
                          </button>
                        </li>`
-          ).join('')}
+            ).join('')}
                     </ul>`;
-        }
+          }
 
-        popup += `<div class="popup-btn">
+          popup += `<div class="popup-btn">
                     <a
                       class="readon"
                       href="${s.url}"
@@ -164,51 +168,51 @@ function addMarkers() {
                 </div>
             </div>`;
 
-        // Création du marqueur
-        const m = L.marker([latitude, longitude], {
-          icon: L.icon({iconUrl, iconSize: [41, 41], iconAnchor: [22, 0]}),
-          customData: {type: 'structure', slug: s.slug, structureSlug: s.slug}
-        })
-          .bindPopup(popup)
-          .on('click', () => {
-            const query = {...router.currentRoute.value.query} as QueryParams;
-            query.type = 'structure';
-            query.slug = s.slug;
-            query.latitude = latitude.toString();
-            query.longitude = longitude.toString();
-            delete query.structureSlug;
-            router.replace({query});
+          // Création du marqueur
+          const m = L.marker([latitude, longitude], {
+            icon: L.icon({iconUrl, iconSize: [41, 41], iconAnchor: [22, 0]}),
+            customData: {type: 'structure', slug: s.slug, structureSlug: s.slug}
           })
-          .on('popupopen', () => bindFormationButtons(m, s.slug));
-        markers.addLayer(m);
-        const key = `structure-${s.slug}-${latitude}-${longitude}`;
-        for (const f of atThisAddress) {
-          const fkey = `formation-${f.slug}-${latitude}-${longitude}`;
-          markerRefs[fkey] = m;
+            .bindPopup(popup)
+            .on('click', () => {
+              const query = {...router.currentRoute.value.query} as QueryParams;
+              query.type = 'structure';
+              query.slug = s.slug;
+              query.latitude = latitude.toString();
+              query.longitude = longitude.toString();
+              delete query.structureSlug;
+              router.replace({query});
+            })
+            .on('popupopen', () => bindFormationButtons(m, s.slug));
+          markers.addLayer(m);
+          const key = `structure-${s.slug}-${latitude}-${longitude}`;
+          for (const f of atThisAddress) {
+            const fkey = `formation-${f.slug}-${latitude}-${longitude}`;
+            markerRefs[fkey] = m;
+          }
+          markerRefs[key] = m;
         }
-        markerRefs[key] = m;
-      }
 
-      // Formations orphelines (formations hors sa structure)
-      const orphanFormations = new Map<number, FormationModel[]>();
-      for (const f of adresse.formations || []) {
-        const sameAsStruct = f.structure?.adresses.some(a => a.latitude === latitude && a.longitude === longitude);
-        const sameAsPerm = f.permanence?.adresses.some(a => a.latitude === latitude && a.longitude === longitude);
-        if (!sameAsStruct && !sameAsPerm) {
-          const key = f.structure?.id ?? f.id;
-          if (!orphanFormations.has(key)) orphanFormations.set(key, []);
-          orphanFormations.get(key)!.push(f);
+        // Formations orphelines (formations hors sa structure)
+        const orphanFormations = new Map<number, FormationModel[]>();
+        for (const f of adresse.formations || []) {
+          const sameAsStruct = f.structure?.adresses.some(a => a.latitude === latitude && a.longitude === longitude);
+          const sameAsPerm = f.permanence?.adresses.some(a => a.latitude === latitude && a.longitude === longitude);
+          if (!sameAsStruct && !sameAsPerm) {
+            const key = f.structure?.id ?? f.id;
+            if (!orphanFormations.has(key)) orphanFormations.set(key, []);
+            orphanFormations.get(key)!.push(f);
+          }
         }
-      }
 
-      // Création des marqueurs pour les formations orphelines
-      for (const formations of orphanFormations.values()) {
-        // Récupération de la structure associée
-        const struct = formations[0].structure!;
-        const latitude = adresse.latitude, longitude = adresse.longitude;
+        // Création des marqueurs pour les formations orphelines
+        for (const formations of orphanFormations.values()) {
+          // Récupération de la structure associée
+          const struct = formations[0].structure!;
+          const latitude = adresse.latitude, longitude = adresse.longitude;
 
-        // Construction du contenu du popup
-        const formationsHTML = `
+          // Construction du contenu du popup
+          const formationsHTML = `
   <ul class="popup-formation-list">
     ${formations.map(f => `
       <li>
@@ -222,11 +226,11 @@ function addMarkers() {
   </ul>
 `;
 
-        const logoHtml = struct.logo
-          ? `<div class="popup-img"><img src="${struct.logo}" alt="${struct.nom}" /></div>`
-          : '';
+          const logoHtml = struct.logo
+            ? `<div class="popup-img"><img src="${struct.logo}" alt="${struct.nom}" /></div>`
+            : '';
 
-        const popup = `
+          const popup = `
     <div class="popup-container">
     <div class="popup-description">
       ${logoHtml}
@@ -254,99 +258,99 @@ function addMarkers() {
     </div>
   `;
 
-        // Choix de l'icône : jaune si au moins une place dispo, gris sinon
-        const iconUrl = formations.some(f => f.placeDisponible)
-          ? '/icons/marker_yellow.png'
-          : '/icons/marker_gray.png';
+          // Choix de l'icône : jaune si au moins une place dispo, gris sinon
+          const iconUrl = formations.some(f => f.placeDisponible)
+            ? '/icons/marker_yellow.png'
+            : '/icons/marker_gray.png';
 
-        // Création du marqueur
-        const m = L.marker([latitude, longitude], {
-          icon: L.icon({iconUrl, iconSize: [41, 41], iconAnchor: [22, 0]})
-        }).bindPopup(popup);
+          // Création du marqueur
+          const m = L.marker([latitude, longitude], {
+            icon: L.icon({iconUrl, iconSize: [41, 41], iconAnchor: [22, 0]})
+          }).bindPopup(popup);
 
-        // S'il n'y a qu'une formation, on navigue au clic du marqueur (uniquement en desktop)
-        if (!isMobile() && formations.length === 1) {
-          m.on('click', () => {
-            const f = formations[0];
-            const query = {...router.currentRoute.value.query} as QueryParams;
-            query.type = 'formation';
-            query.slug = f.slug;
-            query.latitude = latitude.toString();
-            query.longitude = longitude.toString();
-            delete query.structureSlug;
-            router.replace({query});
-          });
-        }
-
-        // Si plusieurs formations, clic = reset des paramètres d'URL (uniquement en desktop)
-        if (!isMobile() && formations.length > 1) {
-          m.on('click', () => {
-            const query = {...router.currentRoute.value.query} as QueryParams;
-            delete query.type;
-            delete query.slug;
-            query.latitude = latitude.toString();
-            query.longitude = longitude.toString();
-            delete query.structureSlug;
-            router.replace({query});
-          });
-        }
-
-        // En mobile, le clic sur le marqueur reset les paramètres d'URL
-        if(isMobile()) {
-          m.on('click', () => {
-            const query = {...router.currentRoute.value.query} as QueryParams;
-            delete query.type;
-            delete query.slug;
-            query.latitude = latitude.toString();
-            query.longitude = longitude.toString();
-            delete query.structureSlug;
-            router.replace({query});
-          });
-        }
-
-        // A l'ouverture du popup, rattache le click sur les boutons .orphan-link
-        m.on('popupopen', () => {
-          const container = m.getPopup()!.getElement()!;
-          container.querySelectorAll<HTMLButtonElement>('.orphan-link').forEach(btn => {
-            btn.addEventListener('click', () => {
-              const slug = btn.dataset.slug!;
+          // S'il n'y a qu'une formation, on navigue au clic du marqueur (uniquement en desktop)
+          if (!isMobile() && formations.length === 1) {
+            m.on('click', () => {
+              const f = formations[0];
               const query = {...router.currentRoute.value.query} as QueryParams;
               query.type = 'formation';
-              query.slug = slug
+              query.slug = f.slug;
               query.latitude = latitude.toString();
               query.longitude = longitude.toString();
               delete query.structureSlug;
               router.replace({query});
-              m.closePopup();
+            });
+          }
+
+          // Si plusieurs formations, clic = reset des paramètres d'URL (uniquement en desktop)
+          if (!isMobile() && formations.length > 1) {
+            m.on('click', () => {
+              const query = {...router.currentRoute.value.query} as QueryParams;
+              delete query.type;
+              delete query.slug;
+              query.latitude = latitude.toString();
+              query.longitude = longitude.toString();
+              delete query.structureSlug;
+              router.replace({query});
+            });
+          }
+
+          // En mobile, le clic sur le marqueur reset les paramètres d'URL
+          if(isMobile()) {
+            m.on('click', () => {
+              const query = {...router.currentRoute.value.query} as QueryParams;
+              delete query.type;
+              delete query.slug;
+              query.latitude = latitude.toString();
+              query.longitude = longitude.toString();
+              delete query.structureSlug;
+              router.replace({query});
+            });
+          }
+
+          // A l'ouverture du popup, rattache le click sur les boutons .orphan-link
+          m.on('popupopen', () => {
+            const container = m.getPopup()!.getElement()!;
+            container.querySelectorAll<HTMLButtonElement>('.orphan-link').forEach(btn => {
+              btn.addEventListener('click', () => {
+                const slug = btn.dataset.slug!;
+                const query = {...router.currentRoute.value.query} as QueryParams;
+                query.type = 'formation';
+                query.slug = slug
+                query.latitude = latitude.toString();
+                query.longitude = longitude.toString();
+                delete query.structureSlug;
+                router.replace({query});
+                m.closePopup();
+              });
             });
           });
-        });
-        markers.addLayer(m);
-        for (const f of formations) {
-          const key = `formation-${f.slug}-${latitude}-${longitude}`;
-          markerRefs[key] = m;
+          markers.addLayer(m);
+          for (const f of formations) {
+            const key = `formation-${f.slug}-${latitude}-${longitude}`;
+            markerRefs[key] = m;
+          }
         }
       }
-    }
 
-    // Si on a des filtres avancés, on n'affiche que les formations, mais pas les structures
-    if (hasAdvFilters) {
-      // Map pour grouper les formations à la même adresse ET ayant la même structure
-      const grouped = new Map<string, FormationModel[]>();
+      // Si on a des filtres avancés, on n'affiche que les formations, mais pas les structures
+      if (hasAdvFilters) {
+        // Map pour grouper les formations à la même adresse ET ayant la même structure
+        const grouped = new Map<string, FormationModel[]>();
 
-      for (const f of adresse.formations || []) {
-        if (!f.structure) continue;
-        const key = `${f.structure.id}-${latitude}-${longitude}`;
-        if (!grouped.has(key)) grouped.set(key, []);
-        grouped.get(key)!.push(f);
-      }
+        for (const f of adresse.formations || []) {
+          if (!f.structure) continue;
+          const key = `${f.structure.id}-${latitude}-${longitude}`;
+          if (!grouped.has(key)) grouped.set(key, []);
+          grouped.get(key)!.push(f);
+        }
 
-      // Création des marqueurs par groupe (même structure, même adresse)
-      for (const [key, formations] of grouped.entries()) {
-        const struct = formations[0].structure!;
+        // Création des marqueurs par groupe (même structure, même adresse)
+        for (const [key, formations] of grouped.entries()) {
+          const struct = formations[0].structure!;
 
-        // Construction du contenu du popup
-        const formationsHTML = `
+          // Construction du contenu du popup
+          const formationsHTML = `
   <ul class="popup-formation-list">
     ${formations.map(f => `
       <li>
@@ -360,11 +364,11 @@ function addMarkers() {
   </ul>
 `;
 
-        const logoHtml = struct.logo
-          ? `<div class="popup-img"><img src="${struct.logo}" alt="${struct.nom}" /></div>`
-          : '';
+          const logoHtml = struct.logo
+            ? `<div class="popup-img"><img src="${struct.logo}" alt="${struct.nom}" /></div>`
+            : '';
 
-        const popup = `
+          const popup = `
     <div class="popup-container">
     <div class="popup-description">
       ${logoHtml}
@@ -391,77 +395,78 @@ function addMarkers() {
     </div>
   `;
 
-        const hasPlaces = formations.some(f => f.placeDisponible);
-        const iconUrl = hasPlaces
-          ? '/icons/marker_yellow.png'
-          : '/icons/marker_gray.png';
+          const hasPlaces = formations.some(f => f.placeDisponible);
+          const iconUrl = hasPlaces
+            ? '/icons/marker_yellow.png'
+            : '/icons/marker_gray.png';
 
-        // Création du marqueur
-        const m = L.marker([latitude, longitude], {
-          icon: L.icon({iconUrl, iconSize: [41, 41], iconAnchor: [22, 0]})
-        }).bindPopup(popup);
+          // Création du marqueur
+          const m = L.marker([latitude, longitude], {
+            icon: L.icon({iconUrl, iconSize: [41, 41], iconAnchor: [22, 0]})
+          }).bindPopup(popup);
 
-        // Si une seule formation : clic = navigation (uniquement en desktop)
-        if (!isMobile() && formations.length === 1) {
-          const f = formations[0];
-          m.on('click', () => {
-            const query = {...router.currentRoute.value.query} as QueryParams;
-            query.type = 'formation';
-            query.slug = f.slug;
-            query.latitude = latitude.toString();
-            query.longitude = longitude.toString();
-            delete query.structureSlug;
-            router.replace({query});
-          });
-        }
-
-        // Si plusieurs formations : clic = reset des paramètres d'URL (uniquement en desktop)
-        if (!isMobile() && formations.length > 1) {
-          m.on('click', () => {
-            const query = {...router.currentRoute.value.query} as QueryParams;
-            delete query.type;
-            delete query.slug;
-            query.latitude = latitude.toString();
-            query.longitude = longitude.toString();
-            delete query.structureSlug;
-            router.replace({query});
-          });
-        }
-
-        // En mobile, le clic sur le marqueur reset les paramètres d'URL
-        if(isMobile()) {
-          m.on('click', () => {
-            const query = {...router.currentRoute.value.query} as QueryParams;
-            delete query.type;
-            delete query.slug;
-            query.latitude = latitude.toString();
-            query.longitude = longitude.toString();
-            delete query.structureSlug;
-            router.replace({query});
-          });
-        }
-
-        // Sinon : clics dans popup
-        m.on('popupopen', () => {
-          const container = m.getPopup()!.getElement()!;
-          container.querySelectorAll<HTMLButtonElement>('.formation-link').forEach(btn => {
-            btn.addEventListener('click', () => {
-              const slug = btn.dataset.slug!;
+          // Si une seule formation : clic = navigation (uniquement en desktop)
+          if (!isMobile() && formations.length === 1) {
+            const f = formations[0];
+            m.on('click', () => {
               const query = {...router.currentRoute.value.query} as QueryParams;
               query.type = 'formation';
-              query.slug = slug;
+              query.slug = f.slug;
               query.latitude = latitude.toString();
               query.longitude = longitude.toString();
               delete query.structureSlug;
               router.replace({query});
-              m.closePopup();
+            });
+          }
+
+          // Si plusieurs formations : clic = reset des paramètres d'URL (uniquement en desktop)
+          if (!isMobile() && formations.length > 1) {
+            m.on('click', () => {
+              const query = {...router.currentRoute.value.query} as QueryParams;
+              delete query.type;
+              delete query.slug;
+              query.latitude = latitude.toString();
+              query.longitude = longitude.toString();
+              delete query.structureSlug;
+              router.replace({query});
+            });
+          }
+
+          // En mobile, le clic sur le marqueur reset les paramètres d'URL
+          if(isMobile()) {
+            m.on('click', () => {
+              const query = {...router.currentRoute.value.query} as QueryParams;
+              delete query.type;
+              delete query.slug;
+              query.latitude = latitude.toString();
+              query.longitude = longitude.toString();
+              delete query.structureSlug;
+              router.replace({query});
+            });
+          }
+
+          // Sinon : clics dans popup
+          m.on('popupopen', () => {
+            const container = m.getPopup()!.getElement()!;
+            container.querySelectorAll<HTMLButtonElement>('.formation-link').forEach(btn => {
+              btn.addEventListener('click', () => {
+                const slug = btn.dataset.slug!;
+                const query = {...router.currentRoute.value.query} as QueryParams;
+                query.type = 'formation';
+                query.slug = slug;
+                query.latitude = latitude.toString();
+                query.longitude = longitude.toString();
+                delete query.structureSlug;
+                router.replace({query});
+                m.closePopup();
+              });
             });
           });
-        });
-        markers.addLayer(m);
-        for (const f of formations) {
-          const key = `formation-${f.slug}-${latitude}-${longitude}`;
-          markerRefs[key] = m;
+          markers.addLayer(m);
+          for (const f of formations) {
+            const key = `formation-${f.slug}-${latitude}-${longitude}`;
+            markerRefs[key] = m;
+          }
         }
       }
     }
@@ -496,7 +501,9 @@ function addMarkers() {
 
       const m = L.marker([latitude, longitude], {
         icon: L.icon({
-          iconUrl: '/icons/marker_black.png',
+          iconUrl: mapRoute === ROUTE_TYPE.SEARCH_FORMATION
+            ? '/icons/marker_black.png'
+            : '/icons/marker_red.png',
           iconSize: [41, 41],
           iconAnchor: [22, 0]
         }),
@@ -821,6 +828,26 @@ function addLegend() {
 
     const c = L.DomUtil.create('div', `legend-container ${isOpenInitially ? 'open' : ''}`);
 
+    let legendMarkers;
+    let legendSelected;
+    if (mapRoute == ROUTE_TYPE.SEARCH_FORMATION) {
+      legendMarkers = `        <div><img class="ico-legend" src="/icons/marker_blue.png" alt="marqueur bleu structures"> Structures</div>
+        <div><img class="ico-legend" src="/icons/marker_black.png" alt="marqueur noir permanences"> Permanences</div>
+        <div><img class="ico-legend" src="/icons/marker_yellow.png" alt="marqueur jaune formations place dispo"> Formations avec place disponible</div>
+        <div><img class="ico-legend" src="/icons/marker_gray.png" alt="marqueur gris formations sans place"> Formations sans place disponible</div>`;
+
+      legendSelected = `            <img class="ico-legend" src="/icons/marker_blue_clone.png" alt="marqueur bleu focus structures">
+            <img class="ico-legend" src="/icons/marker_black_clone.png" alt="marqueur noir focus permanences">
+            <img class="ico-legend" src="/icons/marker_yellow_clone.png" alt="marqueur jaune focus formations place dispo">
+            <img class="ico-legend" src="/icons/marker_gray_clone.png" alt="marqueur gris focus formations sans place dispo">`;
+    } else if (mapRoute == ROUTE_TYPE.SEARCH_COORDINATION) {
+      legendMarkers = `
+        <div><img class="ico-legend" src="/icons/marker_red.png" alt="marqueur rouge coordination"> Coordination (adresse générale)</div>`;
+
+      legendSelected = `
+            <img class="ico-legend" src="/icons/marker_red_clone.png" alt="marqueur rouge focus coordination">`;
+    }
+
     c.innerHTML = `
       <button class="legend-toggle" aria-label="${isOpenInitially ? 'Fermer' : 'Ouvrir'} la légende">
         ${isOpenInitially
@@ -829,17 +856,11 @@ function addLegend() {
       </button>
       <div class="legend-content">
         <h4>Légende</h4>
-        <div><img class="ico-legend" src="/icons/marker_blue.png" alt="marqueur bleu structures"> Structures</div>
-        <div><img class="ico-legend" src="/icons/marker_black.png" alt="marqueur noir permanences"> Permanences</div>
-        <div><img class="ico-legend" src="/icons/marker_yellow.png" alt="marqueur jaune formations place dispo"> Formations avec place disponible</div>
-        <div><img class="ico-legend" src="/icons/marker_gray.png" alt="marqueur gris formations sans place"> Formations sans place disponible</div>
+            ${legendMarkers}
         <br>
         <span>Point sélectionné :</span>
         <div>
-            <img class="ico-legend" src="/icons/marker_blue_clone.png" alt="marqueur bleu focus structures">
-            <img class="ico-legend" src="/icons/marker_black_clone.png" alt="marqueur noir focus permanences">
-            <img class="ico-legend" src="/icons/marker_yellow_clone.png" alt="marqueur jaune focus formations place dispo">
-            <img class="ico-legend" src="/icons/marker_gray_clone.png" alt="marqueur gris focus formations sans place dispo">
+            ${legendSelected}
         </div>
       </div>
     `;

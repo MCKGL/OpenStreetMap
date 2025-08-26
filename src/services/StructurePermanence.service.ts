@@ -5,7 +5,7 @@ import type {FormationModel} from "@/models/Formation.model.ts";
 
 const JSON_PATH = import.meta.env.DEV
   ? '/api/cartographie.json'
-  : 'https://www.reseau-alpha.org/cartographie.json';
+  : 'http://localhost:8080/app_dev.php/cartographie.json';
 
 // Cache partagé pour tout le JSON
 let _rawCache: { structures: StructureModel[]; permanences: PermanenceModel[] } | null = null;
@@ -141,7 +141,7 @@ export async function getAdresses(): Promise<AdresseModel[]> {
   const map = new Map<string, AdresseModel>();
 
   function addAdresse(a: AdresseModel, type: 'structure' | 'permanence' | 'formation', ref: StructureModel | PermanenceModel | FormationModel) {
-    const key = `${a.latitude}-${a.longitude}-${type}`; // point + type ≠ unique
+    const key = `${a.latitude}-${a.longitude}-${type}`;
     if (!map.has(key)) {
       map.set(key, cloneAdresse(a));
     }
@@ -234,6 +234,58 @@ export async function getAdressesByPermanenceSlug(slug: string): Promise<Adresse
     for (const a of f.adresses || []) {
       addAdresse(a, 'formation', { ...f, permanence });
     }
+  }
+
+  return Array.from(map.values());
+}
+
+/**
+ * Renvoie la liste des lieux de permanences (lieux = adresses de coordinations)
+ */
+export async function getLieux(): Promise<AdresseModel[]> {
+  const { permanences } = await fetchAll();
+
+  const map = new Map<string, AdresseModel>();
+
+  function addLieu(a: AdresseModel, ref: PermanenceModel) {
+    const key = `${a.latitude}-${a.longitude}-permanence`;
+    if (!map.has(key)) {
+      map.set(key, {
+        ...a,
+        structures: [],
+        permanences: [],
+        formations: []
+      });
+    }
+    const adresse = map.get(key)!;
+    adresse.permanences!.push(ref);
+  }
+
+  for (const p of permanences) {
+    for (const lieu of p.lieux || []) {
+      addLieu(lieu, p);
+    }
+  }
+
+  return Array.from(map.values());
+}
+
+/**
+ * Renvoie les lieux pour une permanence donnée (slug)
+ */
+export async function getLieuxByPermanenceSlug(slug: string): Promise<AdresseModel[]> {
+  const permanence = await getPermanenceBySlug(slug);
+  const map = new Map<string, AdresseModel>();
+
+  function addLieu(a: AdresseModel, ref: PermanenceModel) {
+    const key = `${a.latitude}-${a.longitude}-permanence`;
+    if (!map.has(key)) map.set(key, cloneAdresse(a));
+    const adresse = map.get(key)!;
+    adresse.permanences!.push(ref);
+  }
+
+  for (const lieu of permanence.lieux || []) {
+    addLieu(lieu, permanence);
   }
 
   return Array.from(map.values());

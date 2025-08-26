@@ -8,6 +8,7 @@ import type {AdresseModel} from "@/models/Adresse.model.ts";
 import {
   getAdresses,
   getFormations,
+  getLieux,
   getPermanences,
   getStructures
 } from "@/services/StructurePermanence.service.ts";
@@ -17,6 +18,7 @@ import FormationsList from "@/components/widgets/lists/FormationsList.vue";
 import ContainerFilters from "@/components/widgets/filters/ContainerFilters.vue";
 import {useRoute} from "vue-router";
 import LoadingAnimation from "@/components/ui/LoadingAnimation.vue";
+import {type MapRoute, ROUTE_TYPE} from "@/types/RouteType.ts";
 
 const structures = ref<StructureModel[]>([]);
 const permanences = ref<PermanenceModel[]>([]);
@@ -29,6 +31,7 @@ const isMobile = ref(window.innerWidth <= 810);
 const mapRef = ref();
 const listContentRef = ref<HTMLElement|null>(null);
 const route = useRoute();
+const mapRoute = route.name as MapRoute;
 
 const mobileClass = computed(() => {
   if (!isMobile.value) return '';
@@ -61,7 +64,12 @@ onMounted(async () => {
   try {
     structures.value = await getStructures();
     permanences.value = await getPermanences();
-    adresses.value = await getAdresses();
+    if (mapRoute === ROUTE_TYPE.SEARCH_FORMATION) {
+      adresses.value = await getAdresses();
+    }
+    if (mapRoute === ROUTE_TYPE.SEARCH_COORDINATION) {
+      adresses.value = await getLieux();
+    }
     formations.value = await getFormations();
   } finally {
     loading.value = false;
@@ -107,7 +115,7 @@ watch(
       <ContainerFilters />
     </div>
 
-    <div class="container-reminder">
+    <div v-if="mapRoute === ROUTE_TYPE.SEARCH_FORMATION" class="container-reminder">
       L’annuaire de Réseau Alpha est collaboratif, les formations sont renseignées par les structures elles-mêmes
       <div class="view-switch" v-show="isMobile">
         <button
@@ -130,8 +138,8 @@ watch(
           </button>
           <div class="list-content" ref="listContentRef">
             <PermancencesList :permanences="permanences"/>
-            <FormationsList :formations="formations"/>
-            <StructuresList :structures="structures"/>
+            <FormationsList v-if="mapRoute === ROUTE_TYPE.SEARCH_FORMATION" :formations="formations"/>
+            <StructuresList v-if="mapRoute === ROUTE_TYPE.SEARCH_FORMATION" :structures="structures"/>
           </div>
           <button
             v-if="!isMobile || mobileView==='list'"

@@ -1,18 +1,23 @@
 <script setup lang="ts">
 import {computed, nextTick, onMounted, ref, watch} from "vue";
 import {useRoute, useRouter} from "vue-router";
-import { PermanenceModel } from '@/models/Permanence.model.ts';
+import {PermanenceModel} from '@/models/Permanence.model.ts';
 import {useParsedFilters} from "@/composables/filter/useParsedFilters.ts";
 import {permanencesFiltered} from "@/utils/filters.ts";
 import {truncateHtmlSimple} from "@/utils/formatText.ts";
 import {useOpenDescription} from "@/composables/list/useOpenDescription.ts";
+import {type MapRoute, ROUTE_TYPE} from "@/types/RouteType.ts";
 
 const router = useRouter();
 const route = useRoute();
 const filters = useParsedFilters();
 const hasQuerySlug = route.query.type === 'permanence' && typeof route.query.slug === 'string';
-const isListOpen = ref(hasQuerySlug);
-const { toggleDescription, isDescriptionOpen, openDescription } = useOpenDescription();
+const mapRoute = route.name as MapRoute;
+const isListOpen = ref(
+  mapRoute === ROUTE_TYPE.SEARCH_COORDINATION ? true : hasQuerySlug
+);
+const {toggleDescription, isDescriptionOpen, openDescription} = useOpenDescription();
+
 
 const props = defineProps<{
   permanences: PermanenceModel[];
@@ -20,10 +25,13 @@ const props = defineProps<{
 
 const filteredPermanences = computed(() =>
   permanencesFiltered(props.permanences, filters.value)
+    .sort((a, b) => a.nom.localeCompare(b.nom))
 );
 
 function navigateTo(permanence: PermanenceModel) {
-  const adresses = permanence.adresses || [];
+  const adresses = mapRoute === ROUTE_TYPE.SEARCH_FORMATION
+    ? permanence.adresses || []
+    : permanence.lieux || []
 
   const query: Record<string, string | undefined> = {
     ...route.query,
@@ -43,7 +51,7 @@ function navigateTo(permanence: PermanenceModel) {
       query.longitude = a.longitude.toString();
     }
   }
-  router.push({ query });
+  router.push({query});
 }
 
 function toggleList() {
@@ -75,7 +83,7 @@ onMounted(() => {
     nextTick(() => {
       nextTick(() => {
         const element = document.getElementById(`permanence-${slug}`);
-        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        element?.scrollIntoView({behavior: 'smooth', block: 'center'});
 
         setTimeout(() => {
           const container = document.querySelector('.list-content');
@@ -101,7 +109,7 @@ watch(
       isListOpen.value = true;
       nextTick(() => {
         const element = document.getElementById(`permanence-${query.slug}`);
-        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        element?.scrollIntoView({behavior: 'smooth', block: 'center'});
 
         setTimeout(() => {
           const container = document.querySelector('.list-content');
@@ -118,15 +126,15 @@ watch(
       });
     }
   },
-  { immediate: true }
+  {immediate: true}
 );
 
 </script>
 
 <template>
   <div class="list-header" v-if="filteredPermanences.length > 0">
-    <h2>Permanences ({{ numberOfAdresses(filteredPermanences) }})</h2>
-    <button
+    <h2 v-if="mapRoute === ROUTE_TYPE.SEARCH_FORMATION">Permanences ({{ numberOfAdresses(filteredPermanences) }})</h2>
+    <button v-if="mapRoute === ROUTE_TYPE.SEARCH_FORMATION"
       class="toggle-btn"
       @click="toggleList"
       :aria-label="isListOpen ? 'Fermer la liste' : 'Ouvrir la liste'"
@@ -159,14 +167,17 @@ watch(
         <h3>
           <a href="javascript:void(0)">
             <div>
-              <span class="accordion-icon">{{ isDescriptionOpen(permanence.slug) ? '−' : '+' }}</span>
+              <span class="accordion-icon">{{
+                  isDescriptionOpen(permanence.slug) ? '−' : '+'
+                }}</span>
             </div>
             <div>
-              {{ permanence.nom }} – {{ permanence.adresses.length }} Permanence{{ permanence.adresses.length > 1 ? 's' : '' }}
+              {{ permanence.nom }} <span v-if="mapRoute === ROUTE_TYPE.SEARCH_FORMATION">– {{ permanence.adresses.length }}
+              Permanence{{ permanence.adresses.length > 1 ? 's' : '' }}</span>
             </div>
           </a>
           <router-link
-            :to="{ name: 'DetailMapPermanence', params: { slug: permanence.slug } }"
+            :to="{ name: ROUTE_TYPE.DETAIL_MAP_PERMANENCE, params: { slug: permanence.slug } }"
           >
             Voir détail
           </router-link>
@@ -176,7 +187,8 @@ watch(
       <div v-if="isDescriptionOpen(permanence.slug)">
 
         <div class="list-elem-description">
-          <div class="list-description-s-p-font" v-html="truncateHtmlSimple(permanence.description)"></div>
+          <div class="list-description-s-p-font"
+               v-html="truncateHtmlSimple(permanence.description)"></div>
         </div>
 
         <div class="more-btn">

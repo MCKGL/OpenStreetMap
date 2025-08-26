@@ -7,8 +7,9 @@ import type {FormationModel} from "@/models/Formation.model.ts";
 import {useRoute} from "vue-router";
 import {
   getAdressesByPermanenceSlug,
-  getAdressesByStructureSlug
+  getAdressesByStructureSlug, getLieuxByPermanenceSlug
 } from "@/services/StructurePermanence.service.ts";
+import {type MapRoute, ROUTE_TYPE} from "@/types/RouteType.ts";
 
 let map: L.Map
 let markers: L.LayerGroup
@@ -50,13 +51,11 @@ function addMarkers() {
 
     // Structures
     for (const s of adresse.structures || []) {
-      const hasFormationSameAddress =
-        (adresse.formations && adresse.formations.length > 0) ||
-        (adresse.structures || []).some(struct =>
-          (struct.formations || []).some(f =>
-            f.adresses?.some(a => a.latitude === adresse.latitude && a.longitude === adresse.longitude)
-          )
-        );
+      const hasFormationSameAddress = (s.formations || []).some(f =>
+        f.adresses?.some(a =>
+          a.latitude === adresse.latitude && a.longitude === adresse.longitude
+        )
+      );
 
       const iconUrl = hasFormationSameAddress ? '/icons/marker_blue_rotated.png' : '/icons/marker_blue.png';
 
@@ -68,13 +67,17 @@ function addMarkers() {
         ? `<div class="popup-img"><img src="${s.logo}" alt="${s.nom}" /></div>`
         : '';
 
+      const adressText = [adresse.numero, adresse.voie, adresse.codePostal, adresse.ville]
+        .filter(Boolean)
+        .join(' ');
+
       const popup = `<div class="popup-container">
         <div class="popup-description">
           ${logoHtml}
           <div class="popup-text-container">
             <p><strong class="popup-title">${s.nom}</strong></p>
             <p class="popup-activity-list">
-              Mettre l'adresse ici
+              ${adressText}
             </p>
           </div>
         </div>
@@ -104,15 +107,11 @@ function addMarkers() {
     }
 
     for (const formations of orphanFormations.values()) {
-      const hasStructureSameAddress =
-        (adresse.structures || []).some(struct =>
-          (struct.formations || []).some(f =>
-            f.adresses?.some(a => a.latitude === adresse.latitude && a.longitude === adresse.longitude)
-          )
-        ) ||
-        (adresse.formations || []).some(f => f !== formations[0] && f.adresses?.some(a =>
+      const hasStructureSameAddress = formations.some(f =>
+        f.structure?.adresses?.some(a =>
           a.latitude === adresse.latitude && a.longitude === adresse.longitude
-        ));
+        )
+      );
 
       const struct = formations[0].structure!;
 
@@ -141,13 +140,17 @@ function addMarkers() {
         ? `<div class="popup-img"><img src="${struct.logo}" alt="${struct.nom}" /></div>`
         : '';
 
+      const adressText = [adresse.numero, adresse.voie, adresse.codePostal, adresse.ville]
+        .filter(Boolean)
+        .join(' ');
+
       const popup = `<div class="popup-container">
         <div class="popup-description">
           ${logoHtml}
           <div class="popup-text-container">
             <p><strong class="popup-title">${struct.nom}</strong></p>
             <p class="popup-activity-list">
-              Mettre l'adresse ici
+              ${adressText}
             </p>
           </div>
         </div>
@@ -185,29 +188,52 @@ function addMarkers() {
         ? `<div class="popup-img"><img src="${p.logo}" alt="${p.nom}" /></div>`
         : '';
 
-      const popup = `<div class="popup-container">
-        <div class="popup-description">
-          ${logoHtml}
-          <div class="popup-text-container">
-            <p><strong class="popup-title">${p.nom}</strong></p>
-            <ul class="popup-activity-list">
-              ${p.activitesCoordination.map(act => `<li class="popup-activity-list-item">${act}</li>`).join('')}
-            </ul>
-          </div>
-        </div>
-        <div class="popup-btn">
-          <a class="readon" href="${p.urlCoordination}" target="_blank">Voir la permanence</a>
-        </div>
-      </div>`;
+      const adressText = [adresse.numero, adresse.voie, adresse.codePostal, adresse.ville]
+        .filter(Boolean)
+        .join(' ');
 
-      const m = L.marker([latitude, longitude], {
-        icon: L.icon({ iconUrl: '/icons/marker_black.png', iconSize: [41, 41], iconAnchor: [22, 0] }),
+      const popup = `<div class="popup-container">
+    <div class="popup-description">
+      ${logoHtml}
+      <div class="popup-text-container">
+        <p><strong class="popup-title">${p.nom}</strong></p>
+        <p class="popup-activity-list">${adressText}</p>
+      </div>
+    </div>
+  </div>`;
+
+      const adresseTyped = adresse as AdresseModel & { typeMarker?: 'red' | 'black' };
+      let iconBase = adresseTyped.typeMarker === 'red' ? 'marker_red' : 'marker_black';
+
+      // Vérifie si un autre lieu partage les mêmes coordonnées
+      const hasConflict = adresses.value.some(a => {
+        const aTyped = a as AdresseModel & { typeMarker?: 'red' | 'black' };
+        return aTyped.typeMarker !== adresseTyped.typeMarker &&
+          aTyped.latitude === adresseTyped.latitude &&
+          aTyped.longitude === adresseTyped.longitude;
+      });
+
+      let markerClass = 'marker-permanence';
+      if (hasConflict) {
+        markerClass += adresseTyped.typeMarker === 'red'
+          ? ' marker-permanence-red-rotated'
+          : ' marker-permanence-black-rotated';
+        iconBase += '_rotated';
+      }
+
+      const m = L.marker([adresse.latitude, adresse.longitude], {
+        icon: L.divIcon({
+          html: `<img src="/icons/${iconBase}.png" alt="marker permanence" />`,
+          className: markerClass,
+          iconAnchor: [22, 0]
+        }),
       }).bindPopup(popup);
 
       markers.addLayer(m);
-      const key = `permanence-${p.slug}-${latitude}-${longitude}`;
+      const key = `permanence-${p.slug}-${adresse.latitude}-${adresse.longitude}`;
       markerRefs[key] = m;
     }
+
   }
   fitVisibleMarkers(map, markers);
 }
@@ -221,16 +247,83 @@ function bindFormationButtons(marker: L.Marker) {
   });
 }
 
+/**
+ * Ajoute la légende au coin inférieur droit de la carte. La légende garde en mémoire son état (ouverte ou fermée)
+ * temps qu'on ne ferme pas l'onglet du navigateur (sessionStorage).
+ */
+function addLegend(route: MapRoute) {
+  const legend = (L.control as unknown as (options: L.ControlOptions) => L.Control)({
+    position: 'bottomright'
+  });
+
+  legend.onAdd = () => {
+    const storedState = sessionStorage.getItem('legendState');
+    const isOpenInitially = storedState !== 'closed';
+
+    const c = L.DomUtil.create('div', `legend-container ${isOpenInitially ? 'open' : ''}`);
+
+    let legendContent = `
+      <button class="legend-toggle" aria-label="${isOpenInitially ? 'Fermer' : 'Ouvrir'} la légende">
+        ${isOpenInitially
+      ? `<img class="btn-legend" src="/icons/expand_down.svg" alt="Fermer la légende">`
+      : `Légende <img class="btn-legend" src="/icons/expand_up.svg" alt="Ouvrir la légende">`}
+      </button>
+      <div class="legend-content">
+        <h4>Légende</h4>
+    `;
+
+    if (route === ROUTE_TYPE.DETAIL_MAP_STRUCTURE) {
+      legendContent += `
+        <div><img class="ico-legend" src="/icons/marker_blue.png" alt="marqueur bleu structures"> Lieu de la structure</div>
+        <div><img class="ico-legend" src="/icons/marker_yellow.png" alt="marqueur jaune formations place dispo"> Lieu de formations avec place disponible</div>
+        <div><img class="ico-legend" src="/icons/marker_gray.png" alt="marqueur gris formations sans place"> Lieu de formations sans place disponible</div>
+      `;
+    }
+    if (route === ROUTE_TYPE.DETAIL_MAP_PERMANENCE) {
+      legendContent += `
+        <div><img class="ico-legend" src="/icons/marker_red.png" alt="marqueur rouge permanences adresse générale"> Coordination (adresse générale)</div>
+        <div><img class="ico-legend" src="/icons/marker_black.png" alt="marqueur noir permanences"> Permanence(s) d'accueil, d'évaluation et d'orientation linguistique</div>
+      `;
+    }
+
+    legendContent += `</div>`;
+    c.innerHTML = legendContent;
+
+    const btn = c.querySelector<HTMLButtonElement>('.legend-toggle')!;
+    btn.onclick = () => {
+      const isOpen = c.classList.toggle('open');
+      sessionStorage.setItem('legendState', isOpen ? 'open' : 'closed');
+
+      btn.innerHTML = isOpen
+        ? `<img class="btn-legend" src="/icons/expand_down.svg" alt="Fermer la légende">`
+        : `Légende <img class="btn-legend" src="/icons/expand_up.svg" alt="Ouvrir la légende">`;
+      btn.setAttribute('aria-label', isOpen ? 'Fermer la légende' : 'Ouvrir la légende');
+    };
+    return c;
+  };
+  legend.addTo(map);
+}
+
 onMounted(async () => {
   const slug = route.params.slug as string;
+  const mapRoute = route.name as MapRoute;
 
-  if (route.name === 'DetailMapStructure') {
+  if (mapRoute === ROUTE_TYPE.DETAIL_MAP_STRUCTURE) {
     adresses.value = await getAdressesByStructureSlug(slug);
-  } else if (route.name === 'DetailMapPermanence') {
-    adresses.value = await getAdressesByPermanenceSlug(slug);
+  } else if (mapRoute === ROUTE_TYPE.DETAIL_MAP_PERMANENCE) {
+    const [permanenceAdresses, permanenceLieux] = await Promise.all([
+      getAdressesByPermanenceSlug(slug),
+      getLieuxByPermanenceSlug(slug)
+    ]);
+
+    adresses.value = [
+      ...permanenceAdresses.map(a => ({ ...a, typeMarker: 'black' })),
+      ...permanenceLieux.map(a => ({ ...a, typeMarker: 'red' }))
+    ];
   }
 
   initMap();
+  addLegend(mapRoute);
   addMarkers();
 });
 </script>
@@ -240,20 +333,20 @@ onMounted(async () => {
 </template>
 
 <style>
-.marker-structure img, .marker-formation img {
+.marker-structure img, .marker-formation img, .marker-permanence img {
   width: 41px;
   height: 41px;
   position: absolute;
 }
 
-.marker-structure-rotated img {
+.marker-structure-rotated img, .marker-permanence-black-rotated img {
   width: 32px;
   height: 32px;
   left: 1.8em;
   top: 7px;
 }
 
-.marker-formation-rotated img {
+.marker-formation-rotated img, .marker-permanence-red-rotated img {
   width: 32px;
   height: 32px;
   left: -0.8em;

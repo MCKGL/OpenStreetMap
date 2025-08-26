@@ -34,7 +34,7 @@
   height: 100%;
 }
 
-.leaflet-container a {
+.popup-formation-list a {
   color: var(--color-blue-alpha);
 }
 

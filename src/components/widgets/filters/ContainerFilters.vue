@@ -12,13 +12,17 @@ import {
 import * as VilleDepartementService from '@/services/VilleDepartement.service.ts'
 import * as ProgrammeService from '@/services/Programme.service.ts'
 import router from "@/router";
-import type {LocationQueryRaw} from "vue-router";
+import {type LocationQueryRaw, useRoute} from "vue-router";
 import {capitalize} from "@/utils/formatText.ts";
 import {PUBLICS_SPECIFIQUES} from "@/models/PublicSpecifique.model.ts";
 import {OBJECTIF_VISE} from "@/models/ObjectifVise.model.ts";
+import {type MapRoute, ROUTE_TYPE} from "@/types/RouteType.ts";
 
 const isFilterOpen = ref(window.location.search.length === 0);
 const isMobile = ref(window.innerWidth <= 810);
+
+const route = useRoute();
+const mapRoute = route.name as MapRoute;
 
 const emit = defineEmits<{
   (e: 'toggle-filter', open: boolean): void;
@@ -275,7 +279,7 @@ onBeforeUnmount(() => {
 
     <section v-if="!isMobile || isFilterOpen">
       <section class="first-section">
-        <div id="first-section-activites" class="global-input">
+        <div v-if="mapRoute === ROUTE_TYPE.SEARCH_FORMATION" id="first-section-activites" class="global-input">
           <label for="activites-select" class="label">Je recherche une formation de :</label>
           <Multiselect
             id="activites-select"
@@ -312,7 +316,7 @@ onBeforeUnmount(() => {
 
       </section>
 
-      <section class="first-section">
+      <section v-if="mapRoute === ROUTE_TYPE.SEARCH_FORMATION" class="first-section">
         <div id="first-section-checkbox">
           <label for="checkbox" class="label">
             <input type="checkbox" id="checkbox-only-permanence" v-model="permanencesSeulesChecked" />
@@ -333,7 +337,7 @@ onBeforeUnmount(() => {
 
       <hr />
 
-      <section class="advanced-section">
+      <section v-if="mapRoute === ROUTE_TYPE.SEARCH_FORMATION" class="advanced-section">
         <div class="section-title filter-advanced-title">
           <h3 @click="isAdvancedOpen = !isAdvancedOpen">
             <a href="javascript:void(0)">
