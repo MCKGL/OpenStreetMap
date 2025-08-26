@@ -8,7 +8,8 @@ import {formatDate} from "@/utils/formatText.ts";
 import {useOpenDescription} from "@/composables/list/useOpenDescription.ts";
 import LogoProgramme from "@/components/widgets/LogosProgrammes/LogoProgramme.vue";
 import type {ProgrammeModel} from "@/models/Programme.model.ts";
-import {type ProgrammeCode, programmeMap} from "@/types/ProgrammeType.ts";
+import {type ProgrammeCode, PROGRAMME_MAP} from "@/types/ProgrammeType.ts";
+import {ROUTE_TYPE} from "@/types/RouteType.ts";
 
 const router = useRouter();
 const route = useRoute();
@@ -87,7 +88,7 @@ function getValidProgrammeCode(programmes: ProgrammeModel[]): ProgrammeCode | nu
   if (!programmes?.length) return null;
 
   for (const p of programmes) {
-    const code = programmeMap[p.nom];
+    const code = PROGRAMME_MAP[p.nom];
     if (code) return code;
   }
 
@@ -202,6 +203,11 @@ watch(
               :programme="getValidProgrammeCode(formation.programmes)!"
             />
           </a>
+          <router-link
+            :to="{ name: ROUTE_TYPE.DETAIL_MAP_FORMATION, params: { slugStructure: formation.structure?.slug ,slug: formation.slug } }"
+          >
+            Voir détail
+          </router-link>
         </h3>
       </div>
 

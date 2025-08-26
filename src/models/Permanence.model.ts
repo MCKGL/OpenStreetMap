@@ -14,5 +14,6 @@ export class PermanenceModel {
   activitesCoordination!: string[];
   formations!: FormationModel[];
   adresses!: AdresseModel[];
+  lieux!: AdresseModel[];
   url!: string;
 }

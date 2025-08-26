@@ -8,6 +8,8 @@ export class AdresseModel {
   latitude!: number;
   longitude!: number;
   ville!: string;
+  numero!: string;
+  voie!: string;
   correspondancesCodePostal!: string[];
   correspondancesVille!: string[];
   structures?: StructureModel[];

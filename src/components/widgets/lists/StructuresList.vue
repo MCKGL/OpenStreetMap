@@ -6,6 +6,7 @@ import {structuresFiltered} from "@/utils/filters.ts";
 import {useParsedFilters} from "@/composables/filter/useParsedFilters.ts";
 import {truncateHtmlSimple} from "@/utils/formatText.ts";
 import {useOpenDescription} from "@/composables/list/useOpenDescription.ts";
+import {ROUTE_TYPE} from "@/types/RouteType.ts";
 
 const router = useRouter();
 const route = useRoute();
@@ -157,6 +158,11 @@ watch(
               {{ structure.nom }}
             </div>
           </a>
+          <router-link
+            :to="{ name: ROUTE_TYPE.DETAIL_MAP_STRUCTURE, params: { slug: structure.slug } }"
+          >
+            Voir détail
+          </router-link>
         </h3>
       </div>
 
