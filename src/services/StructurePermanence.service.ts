@@ -3,9 +3,14 @@ import type {PermanenceModel} from '@/models/Permanence.model.ts';
 import type {AdresseModel} from "@/models/Adresse.model.ts";
 import type {FormationModel} from "@/models/Formation.model.ts";
 
+// const JSON_PATH = import.meta.env.DEV
+//   ? '/api/cartographie.json'
+//   : 'http://localhost:8080/app_dev.php/cartographie.json';
+
+
 const JSON_PATH = import.meta.env.DEV
   ? '/api/cartographie.json'
-  : 'http://localhost:8080/app_dev.php/cartographie.json';
+  : 'https://www.reseau-alpha.org/cartographie.json';
 
 // Cache partagé pour tout le JSON
 let _rawCache: { structures: StructureModel[]; permanences: PermanenceModel[] } | null = null;
@@ -234,6 +239,30 @@ export async function getAdressesByPermanenceSlug(slug: string): Promise<Adresse
     for (const a of f.adresses || []) {
       addAdresse(a, 'formation', { ...f, permanence });
     }
+  }
+
+  return Array.from(map.values());
+}
+
+/**
+ * Renvoie les adresses pour une formation donnée (slug)
+ */
+export async function getAdressesByFormationSlug(slug: string): Promise<AdresseModel[]> {
+  const formations = await getFormations();
+  const formation = formations.find(f => f.slug === slug);
+  if (!formation) throw new Error(`Formation avec slug ${slug} introuvable`);
+
+  const map = new Map<string, AdresseModel>();
+
+  function addAdresse(a: AdresseModel, ref: FormationModel) {
+    const key = `${a.latitude}-${a.longitude}-formation`;
+    if (!map.has(key)) map.set(key, cloneAdresse(a));
+    const adresse = map.get(key)!;
+    adresse.formations!.push(ref);
+  }
+
+  for (const a of formation.adresses || []) {
+    addAdresse(a, formation);
   }
 
   return Array.from(map.values());

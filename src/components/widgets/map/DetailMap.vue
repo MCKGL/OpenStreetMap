@@ -6,16 +6,20 @@ import {onMounted, ref} from "vue";
 import type {FormationModel} from "@/models/Formation.model.ts";
 import {useRoute} from "vue-router";
 import {
+  getAdressesByFormationSlug,
   getAdressesByPermanenceSlug,
   getAdressesByStructureSlug, getLieuxByPermanenceSlug
 } from "@/services/StructurePermanence.service.ts";
 import {type MapRoute, ROUTE_TYPE} from "@/types/RouteType.ts";
+import LoadingAnimation from "@/components/ui/LoadingAnimation.vue";
 
+const loading = ref(true);
 let map: L.Map
 let markers: L.LayerGroup
 const mapDetailRef = ref<HTMLElement | null>(null);
 const markerRefs: Record<string, L.Marker> = {};
 const route = useRoute();
+const mapRoute = route.name as MapRoute;
 const adresses = ref<AdresseModel[]>([]);
 
 /**
@@ -67,18 +71,17 @@ function addMarkers() {
         ? `<div class="popup-img"><img src="${s.logo}" alt="${s.nom}" /></div>`
         : '';
 
-      const adressText = [adresse.numero, adresse.voie, adresse.codePostal, adresse.ville]
-        .filter(Boolean)
-        .join(' ');
+      const adressText = `<p class="popup-activity-list">
+      ${(adresse.numero || '')}${adresse.numero && adresse.voie ? ', ' : ''}${adresse.voie || ''}<br>
+      ${adresse.codePostal || ''}${adresse.codePostal && adresse.ville ? ' - ' : ''}${adresse.ville || ''}
+    </p>`;
 
       const popup = `<div class="popup-container">
         <div class="popup-description">
           ${logoHtml}
           <div class="popup-text-container">
             <p><strong class="popup-title">${s.nom}</strong></p>
-            <p class="popup-activity-list">
               ${adressText}
-            </p>
           </div>
         </div>
       </div>`;
@@ -107,11 +110,12 @@ function addMarkers() {
     }
 
     for (const formations of orphanFormations.values()) {
-      const hasStructureSameAddress = formations.some(f =>
-        f.structure?.adresses?.some(a =>
-          a.latitude === adresse.latitude && a.longitude === adresse.longitude
-        )
-      );
+      const hasStructureSameAddress = mapRoute !== ROUTE_TYPE.DETAIL_MAP_FORMATION &&
+        formations.some(f =>
+          f.structure?.adresses?.some(a =>
+            a.latitude === adresse.latitude && a.longitude === adresse.longitude
+          )
+        );
 
       const struct = formations[0].structure!;
 
@@ -140,18 +144,17 @@ function addMarkers() {
         ? `<div class="popup-img"><img src="${struct.logo}" alt="${struct.nom}" /></div>`
         : '';
 
-      const adressText = [adresse.numero, adresse.voie, adresse.codePostal, adresse.ville]
-        .filter(Boolean)
-        .join(' ');
+      const adressText = `<p class="popup-activity-list">
+      ${(adresse.numero || '')}${adresse.numero && adresse.voie ? ', ' : ''}${adresse.voie || ''}<br>
+      ${adresse.codePostal || ''}${adresse.codePostal && adresse.ville ? ' - ' : ''}${adresse.ville || ''}
+    </p>`;
 
       const popup = `<div class="popup-container">
         <div class="popup-description">
           ${logoHtml}
           <div class="popup-text-container">
             <p><strong class="popup-title">${struct.nom}</strong></p>
-            <p class="popup-activity-list">
               ${adressText}
-            </p>
           </div>
         </div>
         <div>Formations de cette structure à cette adresse :</div>
@@ -188,16 +191,17 @@ function addMarkers() {
         ? `<div class="popup-img"><img src="${p.logo}" alt="${p.nom}" /></div>`
         : '';
 
-      const adressText = [adresse.numero, adresse.voie, adresse.codePostal, adresse.ville]
-        .filter(Boolean)
-        .join(' ');
+      const adressText = `<p class="popup-activity-list">
+      ${(adresse.numero || '')}${adresse.numero && adresse.voie ? ', ' : ''}${adresse.voie || ''}<br>
+      ${adresse.codePostal || ''}${adresse.codePostal && adresse.ville ? ' - ' : ''}${adresse.ville || ''}
+    </p>`;
 
       const popup = `<div class="popup-container">
     <div class="popup-description">
       ${logoHtml}
       <div class="popup-text-container">
         <p><strong class="popup-title">${p.nom}</strong></p>
-        <p class="popup-activity-list">${adressText}</p>
+        ${adressText}
       </div>
     </div>
   </div>`;
@@ -306,20 +310,25 @@ function addLegend(route: MapRoute) {
 
 onMounted(async () => {
   const slug = route.params.slug as string;
-  const mapRoute = route.name as MapRoute;
 
-  if (mapRoute === ROUTE_TYPE.DETAIL_MAP_STRUCTURE) {
-    adresses.value = await getAdressesByStructureSlug(slug);
-  } else if (mapRoute === ROUTE_TYPE.DETAIL_MAP_PERMANENCE) {
-    const [permanenceAdresses, permanenceLieux] = await Promise.all([
-      getAdressesByPermanenceSlug(slug),
-      getLieuxByPermanenceSlug(slug)
-    ]);
+  try {
+    if (mapRoute === ROUTE_TYPE.DETAIL_MAP_STRUCTURE) {
+      adresses.value = await getAdressesByStructureSlug(slug);
+    } else if (mapRoute === ROUTE_TYPE.DETAIL_MAP_PERMANENCE) {
+      const [permanenceAdresses, permanenceLieux] = await Promise.all([
+        getAdressesByPermanenceSlug(slug),
+        getLieuxByPermanenceSlug(slug)
+      ]);
 
-    adresses.value = [
-      ...permanenceAdresses.map(a => ({ ...a, typeMarker: 'black' })),
-      ...permanenceLieux.map(a => ({ ...a, typeMarker: 'red' }))
-    ];
+      adresses.value = [
+        ...permanenceAdresses.map(a => ({ ...a, typeMarker: 'black' })),
+        ...permanenceLieux.map(a => ({ ...a, typeMarker: 'red' }))
+      ];
+    } else if (mapRoute === ROUTE_TYPE.DETAIL_MAP_FORMATION) {
+      adresses.value = await getAdressesByFormationSlug(slug)
+    }
+  } finally {
+    loading.value = false;
   }
 
   initMap();
@@ -329,6 +338,7 @@ onMounted(async () => {
 </script>
 
 <template>
+  <LoadingAnimation class="loading" v-if="loading" />
   <div ref="mapDetailRef" id="mapDetail"></div>
 </template>
 
@@ -351,5 +361,16 @@ onMounted(async () => {
   height: 32px;
   left: -0.8em;
   top: 7px;
+}
+
+.loading {
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  z-index: 999;
+}
+
+.popup-description {
+  gap: 20px;
 }
 </style>

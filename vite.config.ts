@@ -18,19 +18,22 @@ export default defineConfig({
   server: {
     proxy: {
       '/api/cartographie.json': {
-        target: 'http://localhost:8080/app_dev.php',
+        // target: 'http://localhost:8080/app_dev.php',
+        target: 'https://www.reseau-alpha.org',
         changeOrigin: true,
         secure: false,
         rewrite: path => path.replace(/^\/api/, ''),
       },
       '/api/programmes.json': {
-        target: 'http://localhost:8080/app_dev.php',
+        // target: 'http://localhost:8080/app_dev.php',
+        target: 'https://www.reseau-alpha.org',
         changeOrigin: true,
         secure: false,
         rewrite: path => path.replace(/^\/api/, ''),
       },
       '/api/villes-departements.json': {
-        target: 'http://localhost:8080/app_dev.php',
+        // target: 'http://localhost:8080/app_dev.php',
+        target: 'https://www.reseau-alpha.org',
         changeOrigin: true,
         secure: false,
         rewrite: path => path.replace(/^\/api/, ''),
