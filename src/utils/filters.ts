@@ -272,7 +272,7 @@ export function permanencesFiltered(permanences: PermanenceModel[], filter: Filt
         adresses: matchingAdresses,
       };
     })
-    .filter((p): p is PermanenceModel => p !== null);
+    .filter((p): p is PermanenceModel => p !== null && matchKeyword(p, filter));
 }
 
 export function structuresFiltered(structures: StructureModel[], filter: FilterModel): StructureModel[] {

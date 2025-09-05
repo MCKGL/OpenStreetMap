@@ -25,6 +25,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  stroke: black;
+}
+
+.toggle-btn .icon-expand {
+  width: 20px;
+  height: 20px;
+}
+
+.toggle-btn:hover {
+  background: var(--color-hightlight-hover);
+  color: var(--color-text-on-hightlight);
+  stroke: var(--color-text-on-hightlight);
 }
 
 .ul-list {

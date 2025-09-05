@@ -19,6 +19,7 @@ import ContainerFilters from "@/components/widgets/filters/ContainerFilters.vue"
 import {useRoute} from "vue-router";
 import LoadingAnimation from "@/components/ui/LoadingAnimation.vue";
 import {type MapRoute, ROUTE_TYPE} from "@/types/RouteType.ts";
+import ButtonScrollTop from "@/components/ui/ButtonScrollTop.vue";
 
 const structures = ref<StructureModel[]>([]);
 const permanences = ref<PermanenceModel[]>([]);
@@ -92,14 +93,27 @@ watch(mobileView, (newView) => {
 watch(
   () => route.query,
   (query) => {
-    if (
-      isMobile.value &&
-      query.type === 'formation' &&
+    const hasMarkerSelection =
+      query.type &&
       query.slug &&
       query.latitude &&
-      query.longitude
-    ) {
+      query.longitude;
+
+    if (!hasMarkerSelection) return;
+
+    // Cas mobile : si on clique sur une formation, on bascule en mode liste
+    if (isMobile.value && query.type === 'formation') {
       mobileView.value = 'list';
+    }
+
+    // Cas desktop : on ré-ouvre le pane list si fermé
+    if (!isMobile.value && !isOpen.value) {
+      isOpen.value = true;
+      nextTick(() => {
+        setTimeout(() => {
+          mapRef.value?.handleResize?.();
+        }, 100);
+      });
     }
   },
   { immediate: true }
@@ -141,16 +155,7 @@ watch(
             <FormationsList v-if="mapRoute === ROUTE_TYPE.SEARCH_FORMATION" :formations="formations"/>
             <StructuresList v-if="mapRoute === ROUTE_TYPE.SEARCH_FORMATION" :structures="structures"/>
           </div>
-          <button
-            v-if="!isMobile || mobileView==='list'"
-            class="scroll-top-btn"
-            @click="scrollToTop"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-                 xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 15L12 9L6 15" stroke="#FFFFFF" stroke-width="2"/>
-            </svg>
-          </button>
+          <ButtonScrollTop v-if="!isMobile || mobileView==='list'" @click="scrollToTop" />
         </div>
 
         <div class="panel map-panel" v-if="!isMobile || mobileView==='map'">
@@ -217,7 +222,6 @@ watch(
 
 .panel {
   position: relative;
-  overflow: hidden;
 }
 
 .list-panel {
@@ -227,26 +231,11 @@ watch(
   background: var(--color-background);;
   transition: width 0.3s;
   box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-  overflow: hidden;
   height: 100%;
 }
 
-.scroll-top-btn {
-  position: absolute;
-  border: none;
-  cursor: pointer;
-  background: var(--color-hightlight) none repeat scroll 0 0;
-  bottom: 20px;
-  font-size: 30px;
-  height: 50px;
-  line-height: 52px;
-  right: 20px;
-  width: 45px;
-}
-
 .list-panel.closed {
-  width: 40px;
-
+  width: 11px;
 }
 
 .list-content {
@@ -263,8 +252,8 @@ watch(
 
 .toggle-btn {
   position: absolute;
-  top: 10px;
-  right:10px;
+  top: 50%;
+  right:-15px;
   width: 30px;
   height:30px;
   z-index: 8;
