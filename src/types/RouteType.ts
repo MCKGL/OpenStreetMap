@@ -1,8 +1,9 @@
 export const ROUTE_TYPE = {
   SEARCH_FORMATION: 'SearchFormation',
   SEARCH_COORDINATION: 'SearchCoordination',
-  DETAIL_MAP_PERMANENCE: 'DetailMapPermanence',
-  DETAIL_MAP_STRUCTURE: 'DetailMapStructure',
+  DETAIL_MAP_COORDINATION: 'DetailMapCoordination',
+  DETAIL_MAP_STRUCTURE_LEARNING: 'DetailMapStructure',
+  DETAIL_MAP_STRUCTURE_ACTOR: 'DetailMapActor',
   DETAIL_MAP_FORMATION: 'DetailMapFormation',
 } as const;
 
