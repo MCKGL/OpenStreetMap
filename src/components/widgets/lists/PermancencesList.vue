@@ -165,11 +165,6 @@ watch(
               Permanence{{ permanence.adresses.length > 1 ? 's' : '' }}</span>
             </div>
           </a>
-          <router-link
-            :to="{ name: ROUTE_TYPE.DETAIL_MAP_COORDINATION, params: { slug: permanence.slug } }"
-          >
-            Voir détail
-          </router-link>
         </h3>
       </div>
 
