@@ -10,6 +10,8 @@ import LogoProgramme from "@/components/widgets/LogosProgrammes/LogoProgramme.vu
 import type {ProgrammeModel} from "@/models/Programme.model.ts";
 import {type ProgrammeCode, PROGRAMME_MAP} from "@/types/ProgrammeType.ts";
 import {ROUTE_TYPE} from "@/types/RouteType.ts";
+import ExpandUp from "@/components/icons/ExpandUp.vue";
+import ExpandDown from "@/components/icons/ExpandDown.vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -157,20 +159,7 @@ watch(
     </h2>
     <button class="toggle-btn" @click="toggleList"
             :aria-label="isListOpen ? 'Fermer la liste' : 'Ouvrir la liste'">
-      <img
-        v-if="isListOpen"
-        src="/icons/expand_up.svg"
-        alt="Fermer la liste"
-        width="20"
-        height="20"
-      />
-      <img
-        v-else
-        src="/icons/expand_down.svg"
-        alt="Ouvrir la liste"
-        width="20"
-        height="20"
-      />
+      <component class="icon-expand" :is ="isListOpen ? ExpandUp : ExpandDown" />
     </button>
   </div>
   <ul v-show="isListOpen" class="ul-list">
