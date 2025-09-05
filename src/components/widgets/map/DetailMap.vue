@@ -55,36 +55,40 @@ function addMarkers() {
 
     // Structures
     for (const s of adresse.structures || []) {
-      const hasFormationSameAddress = (s.formations || []).some(f =>
-        f.adresses?.some(a =>
-          a.latitude === adresse.latitude && a.longitude === adresse.longitude
-        )
-      );
+      let iconUrl = '/icons/marker_blue.png';
+      let markerClass = 'marker-structure';
 
-      const iconUrl = hasFormationSameAddress ? '/icons/marker_blue_rotated.png' : '/icons/marker_blue.png';
+      if (mapRoute === ROUTE_TYPE.DETAIL_MAP_STRUCTURE_LEARNING) {
+        const hasFormationSameAddress = (s.formations || []).some(f =>
+          f.adresses?.some(a =>
+            a.latitude === adresse.latitude && a.longitude === adresse.longitude
+          )
+        );
 
-      const markerClass = hasFormationSameAddress
-        ? 'marker-structure marker-structure-rotated'
-        : 'marker-structure';
+        if (hasFormationSameAddress) {
+          iconUrl = '/icons/marker_blue_rotated.png';
+          markerClass = 'marker-structure marker-structure-rotated';
+        }
+      }
 
       const logoHtml = s.logo
         ? `<div class="popup-img"><img src="${s.logo}" alt="${s.nom}" /></div>`
         : '';
 
       const adressText = `<p class="popup-activity-list">
-      ${(adresse.numero || '')}${adresse.numero && adresse.voie ? ', ' : ''}${adresse.voie || ''}<br>
-      ${adresse.codePostal || ''}${adresse.codePostal && adresse.ville ? ' - ' : ''}${adresse.ville || ''}
-    </p>`;
+    ${(adresse.numero || '')}${adresse.numero && adresse.voie ? ', ' : ''}${adresse.voie || ''}<br>
+    ${adresse.codePostal || ''}${adresse.codePostal && adresse.ville ? ' - ' : ''}${adresse.ville || ''}
+  </p>`;
 
       const popup = `<div class="popup-container">
-        <div class="popup-description">
-          ${logoHtml}
-          <div class="popup-text-container">
-            <p><strong class="popup-title">${s.nom}</strong></p>
-              ${adressText}
-          </div>
-        </div>
-      </div>`;
+    <div class="popup-description">
+      ${logoHtml}
+      <div class="popup-text-container">
+        <p><strong class="popup-title">${s.nom}</strong></p>
+        ${adressText}
+      </div>
+    </div>
+  </div>`;
 
       const m = L.marker([latitude, longitude], {
         icon: L.divIcon({
@@ -93,7 +97,7 @@ function addMarkers() {
           iconAnchor: [22, 0]
         }),
       })
-    .bindPopup(popup)
+        .bindPopup(popup)
         .on('popupopen', () => bindFormationButtons(m));
 
       markers.addLayer(m);
@@ -101,26 +105,30 @@ function addMarkers() {
       markerRefs[key] = m;
     }
 
-    // Formations orphelines
-    const orphanFormations = new Map<string, FormationModel[]>();
-    for (const f of adresse.formations || []) {
-      const key = `${adresse.latitude}-${adresse.longitude}`;
-      if (!orphanFormations.has(key)) orphanFormations.set(key, []);
-      orphanFormations.get(key)!.push(f);
+    // Points Formations
+    const groupFormations = new Map<string, FormationModel[]>();
+
+    // On n'affiche pas les formations si on est sur la page acteur ressource
+    if (mapRoute !== ROUTE_TYPE.DETAIL_MAP_STRUCTURE_ACTOR) {
+      for (const f of adresse.formations || []) {
+        const key = `${adresse.latitude}-${adresse.longitude}`;
+        if (!groupFormations.has(key)) groupFormations.set(key, []);
+        groupFormations.get(key)!.push(f);
+      }
     }
 
-    for (const formations of orphanFormations.values()) {
+    for (const formationsAtAddress of groupFormations.values()) {
       const hasStructureSameAddress = mapRoute !== ROUTE_TYPE.DETAIL_MAP_FORMATION &&
-        formations.some(f =>
+        formationsAtAddress.some(f =>
           f.structure?.adresses?.some(a =>
             a.latitude === adresse.latitude && a.longitude === adresse.longitude
           )
         );
 
-      const struct = formations[0].structure!;
+      const struct = formationsAtAddress[0].structure!;
 
       // Choix de l'icône de base selon place disponible
-      let iconBase = formations.some(f => f.placeDisponible) ? 'marker_yellow' : 'marker_gray';
+      let iconBase = formationsAtAddress.some(f => f.placeDisponible) ? 'marker_yellow' : 'marker_gray';
       if (hasStructureSameAddress) iconBase += '_rotated';
       const iconUrl = `/icons/${iconBase}.png`;
 
@@ -130,7 +138,7 @@ function addMarkers() {
 
       const formationsHTML = `
         <ul class="popup-formation-list">
-          ${formations.map(f => `
+          ${formationsAtAddress.map(f => `
             <li>
               <a href="${f.url}" target="_blank" class="orphan-link formation-list ${!f.placeDisponible ? 'noDispo' : ''}" data-slug="${f.slug}">
                 ${f.nom}
@@ -179,7 +187,7 @@ function addMarkers() {
 
       markers.addLayer(m);
 
-      for (const f of formations) {
+      for (const f of formationsAtAddress) {
         const key = `formation-${f.slug}-${adresse.latitude}-${adresse.longitude}`;
         markerRefs[key] = m;
       }
@@ -276,17 +284,23 @@ function addLegend(route: MapRoute) {
         <h4>Légende</h4>
     `;
 
-    if (route === ROUTE_TYPE.DETAIL_MAP_STRUCTURE) {
+    if (route === ROUTE_TYPE.DETAIL_MAP_STRUCTURE_LEARNING) {
       legendContent += `
         <div><img class="ico-legend" src="/icons/marker_blue.png" alt="marqueur bleu structures"> Lieu de la structure</div>
         <div><img class="ico-legend" src="/icons/marker_yellow.png" alt="marqueur jaune formations place dispo"> Lieu de formations avec place disponible</div>
         <div><img class="ico-legend" src="/icons/marker_gray.png" alt="marqueur gris formations sans place"> Lieu de formations sans place disponible</div>
       `;
     }
-    if (route === ROUTE_TYPE.DETAIL_MAP_PERMANENCE) {
+    if (route === ROUTE_TYPE.DETAIL_MAP_COORDINATION) {
       legendContent += `
         <div><img class="ico-legend" src="/icons/marker_red.png" alt="marqueur rouge permanences adresse générale"> Coordination (adresse générale)</div>
         <div><img class="ico-legend" src="/icons/marker_black.png" alt="marqueur noir permanences"> Permanence(s) d'accueil, d'évaluation et d'orientation linguistique</div>
+      `;
+    }
+
+    if (route === ROUTE_TYPE.DETAIL_MAP_STRUCTURE_ACTOR) {
+      legendContent += `
+        <div><img class="ico-legend" src="/icons/marker_blue.png" alt="marqueur bleu structures"> Lieu de la structure</div>
       `;
     }
 
@@ -312,9 +326,9 @@ onMounted(async () => {
   const slug = route.params.slug as string;
 
   try {
-    if (mapRoute === ROUTE_TYPE.DETAIL_MAP_STRUCTURE) {
+    if (mapRoute === ROUTE_TYPE.DETAIL_MAP_STRUCTURE_LEARNING || mapRoute === ROUTE_TYPE.DETAIL_MAP_STRUCTURE_ACTOR) {
       adresses.value = await getAdressesByStructureSlug(slug);
-    } else if (mapRoute === ROUTE_TYPE.DETAIL_MAP_PERMANENCE) {
+    } else if (mapRoute === ROUTE_TYPE.DETAIL_MAP_COORDINATION) {
       const [permanenceAdresses, permanenceLieux] = await Promise.all([
         getAdressesByPermanenceSlug(slug),
         getLieuxByPermanenceSlug(slug)

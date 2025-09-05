@@ -177,7 +177,7 @@ watch(
             </div>
           </a>
           <router-link
-            :to="{ name: ROUTE_TYPE.DETAIL_MAP_PERMANENCE, params: { slug: permanence.slug } }"
+            :to="{ name: ROUTE_TYPE.DETAIL_MAP_COORDINATION, params: { slug: permanence.slug } }"
           >
             Voir détail
           </router-link>

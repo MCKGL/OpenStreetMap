@@ -159,7 +159,7 @@ watch(
             </div>
           </a>
           <router-link
-            :to="{ name: ROUTE_TYPE.DETAIL_MAP_STRUCTURE, params: { slug: structure.slug } }"
+            :to="{ name: ROUTE_TYPE.DETAIL_MAP_STRUCTURE_LEARNING, params: { slug: structure.slug } }"
           >
             Voir détail
           </router-link>
