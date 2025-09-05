@@ -6,7 +6,6 @@ import {structuresFiltered} from "@/utils/filters.ts";
 import {useParsedFilters} from "@/composables/filter/useParsedFilters.ts";
 import {truncateHtmlSimple} from "@/utils/formatText.ts";
 import {useOpenDescription} from "@/composables/list/useOpenDescription.ts";
-import {ROUTE_TYPE} from "@/types/RouteType.ts";
 import ExpandUp from "@/components/icons/ExpandUp.vue";
 import ExpandDown from "@/components/icons/ExpandDown.vue";
 
@@ -147,11 +146,6 @@ watch(
               {{ structure.nom }}
             </div>
           </a>
-          <router-link
-            :to="{ name: ROUTE_TYPE.DETAIL_MAP_STRUCTURE_LEARNING, params: { slug: structure.slug } }"
-          >
-            Voir détail
-          </router-link>
         </h3>
       </div>
 

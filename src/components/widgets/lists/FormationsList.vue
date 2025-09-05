@@ -9,7 +9,6 @@ import {useOpenDescription} from "@/composables/list/useOpenDescription.ts";
 import LogoProgramme from "@/components/widgets/LogosProgrammes/LogoProgramme.vue";
 import type {ProgrammeModel} from "@/models/Programme.model.ts";
 import {type ProgrammeCode, PROGRAMME_MAP} from "@/types/ProgrammeType.ts";
-import {ROUTE_TYPE} from "@/types/RouteType.ts";
 import ExpandUp from "@/components/icons/ExpandUp.vue";
 import ExpandDown from "@/components/icons/ExpandDown.vue";
 
@@ -192,11 +191,6 @@ watch(
               :programme="getValidProgrammeCode(formation.programmes)!"
             />
           </a>
-          <router-link
-            :to="{ name: ROUTE_TYPE.DETAIL_MAP_FORMATION, params: { slugStructure: formation.structure?.slug ,slug: formation.slug } }"
-          >
-            Voir détail
-          </router-link>
         </h3>
       </div>
 
