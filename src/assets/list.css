@@ -19,13 +19,14 @@
   min-width: 25px;
   height: 25px;
   min-height: 25px;
-  background: var(--color-background-soft);
+  background: var(--color-hightlight);
+  color: var(--color-text-on-hightlight);
+  stroke: var(--color-text-on-hightlight);
   filter: brightness(1.10);
   border-radius: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  stroke: black;
 }
 
 .toggle-btn .icon-expand {
