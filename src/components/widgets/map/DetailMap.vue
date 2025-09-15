@@ -322,6 +322,30 @@ function addLegend(route: MapRoute) {
   legend.addTo(map);
 }
 
+/**
+ * Ajoute un bouton pour recentrer la carte sur les marqueurs visibles
+ */
+function addRecenterButton() {
+  const ctrl = (L.control as unknown as (options: L.ControlOptions) => L.Control)({
+    position: 'topright'
+  });
+
+  ctrl.onAdd = () => {
+    const btn = L.DomUtil.create('button', 'recenter-btn-detail-map');
+    btn.title = 'Recentrer sur la sélection';
+    btn.innerHTML = '📍';
+
+    L.DomEvent.disableClickPropagation(btn);
+
+    btn.onclick = async () => {
+      map.closePopup();
+      fitVisibleMarkers(map, markers);
+    };
+    return btn;
+  };
+  ctrl.addTo(map);
+}
+
 onMounted(async () => {
   const slug = route.params.slug as string;
 
@@ -347,6 +371,7 @@ onMounted(async () => {
 
   initMap();
   addLegend(mapRoute);
+  addRecenterButton();
   addMarkers();
 });
 </script>
