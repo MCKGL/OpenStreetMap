@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import type {AdresseModel} from "@/models/Adresse.model.ts";
+import {type AdresseModel, getAdresseByLatLong} from "@/models/Adresse.model.ts";
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import {onMounted, ref} from "vue";
 import type {FormationModel} from "@/models/Formation.model.ts";
 import {useRoute} from "vue-router";
 import {
-  getAdressesByFormationSlug,
   getAdressesByPermanenceSlug,
   getAdressesByStructureSlug, getLieuxByPermanenceSlug
 } from "@/services/StructurePermanence.service.ts";
@@ -52,6 +51,21 @@ function addMarkers() {
   for (const adresse of adresses.value) {
     const {latitude, longitude} = adresse;
     if (!latitude || !longitude) continue;
+
+    // Dans le cas d'une page voir formation, on affiche uniquement le marqueur rouge de l'adresse
+    if (mapRoute === ROUTE_TYPE.DETAIL_MAP_FORMATION) {
+      const m = L.marker([latitude, longitude], {
+        icon: L.divIcon({
+          html: `<img src="/icons/marker_red.png" alt="marker structure" />`,
+          className: 'marker-structure',
+          iconAnchor: [22, 44]
+        }),
+      }).addTo(map);
+
+      markers.addLayer(m);
+      map.setView([latitude, longitude], 15);
+      continue;
+    }
 
     // Structures
     for (const s of adresse.structures || []) {
@@ -363,14 +377,17 @@ onMounted(async () => {
         ...permanenceLieux.map(a => ({ ...a, typeMarker: 'red' }))
       ];
     } else if (mapRoute === ROUTE_TYPE.DETAIL_MAP_FORMATION) {
-      adresses.value = await getAdressesByFormationSlug(slug)
+      const adresse = getAdresseByLatLong(parseFloat(route.params.lat as string), parseFloat(route.params.long as string));
+      adresses.value = [adresse];
     }
   } finally {
     loading.value = false;
   }
 
   initMap();
-  addLegend(mapRoute);
+  if (mapRoute !== ROUTE_TYPE.DETAIL_MAP_FORMATION) {
+    addLegend(mapRoute);
+  }
   addRecenterButton();
   addMarkers();
 });
