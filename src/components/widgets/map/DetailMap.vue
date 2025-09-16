@@ -64,7 +64,6 @@ function addMarkers() {
 
       markers.addLayer(m);
       map.setView([latitude, longitude], 15);
-      continue;
     }
 
     // Structures
