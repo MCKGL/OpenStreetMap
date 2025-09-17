@@ -3,11 +3,6 @@ import type {PermanenceModel} from '@/models/Permanence.model.ts';
 import type {AdresseModel} from "@/models/Adresse.model.ts";
 import type {FormationModel} from "@/models/Formation.model.ts";
 
-// const JSON_PATH = import.meta.env.DEV
-//   ? '/api/cartographie.json'
-//   : 'http://localhost:8080/app_dev.php/cartographie.json';
-
-
 const JSON_PATH = import.meta.env.DEV
   ? '/api/cartographie.json'
   : 'https://www.reseau-alpha.org/cartographie.json';

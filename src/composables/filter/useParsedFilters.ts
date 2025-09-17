@@ -11,21 +11,11 @@ export function useParsedFilters() {
   const parsedFilters = ref<FilterModel>({})
 
   function notifyParent() {
-    const queryString = new URLSearchParams(route.query as any).toString();
-    const parentOrigin = window.parent.location.origin;
-
-    // Liste des sites parents autorisés
-    const allowedOrigins = [
-      'https://www.reseau-alpha.org/',
-      'https://staging-www.reseau-alpha.org/',
-    ];
-
-    if (allowedOrigins.includes(parentOrigin)) {
-      window.parent.postMessage(
-        { type: 'search-update', params: queryString },
-        parentOrigin
-      );
-    }
+    const queryString = new URLSearchParams(route.query as any).toString()
+    window.parent.postMessage(
+      { type: 'search-update', params: queryString },
+      '*'
+    )
   }
 
   function updateFilters() {
