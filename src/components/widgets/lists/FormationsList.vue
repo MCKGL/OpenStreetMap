@@ -101,23 +101,11 @@ onMounted(() => {
   if (route.query.type === 'formation' && typeof slug === 'string') {
     isListOpen.value = true;
     nextTick(() => {
-      nextTick(() => {
-        const element = document.getElementById(`formation-${slug}`);
-        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-        setTimeout(() => {
-          const container = document.querySelector('.list-content');
-          if (container && element) {
-            const containerTop = container.getBoundingClientRect().top;
-            const elementTop = element.getBoundingClientRect().top;
-            const offset = elementTop - containerTop;
-            const correction = offset - container.clientHeight / 2 + element.clientHeight / 2;
-            container.scrollTop += correction;
-          }
-        }, 500);
-
-        openDescription(slug);
-      });
+      const element = document.getElementById(`formation-${slug}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      openDescription(slug);
     });
   }
 });
@@ -129,19 +117,9 @@ watch(
       isListOpen.value = true;
       nextTick(() => {
         const element = document.getElementById(`formation-${query.slug}`);
-        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-        setTimeout(() => {
-          const container = document.querySelector('.list-content');
-          if (container && element) {
-            const containerTop = container.getBoundingClientRect().top;
-            const elementTop = element.getBoundingClientRect().top;
-            const offset = elementTop - containerTop;
-            const correction = offset - container.clientHeight / 2 + element.clientHeight / 2;
-            container.scrollTop += correction;
-          }
-        }, 500);
-
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
         openDescription(query.slug as string);
       });
     }
@@ -171,14 +149,14 @@ watch(
     >
       <div class="section-title"
            @click="onClickFormation(formation)">
-        <h3>
+        <h3 :class="{ 'formation-unavailable': !formation.placeDisponible }">
           <a href="javascript:void(0)">
             <div>
               <span class="accordion-icon">{{
                   isDescriptionOpen(formation.slug) ? '−' : '+'
                 }}</span>
             </div>
-            <div>
+            <div class="formation-name">
               {{ formation.nom }} –
               {{ formation.placeDisponible ? "Places disponibles" : "Pas de places disponibles" }}
               <br/>
@@ -266,5 +244,13 @@ em {
 
 strong {
   text-decoration: underline;
+}
+
+.section-title .formation-unavailable .formation-name {
+  color: var(--color-text-disabled-link);
+}
+
+.section-title .formation-unavailable .accordion-icon {
+  background-color: var(--color-text-disabled-link);
 }
 </style>

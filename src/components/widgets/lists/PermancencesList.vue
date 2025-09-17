@@ -83,23 +83,11 @@ onMounted(() => {
   if (route.query.type === 'permanence' && typeof slug === 'string') {
     isListOpen.value = true;
     nextTick(() => {
-      nextTick(() => {
-        const element = document.getElementById(`permanence-${slug}`);
-        element?.scrollIntoView({behavior: 'smooth', block: 'center'});
-
-        setTimeout(() => {
-          const container = document.querySelector('.list-content');
-          if (container && element) {
-            const containerTop = container.getBoundingClientRect().top;
-            const elementTop = element.getBoundingClientRect().top;
-            const offset = elementTop - containerTop;
-            const correction = offset - container.clientHeight / 2 + element.clientHeight / 2;
-            container.scrollTop += correction;
-          }
-        }, 500);
-
-        openDescription(slug);
-      });
+      const element = document.getElementById(`permanence-${slug}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      openDescription(slug);
     });
   }
 });
@@ -111,19 +99,9 @@ watch(
       isListOpen.value = true;
       nextTick(() => {
         const element = document.getElementById(`permanence-${query.slug}`);
-        element?.scrollIntoView({behavior: 'smooth', block: 'center'});
-
-        setTimeout(() => {
-          const container = document.querySelector('.list-content');
-          if (container && element) {
-            const containerTop = container.getBoundingClientRect().top;
-            const elementTop = element.getBoundingClientRect().top;
-            const offset = elementTop - containerTop;
-            const correction = offset - container.clientHeight / 2 + element.clientHeight / 2;
-            container.scrollTop += correction;
-          }
-        }, 500);
-
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
         openDescription(query.slug as string);
       });
     }
