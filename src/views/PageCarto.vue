@@ -30,7 +30,7 @@ const isOpen = ref(true);
 const mobileView = ref<'list' | 'map'>('list');
 const isMobile = ref(window.innerWidth <= 810);
 const mapRef = ref();
-const listContentRef = ref<HTMLElement|null>(null);
+const listContentRef = ref<HTMLElement | null>(null);
 const route = useRoute();
 const mapRoute = route.name as MapRoute;
 
@@ -116,30 +116,37 @@ watch(
       });
     }
   },
-  { immediate: true }
+  {immediate: true}
 );
 
 </script>
 
 <template>
-  <LoadingAnimation class="loading" v-if="loading" />
+  <LoadingAnimation class="loading" v-if="loading"/>
 
   <div v-else class="all-carto-container">
     <div class="container-filtre">
-      <ContainerFilters />
+      <ContainerFilters/>
     </div>
 
-    <div v-if="mapRoute === ROUTE_TYPE.SEARCH_FORMATION" class="container-reminder">
-      L’annuaire de Réseau Alpha est collaboratif, les formations sont renseignées par les structures elles-mêmes
+    <div class="container-reminder">
+      <span v-if="mapRoute === ROUTE_TYPE.SEARCH_FORMATION">
+        L’annuaire de Réseau Alpha est collaboratif, les formations sont renseignées par les structures elles-mêmes
+      </span>
+      <span v-else>
+        &nbsp;
+      </span>
       <div class="view-switch" v-show="isMobile">
         <button
           :class="{ active: mobileView==='list' }"
           @click="mobileView = 'list'"
-        >Liste</button>
+        >Liste
+        </button>
         <button
           :class="{ active: mobileView==='map' }"
           @click="mobileView = 'map'"
-        >Carte</button>
+        >Carte
+        </button>
       </div>
     </div>
 
@@ -152,10 +159,12 @@ watch(
           </button>
           <div class="list-content" ref="listContentRef">
             <PermancencesList :permanences="permanences"/>
-            <FormationsList v-if="mapRoute === ROUTE_TYPE.SEARCH_FORMATION" :formations="formations"/>
-            <StructuresList v-if="mapRoute === ROUTE_TYPE.SEARCH_FORMATION" :structures="structures"/>
+            <FormationsList v-if="mapRoute === ROUTE_TYPE.SEARCH_FORMATION"
+                            :formations="formations"/>
+            <StructuresList v-if="mapRoute === ROUTE_TYPE.SEARCH_FORMATION"
+                            :structures="structures"/>
           </div>
-          <ButtonScrollTop v-if="!isMobile || mobileView==='list'" @click="scrollToTop" />
+          <ButtonScrollTop v-if="!isMobile || mobileView==='list'" @click="scrollToTop"/>
         </div>
 
         <div class="panel map-panel" v-if="!isMobile || mobileView==='map'">
@@ -182,7 +191,7 @@ watch(
   z-index: 10;
 }
 
-.container-reminder{
+.container-reminder {
   display: flex;
   justify-content: center;
   font-size: var(--text-font-size);
@@ -215,7 +224,7 @@ watch(
 }
 
 .panels {
-  flex:1;
+  flex: 1;
   display: flex;
   height: 100%;
 }
@@ -230,7 +239,7 @@ watch(
   width: 33.33%;
   background: var(--color-background);;
   transition: width 0.3s;
-  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
   height: 100%;
 }
 
@@ -245,7 +254,7 @@ watch(
 }
 
 .map-panel {
-  flex:1;
+  flex: 1;
   height: 100%;
   z-index: 1;
 }
@@ -253,9 +262,9 @@ watch(
 .toggle-btn {
   position: absolute;
   top: 50%;
-  right:-15px;
+  right: -15px;
   width: 30px;
-  height:30px;
+  height: 30px;
   z-index: 8;
 }
 
@@ -289,7 +298,7 @@ watch(
     background-color: #fafafa;
     padding: 5px 10px;
     border-radius: 34px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
   .panels {
