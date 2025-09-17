@@ -127,13 +127,13 @@ function addMarkers() {
     const groupFormations = new Map<string, FormationModel[]>();
 
     // On n'affiche pas les formations si on est sur la page acteur ressource
-    // if (mapRoute !== ROUTE_TYPE.DETAIL_MAP_STRUCTURE_ACTOR) {
-    //   for (const f of adresse.formations || []) {
-    //     const key = `${adresse.latitude}-${adresse.longitude}`;
-    //     if (!groupFormations.has(key)) groupFormations.set(key, []);
-    //     groupFormations.get(key)!.push(f);
-    //   }
-    // }
+    if (mapRoute !== ROUTE_TYPE.DETAIL_MAP_STRUCTURE_ACTOR) {
+      for (const f of adresse.formations || []) {
+        const key = `${adresse.latitude}-${adresse.longitude}`;
+        if (!groupFormations.has(key)) groupFormations.set(key, []);
+        groupFormations.get(key)!.push(f);
+      }
+    }
 
     for (const formationsAtAddress of groupFormations.values()) {
       const hasStructureSameAddress = mapRoute !== ROUTE_TYPE.DETAIL_MAP_FORMATION &&
