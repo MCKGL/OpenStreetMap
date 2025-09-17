@@ -53,10 +53,15 @@ function addMarkers() {
     if (!latitude || !longitude) continue;
 
     // Dans le cas d'une page voir formation, on affiche uniquement le marqueur rouge de l'adresse
-    if (mapRoute === ROUTE_TYPE.DETAIL_MAP_FORMATION) {
+    // Dans le cas d'une page acteur ressource, on affiche uniquement le marqueur bleu de l'adresse
+    if (mapRoute === ROUTE_TYPE.DETAIL_MAP_FORMATION || mapRoute === ROUTE_TYPE.DETAIL_MAP_STRUCTURE_ACTOR) {
+      const markerIconSrc = mapRoute === ROUTE_TYPE.DETAIL_MAP_FORMATION
+        ? '/icons/marker_red.png'
+        : '/icons/marker_blue.png';
+
       const m = L.marker([latitude, longitude], {
         icon: L.divIcon({
-          html: `<img src="/icons/marker_red.png" alt="marker structure" />`,
+          html: `<img src="${markerIconSrc}" alt="marker structure" />`,
           className: 'marker-structure',
           iconAnchor: [22, 44]
         }),
@@ -122,13 +127,13 @@ function addMarkers() {
     const groupFormations = new Map<string, FormationModel[]>();
 
     // On n'affiche pas les formations si on est sur la page acteur ressource
-    if (mapRoute !== ROUTE_TYPE.DETAIL_MAP_STRUCTURE_ACTOR) {
-      for (const f of adresse.formations || []) {
-        const key = `${adresse.latitude}-${adresse.longitude}`;
-        if (!groupFormations.has(key)) groupFormations.set(key, []);
-        groupFormations.get(key)!.push(f);
-      }
-    }
+    // if (mapRoute !== ROUTE_TYPE.DETAIL_MAP_STRUCTURE_ACTOR) {
+    //   for (const f of adresse.formations || []) {
+    //     const key = `${adresse.latitude}-${adresse.longitude}`;
+    //     if (!groupFormations.has(key)) groupFormations.set(key, []);
+    //     groupFormations.get(key)!.push(f);
+    //   }
+    // }
 
     for (const formationsAtAddress of groupFormations.values()) {
       const hasStructureSameAddress = mapRoute !== ROUTE_TYPE.DETAIL_MAP_FORMATION &&
@@ -363,7 +368,7 @@ onMounted(async () => {
   const slug = route.params.slug as string;
 
   try {
-    if (mapRoute === ROUTE_TYPE.DETAIL_MAP_STRUCTURE_LEARNING || mapRoute === ROUTE_TYPE.DETAIL_MAP_STRUCTURE_ACTOR) {
+    if (mapRoute === ROUTE_TYPE.DETAIL_MAP_STRUCTURE_LEARNING) {
       adresses.value = await getAdressesByStructureSlug(slug);
     } else if (mapRoute === ROUTE_TYPE.DETAIL_MAP_COORDINATION) {
       const [permanenceAdresses, permanenceLieux] = await Promise.all([
@@ -376,6 +381,9 @@ onMounted(async () => {
         ...permanenceLieux.map(a => ({ ...a, typeMarker: 'red' }))
       ];
     } else if (mapRoute === ROUTE_TYPE.DETAIL_MAP_FORMATION) {
+      const adresse = getAdresseByLatLong(parseFloat(route.params.lat as string), parseFloat(route.params.long as string));
+      adresses.value = [adresse];
+    } else if (mapRoute === ROUTE_TYPE.DETAIL_MAP_STRUCTURE_ACTOR) {
       const adresse = getAdresseByLatLong(parseFloat(route.params.lat as string), parseFloat(route.params.long as string));
       adresses.value = [adresse];
     }
