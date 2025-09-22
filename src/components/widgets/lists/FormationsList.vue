@@ -11,6 +11,8 @@ import type {ProgrammeModel} from "@/models/Programme.model.ts";
 import {type ProgrammeCode, PROGRAMME_MAP} from "@/types/ProgrammeType.ts";
 import ExpandUp from "@/components/icons/ExpandUp.vue";
 import ExpandDown from "@/components/icons/ExpandDown.vue";
+import {exportFormationsPDF} from "@/composables/pdf/exportFormationsPDF.ts";
+import PrintIcon from "@/components/icons/PrintIcon.vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -127,6 +129,10 @@ watch(
   { immediate: true }
 );
 
+function onExportPDF() {
+  exportFormationsPDF(filteredFormations.value, filters.value);
+}
+
 </script>
 
 <template>
@@ -134,6 +140,7 @@ watch(
     <h2>
       Formations ({{ filteredFormations.length }} dont {{ numberOfPlacesAvailable(filteredFormations) }} avec places disponibles)
     </h2>
+    <PrintIcon v-show="filters && Object.keys(filters).length > 0" title="Exporter la liste des formations en PDF" class="icon-print" @click="onExportPDF" />
     <button class="toggle-btn" @click="toggleList"
             :aria-label="isListOpen ? 'Fermer la liste' : 'Ouvrir la liste'">
       <component class="icon-expand" :is ="isListOpen ? ExpandUp : ExpandDown" />
