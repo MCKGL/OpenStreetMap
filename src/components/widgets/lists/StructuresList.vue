@@ -8,6 +8,8 @@ import {truncateHtmlSimple} from "@/utils/formatText.ts";
 import {useOpenDescription} from "@/composables/list/useOpenDescription.ts";
 import ExpandUp from "@/components/icons/ExpandUp.vue";
 import ExpandDown from "@/components/icons/ExpandDown.vue";
+import PrintIcon from "@/components/icons/PrintIcon.vue";
+import {exportStructuresPDF} from "@/composables/pdf/exportStructuresPDF.ts";
 
 const router = useRouter();
 const route = useRoute();
@@ -96,11 +98,16 @@ watch(
   { immediate: true }
 );
 
+function onExportPDF() {
+  exportStructuresPDF(filteredStructures.value, filters.value);
+}
+
 </script>
 
 <template>
   <div class="list-header" v-if="filteredStructures.length > 0">
     <h2>Structures ({{filteredStructures.length}})</h2>
+    <PrintIcon v-show="filters && Object.keys(filters).length > 0" title="Exporter la liste des structures en PDF" class="icon-print" @click="onExportPDF" />
     <button class="toggle-btn" @click="toggleList" :aria-label="isListOpen ? 'Fermer la liste' : 'Ouvrir la liste'">
       <component class="icon-expand" :is ="isListOpen ? ExpandUp : ExpandDown" />
     </button>

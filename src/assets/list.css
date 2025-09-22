@@ -71,3 +71,13 @@
 .list-description-s-p-font * {
   font-size: var(--text-font-size);
 }
+
+.icon-print {
+  min-width: 50px;
+  min-height: 50px;
+}
+
+.icon-print:hover {
+  cursor: pointer;
+  filter: contrast(175%) brightness(3%);
+}

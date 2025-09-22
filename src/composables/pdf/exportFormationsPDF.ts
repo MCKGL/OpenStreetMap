@@ -53,6 +53,13 @@ export function exportFormationsPDF(
     ]),
     styles: { fontSize: 9 },
     headStyles: { fillColor: [41, 128, 185] },
+    columnStyles: {
+      0: { cellWidth: 40 }, // Nom
+      2: { cellWidth: 40 }, // Publics
+      3: { cellWidth: 15 }, // Niveaux
+      4: { cellWidth: 15 }, // Places
+      5: { cellWidth: 40 }, // Dates
+    },
   });
 
   // téléchargement
