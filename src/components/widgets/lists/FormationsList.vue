@@ -130,7 +130,8 @@ watch(
 );
 
 function onExportPDF() {
-  exportFormationsPDF(filteredFormations.value, filters.value);
+  const formationsWithPlaces = filteredFormations.value.filter(f => f.placeDisponible);
+  exportFormationsPDF(formationsWithPlaces, filters.value);
 }
 
 </script>
