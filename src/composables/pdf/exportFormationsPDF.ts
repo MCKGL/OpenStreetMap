@@ -89,7 +89,7 @@ export function exportFormationsPDF(
         ? f.objectifsVises.map(o => `- ${o.objectifVise}`).join("\n")
         : "-",
       Array.isArray(f.criteresScolarisation)
-        ? f.criteresScolarisation.join("\n")
+        ? f.criteresScolarisation.map(c => `- ${c}`).join("\n")
         : "-",
       Array.isArray(f.publicsSpecifiques)
         ? f.publicsSpecifiques.map(p => p.publicSpecifique).join("\n")
@@ -108,18 +108,18 @@ export function exportFormationsPDF(
           : "-",
         `${formatDate(f.dateDebut) || ""} - ${formatDate(f.dateFin) || ""}`,
         Array.isArray(f.joursHoraires)
-          ? f.joursHoraires.join("\n")
+          ? f.joursHoraires.map(j => `- ${j}`).join("\n")
           : "-",
       ].join("\n\n"),
-      ""
+      "" //TODO contact & coût
     ]),
-    styles: { fontSize: 9 },
-    headStyles: { fillColor: [7, 141, 204] },
+    styles: {fontSize: 9},
+    headStyles: {fillColor: [7, 141, 204]},
     columnStyles: {
-      0: { cellWidth: 10 },
-      1: { cellWidth: 50 },
+      0: {cellWidth: 10},
+      1: {cellWidth: 50},
     },
-    margin: { top: headerSpace, bottom: 20, left: 10, right: 10 },
+    margin: {top: headerSpace, bottom: 20, left: 10, right: 10},
   });
 
   const totalPages = (doc.internal as any).getNumberOfPages();
