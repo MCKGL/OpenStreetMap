@@ -4,14 +4,14 @@ import type { StructureModel } from "@/models/Structure.model.ts";
 import type {AdresseModel} from "@/models/Adresse.model.ts";
 
 export function exportStructuresPDF(
-  formations: StructureModel[],
+  structures: StructureModel[],
   filters: Record<string, unknown>
 ) {
-  const doc = new jsPDF();
+  const doc = new jsPDF('landscape');
 
   // titre
   doc.setFontSize(18);
-  doc.text("Résultats de recherche - Structures", 14, 15);
+  doc.text(`Résultats de recherche - ${structures.length} Structures`, 14, 15);
 
   // date
   doc.setFontSize(11);
@@ -36,11 +36,11 @@ export function exportStructuresPDF(
     y += 8; // un petit espace avant le tableau
   }
 
-  // tableau des formations
+  // tableau des structures
   autoTable(doc, {
     startY: y,
     head: [["Nom", "l'activité de la formation", "adresses"]],
-    body: formations.map((s) => [
+    body: structures.map((s) => [
       s.nom || "-",
       Array.isArray(s.activitesFormation) ? s.activitesFormation.join(", ") : "-",
       Array.isArray(s.adresses)
