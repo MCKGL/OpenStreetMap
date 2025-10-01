@@ -4,6 +4,8 @@ import type {PermanenceModel} from "@/models/Permanence.model.ts";
 import type {ProgrammeModel} from "@/models/Programme.model.ts";
 import type {ObjectifViseModel} from "@/models/ObjectifVise.model.ts";
 import type {publicSpecifiqueModel} from "@/models/PublicSpecifique.model.ts";
+import type {ContactModel} from "@/models/Contact.model.ts";
+import {JoursHorairesDetails} from "@/models/JoursHorairesDetails.ts";
 
 export const ACTIVITE_FORMATION = {
   ACTIVITE_LINGUISTIQUE_VISEE_AUTONOMIE_SOCIAL : 'Français à visée sociale et communicative',
@@ -65,4 +67,10 @@ export class FormationModel {
   url!: string;
   structure?: StructureModel;
   permanence?: PermanenceModel;
+  contact! : ContactModel;
+  cout!: string;
+  criteresLinguistiqueEcrit!: string[];
+  criteresLinguistiqueOral!: string[];
+  criteresSavoirBase!: string;
+  joursHorairesDetails!: JoursHorairesDetails[];
 }
