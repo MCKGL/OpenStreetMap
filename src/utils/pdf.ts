@@ -6,6 +6,7 @@ interface PDFData {
   infoLines: string[];
   resultCount: number;
   filters: Record<string, unknown>;
+  extraLabel?: string;
 }
 
 /**
@@ -67,7 +68,11 @@ export function createBasePDF(data: PDFData) {
   // Nombre de résultats
   doc.setFontSize(14);
   doc.setTextColor(50);
-  const resultText = `${data.resultCount} ${data.resultCount > 1 ? data.title.toLowerCase().split(' ').pop() + 's' : data.title.toLowerCase().split(' ').pop()}`;
+  const label = data.resultCount > 1
+    ? data.title.toLowerCase().split(' ').pop() + 's'
+    : data.title.toLowerCase().split(' ').pop();
+
+  const resultText = `${data.resultCount} ${label}${data.extraLabel ? " " + data.extraLabel : ""}`;
   const resultTextWidth = doc.getTextWidth(resultText);
   doc.text(resultText, (pageWidth - resultTextWidth) / 2, y);
   y += 5;
@@ -89,7 +94,7 @@ export const addPdfHeaderAndFooter = (doc: jsPDF, pageNumber: number, totalPages
   const logoY = 5; // Position Y du logo
 
   // HEADER
-  doc.addImage(logoRA, 'PNG', (pageWidth - 120) / 2, logoY, 120, logoHeight);
+  doc.addImage(logoRA, 'PNG', (pageWidth - 120) / 2, logoY, 130, logoHeight);
 
   // FOOTER - Numéro de page
   doc.setFontSize(8);
@@ -98,4 +103,8 @@ export const addPdfHeaderAndFooter = (doc: jsPDF, pageNumber: number, totalPages
   const footerWidth = doc.getTextWidth(footerText);
   const margin = 10;
   doc.text(footerText, pageWidth - footerWidth - margin, pageHeight - margin);
+
+  // Texte à gauche
+  const siteUrl = "https://www.reseau-alpha.org";
+  doc.text(siteUrl, margin, pageHeight - margin);
 };
