@@ -55,8 +55,8 @@ function formatProfils(f: FormationModel): string {
 }
 
 function formatPublics(f: FormationModel): string {
-  return Array.isArray(f.publicsSpecifiques)
-    ? f.publicsSpecifiques.map(p => p.publicSpecifique).join("\n")
+  return Array.isArray(f.publicsSpecifiques) && f.publicsSpecifiques.length > 0
+    ? f.publicsSpecifiques.map(p => `- ${p.publicSpecifique}`).join("\n")
     : "-";
 }
 
