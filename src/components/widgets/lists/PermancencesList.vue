@@ -33,7 +33,7 @@ const filteredPermanences = computed(() =>
 function navigateTo(permanence: PermanenceModel) {
   const adresses = mapRoute === ROUTE_TYPE.SEARCH_FORMATION
     ? permanence.adresses || []
-    : permanence.lieux || []
+    : permanence.lieux?.adressesCoordination || []
 
   const query: Record<string, string | undefined> = {
     ...route.query,
