@@ -20,21 +20,24 @@ function formatAdresses(structure: StructureModel): string {
 }
 
 function formatContacts(structure: StructureModel): string {
-  return Array.isArray(structure.contact) && structure.contact.length > 0
-    ? structure.contact
-      .map((c: ContactModel) => {
-        const parts: string[] = [];
-        if (c.civilite || c.nom || c.prenom) {
-          parts.push([c.civilite, c.nom, c.prenom].filter(Boolean).join(" "));
-        }
-        if (c.telephone1 || c.telephone2) {
-          parts.push([c.telephone1, c.telephone2].filter(Boolean).join(" / "));
-        }
-        if (c.email) parts.push(c.email);
-        return `- ${parts.join(", ")}`;
-      })
-      .join("\n")
-    : "-";
+  const contacts = structure.lieux?.contacts ?? [];
+  if (!Array.isArray(contacts) || contacts.length === 0) {
+    return "-";
+  }
+
+  return contacts
+    .map((c: ContactModel) => {
+      const parts: string[] = [];
+      if (c.civilite || c.nom || c.prenom) {
+        parts.push([c.civilite, c.nom, c.prenom].filter(Boolean).join(" "));
+      }
+      if (c.telephone1 || c.telephone2) {
+        parts.push([c.telephone1, c.telephone2].filter(Boolean).join(" / "));
+      }
+      if (c.email) parts.push(c.email);
+      return `- ${parts.join("\n ")}`;
+    })
+    .join("\n");
 }
 
 function formatObjectifs(structure: StructureModel): string {
@@ -74,6 +77,7 @@ export function exportStructuresPDF(structures: StructureModel[], filters: Recor
       0: { cellWidth: 10 },
       1: { cellWidth: 50 },
       2: { cellWidth: 80 },
+      3: { cellWidth: 70 },
     },
     margin: { top: 35, bottom: 20, left: 10, right: 10 },
   });

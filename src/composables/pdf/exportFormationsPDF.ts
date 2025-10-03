@@ -83,7 +83,7 @@ function formatAdressesEtHoraires(f: FormationModel): string {
           ? `${end.getHours().toString().padStart(2, "0")}:${end.getMinutes().toString().padStart(2, "0")}`
           : "?";
 
-        return `${j.jour} de ${startStr} à ${endStr}`;
+        return `- ${j.jour} de ${startStr} à ${endStr}`;
       })
       .join("\n")
     : "-";
@@ -92,20 +92,19 @@ function formatAdressesEtHoraires(f: FormationModel): string {
 }
 
 function formatContactEtCout(f: FormationModel): string {
-  const contacts = Array.isArray(f.contact)
-    ? f.contact
-      .map((c: ContactModel) => {
-        const parts: string[] = [];
-        if (c.civilite || c.nom || c.prenom) {
-          parts.push([c.civilite, c.nom, c.prenom].filter(Boolean).join(" "));
-        }
-        if (c.telephone1 || c.telephone2) {
-          parts.push([c.telephone1, c.telephone2].filter(Boolean).join(" / "));
-        }
-        if (c.email) parts.push(c.email);
-        return `- ${parts.join(", ")}`;
-      })
-      .join("\n")
+  const c = f.contact;
+  const contacts = c
+    ? (() => {
+      const parts: string[] = [];
+      if (c.civilite || c.nom || c.prenom) {
+        parts.push([c.civilite, c.nom, c.prenom].filter(Boolean).join(" "));
+      }
+      if (c.telephone1 || c.telephone2) {
+        parts.push([c.telephone1, c.telephone2].filter(Boolean).join(" / "));
+      }
+      if (c.email) parts.push(c.email);
+      return `- ${parts.join("\n ")}`;
+    })()
     : "-";
 
   return [`Coût :\n${f.cout || "-"}`, `Contacter la structure :\n${contacts}`].join("\n\n");
@@ -152,7 +151,11 @@ export function exportFormationsPDF(formations: FormationModel[], filters: Recor
     columnStyles: {
       0: { cellWidth: 10 },
       1: { cellWidth: 50 },
-      2: { cellWidth: 70 },
+      2: { cellWidth: 50 },
+      3: { cellWidth: 50 },
+      4: { cellWidth: 40 },
+      5: { cellWidth: 40 },
+      6: { cellWidth: 40 },
     },
     margin: { top: 35, bottom: 20, left: 10, right: 10 },
   });

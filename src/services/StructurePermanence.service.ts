@@ -286,8 +286,11 @@ export async function getLieux(): Promise<AdresseModel[]> {
   }
 
   for (const p of permanences) {
-    for (const lieu of p.lieux || []) {
-      addLieu(lieu, p);
+    for (const lieu of p.lieux ? [p.lieux] : []) {
+      // on récupère toutes les adresses du lieu
+      for (const adresse of lieu.adressesCoordination || []) {
+        addLieu(adresse, p);
+      }
     }
   }
 
@@ -308,8 +311,11 @@ export async function getLieuxByPermanenceSlug(slug: string): Promise<AdresseMod
     adresse.permanences!.push(ref);
   }
 
-  for (const lieu of permanence.lieux || []) {
-    addLieu(lieu, permanence);
+  for (const lieu of permanence.lieux ? [permanence.lieux] : []) {
+    // récupération des adressesCoordination dans le lieu
+    for (const adresse of lieu.adressesCoordination || []) {
+      addLieu(adresse, permanence);
+    }
   }
 
   return Array.from(map.values());

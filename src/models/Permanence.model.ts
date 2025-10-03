@@ -1,5 +1,6 @@
 import type {FormationModel} from "@/models/Formation.model.ts";
 import type {AdresseModel} from "@/models/Adresse.model.ts";
+import type {LieuModel} from "@/models/Lieu.model.ts";
 
 export class PermanenceModel {
   id!: number;
@@ -14,6 +15,6 @@ export class PermanenceModel {
   activitesCoordination!: string[];
   formations!: FormationModel[];
   adresses!: AdresseModel[];
-  lieux!: AdresseModel[];
+  lieux!: LieuModel;
   url!: string;
 }

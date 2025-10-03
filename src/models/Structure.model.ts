@@ -1,6 +1,6 @@
 import type {FormationModel} from "@/models/Formation.model.ts";
 import type {AdresseModel} from "@/models/Adresse.model.ts";
-import type {ContactModel} from "@/models/Contact.model.ts";
+import type {LieuModel} from "@/models/Lieu.model.ts";
 
 export class StructureModel {
   id!: number;
@@ -16,5 +16,5 @@ export class StructureModel {
   formations!: FormationModel[];
   adresses!: AdresseModel[];
   url!: string;
-  contact!: ContactModel;
+  lieux!: LieuModel;
 }
