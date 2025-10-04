@@ -108,3 +108,28 @@ export const addPdfHeaderAndFooter = (doc: jsPDF, pageNumber: number, totalPages
   const siteUrl = "https://www.reseau-alpha.org";
   doc.text(siteUrl, margin, pageHeight - margin);
 };
+
+
+export const addPdfHeaderAndFooterFirstPage = (doc: jsPDF, pageNumber: number, totalPages: number) => {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 10;
+
+  // HEADER uniquement sur la première page
+  if (pageNumber === 1) {
+    const logoHeight = 25; // Hauteur du logo
+    const logoY = 5; // Position Y du logo
+    doc.addImage(logoRA, 'PNG', (pageWidth - 120) / 2, logoY, 130, logoHeight);
+  }
+
+  // FOOTER sur toutes les pages
+  doc.setFontSize(8);
+  doc.setTextColor(150);
+  const footerText = `Page ${pageNumber} sur ${totalPages}`;
+  const footerWidth = doc.getTextWidth(footerText);
+  doc.text(footerText, pageWidth - footerWidth - margin, pageHeight - margin);
+
+  // Texte à gauche
+  const siteUrl = "https://www.reseau-alpha.org";
+  doc.text(siteUrl, margin, pageHeight - margin);
+};
