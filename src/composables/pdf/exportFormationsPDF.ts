@@ -2,8 +2,7 @@ import autoTable from "jspdf-autotable";
 import { formatDate } from "@/utils/formatText";
 import type { FormationModel } from "@/models/Formation.model";
 import type { AdresseModel } from "@/models/Adresse.model.ts";
-import { addPdfHeaderAndFooter, createBasePDF } from "@/utils/pdf";
-import type { ContactModel } from "@/models/Contact.model.ts";
+import { addPdfHeaderAndFooterOnTab, createBasePDF } from "@/utils/pdf";
 
 // -----------------------
 // Format helpers
@@ -163,7 +162,7 @@ export function exportFormationsPDF(formations: FormationModel[], filters: Recor
   const totalPages = (doc.internal as any).getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
-    addPdfHeaderAndFooter(doc, i, totalPages);
+    addPdfHeaderAndFooterOnTab(doc, i, totalPages);
   }
 
   doc.save("formations.pdf");

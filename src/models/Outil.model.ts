@@ -3,8 +3,12 @@ export class OutilModel {
   slug!: string;
   titre!: string;
   resume!: string;
-  typePublication!: string;
-  thematiques!: string[];
   nomsStructures!: string[];
-  auteur!: string;
+  thematiques!: string[];
+  typeUtilisateur!: string[];
+  profilLinguistique!: string[];
+  competencesTravaillees!: string[];
+  niveauVise!: string[];
+  typeSupport!: string[];
+  accessibiliteOutil!: string[];
 }

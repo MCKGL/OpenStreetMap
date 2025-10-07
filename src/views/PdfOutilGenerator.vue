@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import {useRoute} from 'vue-router';
-import {exportOutilPDF} from "@/composables/pdf/exportOutilPDF.ts";
+import {useExportOutilPDF} from "@/composables/pdf/exportOutilPDF.ts";
 import DownloadIcon from "@/components/icons/DownloadIcon.vue";
 
 const route = useRoute();
 const slug = route.params.slug as string;
 
-const {generatePdf} = exportOutilPDF();
+const {generatePdf} = useExportOutilPDF();
 
 function handleClick() {
   generatePdf(slug);
