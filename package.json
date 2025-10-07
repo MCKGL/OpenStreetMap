@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
-    "lint": "eslint . --fix"
+    "lint": "eslint . --fix",
+    "vercel-build": "npm install --legacy-peer-deps && vite build"
   },
   "dependencies": {
     "html2pdf.js": "^0.12.1",
