@@ -1,7 +1,7 @@
 import autoTable from "jspdf-autotable";
 import type { StructureModel } from "@/models/Structure.model.ts";
 import type { AdresseModel } from "@/models/Adresse.model.ts";
-import { addPdfHeaderAndFooter, createBasePDF } from "@/utils/pdf.ts";
+import { addPdfHeaderAndFooterOnTab, createBasePDF } from "@/utils/pdf.ts";
 import type { ContactModel } from "@/models/Contact.model.ts";
 
 // -----------------------
@@ -85,7 +85,7 @@ export function exportStructuresPDF(structures: StructureModel[], filters: Recor
   const totalPages = (doc.internal as any).getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
-    addPdfHeaderAndFooter(doc, i, totalPages);
+    addPdfHeaderAndFooterOnTab(doc, i, totalPages);
   }
 
   doc.save("structures.pdf");
