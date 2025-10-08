@@ -46,14 +46,17 @@ export function useParsedFilters() {
 
   // Recevoir params du parent (au refresh ou load)
   onMounted(() => {
+    // Signaler au parent que l'iframe est prête à recevoir les paramètres
+    window.parent.postMessage({ type: "iframe-ready" }, "*");
+
     window.addEventListener("message", (event) => {
       if (event.data?.type === "set-search" && event.data.params) {
-        const paramsObj = Object.fromEntries(new URLSearchParams(event.data.params))
-        // Remplace la query côté enfant seulement, ne touche pas au parent
-        router.replace({ path: route.path, query: paramsObj })
+        const paramsObj = Object.fromEntries(new URLSearchParams(event.data.params));
+        router.replace({ path: route.path, query: paramsObj });
       }
-    })
-  })
+    });
+  });
+
 
   return parsedFilters
 }

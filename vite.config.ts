@@ -18,29 +18,25 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api/cartographie.json': {
+      '/cartographie.json': {
         target: `${CONFIG.JSON_PATH_PREFIX}`,
         changeOrigin: true,
         secure: false,
-        rewrite: path => path.replace(/^\/api/, ''),
       },
-      '/api/programmes.json': {
+      '/programmes.json': {
         target: `${CONFIG.JSON_PATH_PREFIX}`,
         changeOrigin: true,
         secure: false,
-        rewrite: path => path.replace(/^\/api/, ''),
       },
-      '/api/villes-departements.json': {
+      '/villes-departements.json': {
         target: `${CONFIG.JSON_PATH_PREFIX}`,
         changeOrigin: true,
         secure: false,
-        rewrite: path => path.replace(/^\/api/, ''),
       },
-      '/api/outil.json': {
+      '/outil.json': {
         target: `${CONFIG.JSON_PATH_PREFIX}`,
         changeOrigin: true,
         secure: false,
-        rewrite: path => path.replace(/^\/api/, ''),
       },
     }
   }

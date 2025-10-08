@@ -4,9 +4,7 @@ import type {AdresseModel} from "@/models/Adresse.model.ts";
 import type {FormationModel} from "@/models/Formation.model.ts";
 import {CONFIG} from "@/config.ts";
 
-const JSON_PATH = import.meta.env.DEV
-  ? '/api/cartographie.json'
-  : `${CONFIG.JSON_PATH_PREFIX}/cartographie.json`;
+const JSON_PATH = `${CONFIG.JSON_PATH_PREFIX}/cartographie.json`;
 
 // Cache partagé pour tout le JSON
 let _rawCache: { structures: StructureModel[]; permanences: PermanenceModel[] } | null = null;

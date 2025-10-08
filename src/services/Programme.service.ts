@@ -1,9 +1,7 @@
 import type { ProgrammeModel } from '@/models/Programme.model.ts';
 import {CONFIG} from "@/config.ts";
 
-const JSON_PATH = import.meta.env.DEV
-  ? '/api/programmes.json'
-  : `${CONFIG.JSON_PATH_PREFIX}/programmes.json`;
+const JSON_PATH = `${CONFIG.JSON_PATH_PREFIX}/programmes.json`;
 
 let _cache: Record<string, string> | null = null;
 let _cacheTimestamp = 0;
