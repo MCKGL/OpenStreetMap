@@ -117,7 +117,7 @@ watch(
       {{
         mapRoute === ROUTE_TYPE.SEARCH_FORMATION
           ? `Permanences (${numberOfAdresses(filteredPermanences)})`
-          : `Coordinations (${numberOfAdresses(filteredPermanences)})`
+          : `Coordinations (${filteredPermanences.length})`
       }}
     </h2>
     <button

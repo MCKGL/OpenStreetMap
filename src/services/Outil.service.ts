@@ -2,9 +2,7 @@
 import type { OutilModel } from '@/models/Outil.model.ts';
 import { CONFIG } from '@/config.ts';
 
-const BASE_URL = import.meta.env.DEV
-  ? '/api/outil.json'
-  : `${CONFIG.JSON_PATH_PREFIX}/outil.json`;
+const BASE_URL = `${CONFIG.JSON_PATH_PREFIX}/outil.json`;
 
 /**
  * Récupère un outil par son slug
