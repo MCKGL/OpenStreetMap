@@ -113,8 +113,14 @@ watch(
 
 <template>
   <div class="list-header" v-if="filteredPermanences.length > 0">
-    <h2 v-if="mapRoute === ROUTE_TYPE.SEARCH_FORMATION">Permanences ({{ numberOfAdresses(filteredPermanences) }})</h2>
-    <button v-if="mapRoute === ROUTE_TYPE.SEARCH_FORMATION"
+    <h2>
+      {{
+        mapRoute === ROUTE_TYPE.SEARCH_FORMATION
+          ? `Permanences (${numberOfAdresses(filteredPermanences)})`
+          : `Coordinations (${numberOfAdresses(filteredPermanences)})`
+      }}
+    </h2>
+    <button
       class="toggle-btn"
       @click="toggleList"
       :aria-label="isListOpen ? 'Fermer la liste' : 'Ouvrir la liste'"

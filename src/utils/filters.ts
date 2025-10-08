@@ -226,7 +226,7 @@ function matchJoursHoraires(horaires: string[] = [], filter: FilterModel): boole
 
   const formationHoraires = horaires.map(h => h.toLowerCase().trim());
 
-  return filter.joursHoraires.every(filtre => {
+  return filter.joursHoraires.some(filtre => {
     const filtreStr = filtre.toLowerCase().trim();
 
     if (!filtreStr.includes(':')) {
