@@ -188,7 +188,7 @@ watch(
 
 .container-filtre {
   flex: 0 0 auto;
-  z-index: 10;
+  z-index: 21;
 }
 
 .container-reminder {

@@ -7,7 +7,8 @@ import type {FormationModel} from "@/models/Formation.model.ts";
 import {useRoute} from "vue-router";
 import {
   getAdressesByPermanenceSlug,
-  getAdressesByStructureSlug, getLieuxByPermanenceSlug
+  getAdressesByStructureSlug,
+  getLieuxByPermanenceSlug
 } from "@/services/StructurePermanence.service.ts";
 import {type MapRoute, ROUTE_TYPE} from "@/types/RouteType.ts";
 import LoadingAnimation from "@/components/ui/LoadingAnimation.vue";
@@ -53,22 +54,45 @@ function addMarkers() {
     if (!latitude || !longitude) continue;
 
     // Dans le cas d'une page voir formation, on affiche uniquement le marqueur rouge de l'adresse
-    // Dans le cas d'une page acteur ressource, on affiche uniquement le marqueur bleu de l'adresse
+    // Dans le cas d'une page acteur ressource, on affiche uniquement les marqueurs bleu de l'adresses
     if (mapRoute === ROUTE_TYPE.DETAIL_MAP_FORMATION || mapRoute === ROUTE_TYPE.DETAIL_MAP_STRUCTURE_ACTOR) {
-      const markerIconSrc = mapRoute === ROUTE_TYPE.DETAIL_MAP_FORMATION
-        ? '/icons/marker_red.png'
-        : '/icons/marker_blue.png';
+      const markerIconSrc =
+        mapRoute === ROUTE_TYPE.DETAIL_MAP_FORMATION
+          ? '/icons/marker_red.png'
+          : '/icons/marker_blue.png';
 
-      const m = L.marker([latitude, longitude], {
-        icon: L.divIcon({
-          html: `<img src="${markerIconSrc}" alt="marker structure" />`,
-          className: 'marker-structure',
-          iconAnchor: [22, 44]
-        }),
-      }).addTo(map);
+      let bounds: L.LatLngBounds | null = null;
 
-      markers.addLayer(m);
-      map.setView([latitude, longitude], 15);
+      for (const a of adresses.value) {
+        // Protection : s’assurer que lat/long sont valides
+        if (typeof a.latitude !== 'number' || typeof a.longitude !== 'number') {
+          continue;
+        }
+
+        const latLng: L.LatLngTuple = [a.latitude, a.longitude];
+
+        const m = L.marker(latLng, {
+          icon: L.divIcon({
+            html: `<img src="${markerIconSrc}" alt="marker structure" />`,
+            className: 'marker-structure',
+            iconAnchor: [22, 44],
+          }),
+        }).addTo(map);
+
+        markers.addLayer(m);
+
+        if (!bounds) {
+          bounds = L.latLngBounds([latLng]);
+        } else {
+          bounds.extend(latLng);
+        }
+      }
+
+      if (adresses.value.length === 1 && adresses.value[0].latitude && adresses.value[0].longitude) {
+        map.setView([adresses.value[0].latitude, adresses.value[0].longitude], 15);
+      } else if (bounds) {
+        map.fitBounds(bounds, { maxZoom: 15 });
+      }
     }
 
     // Structures
@@ -384,8 +408,18 @@ onMounted(async () => {
       const adresse = getAdresseByLatLong(parseFloat(route.params.lat as string), parseFloat(route.params.long as string));
       adresses.value = [adresse];
     } else if (mapRoute === ROUTE_TYPE.DETAIL_MAP_STRUCTURE_ACTOR) {
-      const adresse = getAdresseByLatLong(parseFloat(route.params.lat as string), parseFloat(route.params.long as string));
-      adresses.value = [adresse];
+      const { points } = route.params;
+
+      if (points) {
+        adresses.value = (points as string)
+          .split('|')
+          .map(p => {
+            const [lat, long] = p.split(',').map(Number);
+            return getAdresseByLatLong(lat, long);
+          });
+      } else {
+        adresses.value = [];
+      }
     }
   } finally {
     loading.value = false;
