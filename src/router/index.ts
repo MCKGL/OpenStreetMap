@@ -7,7 +7,7 @@ const PdfOutilGenerator = () => import('@/views/PdfOutilGenerator.vue');
 const PageErreur = () => import('@/views/PageErreur.vue');
 
 const routes = [
-  { path: '/', redirect: '/trouver-une-formation' },
+  { path: '/', name: 'NotFound', component: PageErreur, meta: { delayedError: true } },
   { path: '/trouver-une-formation', name: ROUTE_TYPE.SEARCH_FORMATION, component: PageCarto },
   { path: '/les-coordinations-linguistiques-franciliennes', name: ROUTE_TYPE.SEARCH_COORDINATION, component: PageCarto },
   { path: '/structure/coordination/:slug', name: ROUTE_TYPE.DETAIL_MAP_COORDINATION, component: DetailMap },
@@ -27,7 +27,7 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   if (to.meta.delayedError) {
-    setTimeout(() => next(), 100);
+    setTimeout(() => next(), 1000);
   } else {
     next();
   }
