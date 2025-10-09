@@ -47,7 +47,9 @@ export function useParsedFilters() {
   // Recevoir params du parent (au refresh ou load)
   onMounted(() => {
     // Signaler au parent que l'iframe est prête à recevoir les paramètres
-    window.parent.postMessage({ type: "iframe-ready" }, "*");
+    router.isReady().then(() => {
+      window.parent.postMessage({ type: 'iframe-ready' }, '*');
+    });
 
     window.addEventListener("message", (event) => {
       if (event.data?.type === "set-search" && event.data.params) {
