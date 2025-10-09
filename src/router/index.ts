@@ -27,7 +27,7 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   if (to.meta.delayedError) {
-    setTimeout(() => next(), 1000);
+    setTimeout(() => next(), 3000);
   } else {
     next();
   }
