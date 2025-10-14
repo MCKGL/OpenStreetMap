@@ -5,6 +5,7 @@ import type {FormationModel} from "@/models/Formation.model.ts";
 import {CONFIG} from "@/config.ts";
 
 const JSON_PATH = `${CONFIG.JSON_PATH_PREFIX}/cartographie.json`;
+const JSON_PATH_SLUG = `${CONFIG.JSON_PATH_PREFIX}/structure.json`;
 
 // Cache partagé pour tout le JSON
 let _rawCache: { structures: StructureModel[]; permanences: PermanenceModel[] } | null = null;
@@ -71,12 +72,14 @@ export function getStructureById(id: number): Promise<StructureModel> {
 /**
  * Renvoie une seule structure par Slug
  */
-export function getStructureBySlug(slug: string): Promise<StructureModel> {
-  return getStructures().then(list => {
-    const s = list.find(s => s.slug === slug);
-    if (!s) throw new Error(`Structure avec slug ${slug} introuvable`);
-    return s;
-  });
+export async function getStructureBySlug(slug: string): Promise<StructureModel> {
+  const res = await fetch(`${JSON_PATH_SLUG}?slug=${encodeURIComponent(slug)}`);
+  if (!res.ok) throw new Error(`Erreur lors de la récupération de la structure`);
+
+  const data = await res.json();
+  if (!data.structure) throw new Error(`Structure introuvable`);
+
+  return data.structure as StructureModel;
 }
 
 /**
@@ -100,12 +103,14 @@ export function getPermanenceById(id: number): Promise<PermanenceModel> {
 /**
  * Renvoie une seule permanence par slug
  */
-export function getPermanenceBySlug(slug: string): Promise<PermanenceModel> {
-  return getPermanences().then(list => {
-    const p = list.find(p => p.slug === slug);
-    if (!p) throw new Error(`Permanence avec slug ${slug} introuvable`);
-    return p;
-  });
+export async function getPermanenceBySlug(slug: string): Promise<PermanenceModel> {
+  const res = await fetch(`${JSON_PATH_SLUG}?slug=${encodeURIComponent(slug)}`);
+  if (!res.ok) throw new Error(`Erreur lors de la récupération de la permanence`);
+
+  const data = await res.json();
+  if (!data.permanence) throw new Error(`Permanence introuvable`);
+
+  return data.permanence as PermanenceModel;
 }
 
 /**
