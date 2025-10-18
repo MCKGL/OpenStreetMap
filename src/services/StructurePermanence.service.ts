@@ -1,154 +1,118 @@
-import type {StructureModel} from '@/models/Structure.model.ts';
-import type {PermanenceModel} from '@/models/Permanence.model.ts';
-import type {AdresseModel} from "@/models/Adresse.model.ts";
-import type {FormationModel} from "@/models/Formation.model.ts";
-import {CONFIG} from "@/config.ts";
-
-const JSON_PATH = `${CONFIG.JSON_PATH_PREFIX}/cartographie.json`;
-const JSON_PATH_SLUG = `${CONFIG.JSON_PATH_PREFIX}/structure.json`;
-
-// Cache partagé pour tout le JSON
-let _rawCache: { structures: StructureModel[]; permanences: PermanenceModel[] } | null = null;
-let _cacheTimestamp = 0;
-
-// Durée de vie du cache : 10 minutes
-const CACHE_DURATION = 10 * 60 * 1000;
+import type { StructureModel } from '@/models/Structure.model.ts';
+import type { PermanenceModel } from '@/models/Permanence.model.ts';
+import type { AdresseModel } from "@/models/Adresse.model.ts";
+import type { FormationModel } from "@/models/Formation.model.ts";
+import { apiFetch } from './apiClient.ts';
 
 interface ApiResponse {
   structures: StructureModel[];
   permanences: PermanenceModel[];
 }
 
+type EntityRef = StructureModel | PermanenceModel | FormationModel;
+
 function cloneAdresse(a: AdresseModel): AdresseModel {
-  return {
-    ...a,
-    structures: [],
-    permanences: [],
-    formations: [],
-  };
+  return { ...a, structures: [], permanences: [], formations: [] };
 }
 
 /**
- * Charge et met en cache le JSON complet (structures+permanences)
+ * Charge le JSON complet (structures + permanences)
  */
-function fetchAll(): Promise<ApiResponse> {
-  const now = Date.now();
-  if (_rawCache && now - _cacheTimestamp < CACHE_DURATION) {
-    return Promise.resolve(_rawCache);
-  }
-  return fetch(JSON_PATH)
-    .then(res => {
-      if (!res.ok) throw new Error(`Erreur ${res.status} lors de la récupération du JSON`);
-      return res.json() as Promise<ApiResponse>;
-    })
-    .then(data => {
-      data.structures = data.structures?.filter(s => s.slug !== 'test-reseau-alpha') ?? [];
-      data.permanences = data.permanences?.filter(p => p.slug !== 'test-reseau-alpha') ?? [];
-
-      _rawCache = data;
-      _cacheTimestamp = Date.now();
-      return data;
-    });
+async function fetchAll(): Promise<ApiResponse> {
+  const data = await apiFetch<ApiResponse>('/cartographie.json', { useCache: true });
+  data.structures = data.structures?.filter(s => s.slug !== 'test-reseau-alpha') ?? [];
+  data.permanences = data.permanences?.filter(p => p.slug !== 'test-reseau-alpha') ?? [];
+  return data;
 }
 
 /**
  * Renvoie la liste des structures
  */
-export function getStructures(): Promise<StructureModel[]> {
-  return fetchAll().then(data => data.structures);
+export async function getStructures(): Promise<StructureModel[]> {
+  return (await fetchAll()).structures;
 }
 
 /**
  * Renvoie une seule structure par ID
  */
-export function getStructureById(id: number): Promise<StructureModel> {
-  return getStructures().then(list => {
-    const s = list.find(s => s.id === id);
-    if (!s) throw new Error(`Structure avec l'ID ${id} introuvable`);
-    return s;
-  });
+export async function getStructureById(id: number): Promise<StructureModel> {
+  const list = await getStructures();
+  const s = list.find(s => s.id === id);
+  if (!s) throw new Error(`Structure introuvable`);
+  return s;
 }
 
 /**
  * Renvoie une seule structure par Slug
  */
 export async function getStructureBySlug(slug: string): Promise<StructureModel> {
-  const res = await fetch(`${JSON_PATH_SLUG}?slug=${encodeURIComponent(slug)}`);
-  if (!res.ok) throw new Error(`Erreur lors de la récupération de la structure`);
-
-  const data = await res.json();
+  const data = await apiFetch<{ structure: StructureModel }>(
+    `/structure.json?slug=${encodeURIComponent(slug)}`
+  );
   if (!data.structure) throw new Error(`Structure introuvable`);
-
-  return data.structure as StructureModel;
+  return data.structure;
 }
 
 /**
  * Renvoie la liste des permanences
  */
-export function getPermanences(): Promise<PermanenceModel[]> {
-  return fetchAll().then(data => data.permanences);
+export async function getPermanences(): Promise<PermanenceModel[]> {
+  return (await fetchAll()).permanences;
 }
 
 /**
  * Renvoie une seule permanence par ID
  */
-export function getPermanenceById(id: number): Promise<PermanenceModel> {
-  return getPermanences().then(list => {
-    const p = list.find(p => p.id === id);
-    if (!p) throw new Error(`Permanence avec l'ID ${id} introuvable`);
-    return p;
-  });
+export async function getPermanenceById(id: number): Promise<PermanenceModel> {
+  const list = await getPermanences();
+  const p = list.find(p => p.id === id);
+  if (!p) throw new Error(`Permanence introuvable`);
+  return p;
 }
 
 /**
  * Renvoie une seule permanence par slug
  */
 export async function getPermanenceBySlug(slug: string): Promise<PermanenceModel> {
-  const res = await fetch(`${JSON_PATH_SLUG}?slug=${encodeURIComponent(slug)}`);
-  if (!res.ok) throw new Error(`Erreur lors de la récupération de la permanence`);
-
-  const data = await res.json();
+  const data = await apiFetch<{ permanence: PermanenceModel }>(
+    `/structure.json?slug=${encodeURIComponent(slug)}`
+  );
   if (!data.permanence) throw new Error(`Permanence introuvable`);
-
-  return data.permanence as PermanenceModel;
+  return data.permanence;
 }
 
 /**
- * Renvoie la liste de toutes les formations (rattachées à une structure ou à une permanence)
+ * Renvoie toutes les formations
  */
 export async function getFormations(): Promise<FormationModel[]> {
   const { structures, permanences } = await fetchAll();
-
   const formations: FormationModel[] = [];
 
   for (const s of structures) {
-    for (const f of s.formations || []) {
-      formations.push({ ...f, structure: s });
-    }
+    for (const f of s.formations || []) formations.push({ ...f, structure: s });
   }
-
   for (const p of permanences) {
-    for (const f of p.formations || []) {
-      formations.push({ ...f, permanence: p });
-    }
+    for (const f of p.formations || []) formations.push({ ...f, permanence: p });
   }
 
   return formations;
 }
 
 /**
- * Regroupe toutes les adresses en un seul tableau enrichi (structure, permanence, formation)
+ * Renvoie toutes les adresses (structure, permanence, formation)
+ * ⚠ Inclut les adresses des formations rattachées aux structures et permanences
  */
 export async function getAdresses(): Promise<AdresseModel[]> {
   const { structures, permanences } = await fetchAll();
-
   const map = new Map<string, AdresseModel>();
 
-  function addAdresse(a: AdresseModel, type: 'structure' | 'permanence' | 'formation', ref: StructureModel | PermanenceModel | FormationModel) {
+  function addAdresse(
+    a: AdresseModel,
+    type: 'structure' | 'permanence' | 'formation',
+    ref: StructureModel | PermanenceModel | FormationModel
+  ) {
     const key = `${a.latitude}-${a.longitude}-${type}`;
-    if (!map.has(key)) {
-      map.set(key, cloneAdresse(a));
-    }
+    if (!map.has(key)) map.set(key, cloneAdresse(a));
     const adresse = map.get(key)!;
 
     if (type === 'structure') adresse.structures!.push(ref as StructureModel);
@@ -157,87 +121,59 @@ export async function getAdresses(): Promise<AdresseModel[]> {
   }
 
   for (const s of structures) {
-    for (const a of s.adresses || []) {
-      addAdresse(a, 'structure', s);
-    }
-    for (const f of s.formations || []) {
-      for (const a of f.adresses || []) {
-        addAdresse(a, 'formation', { ...f, structure: s });
-      }
-    }
+    for (const a of s.adresses || []) addAdresse(a, 'structure', s);
+    for (const f of s.formations || [])
+      for (const a of f.adresses || []) addAdresse(a, 'formation', { ...f, structure: s });
   }
 
   for (const p of permanences) {
-    for (const a of p.adresses || []) {
-      addAdresse(a, 'permanence', p);
-    }
-    for (const f of p.formations || []) {
-      for (const a of f.adresses || []) {
-        addAdresse(a, 'formation', { ...f, permanence: p });
-      }
-    }
+    for (const a of p.adresses || []) addAdresse(a, 'permanence', p);
+    for (const f of p.formations || [])
+      for (const a of f.adresses || []) addAdresse(a, 'formation', { ...f, permanence: p });
   }
 
   return Array.from(map.values());
 }
 
-/**
- * Renvoie les adresses pour une structure donnée (slug)
- */
 export async function getAdressesByStructureSlug(slug: string): Promise<AdresseModel[]> {
   const structure = await getStructureBySlug(slug);
   const map = new Map<string, AdresseModel>();
 
-  function addAdresse(a: AdresseModel, type: 'structure' | 'formation', ref: StructureModel | FormationModel) {
-    const key = `${a.latitude}-${a.longitude}-${type}`;
+  function addAdresse(a: AdresseModel, key: string, type: string, ref: EntityRef) {
     if (!map.has(key)) map.set(key, cloneAdresse(a));
     const adresse = map.get(key)!;
-
     if (type === 'structure') adresse.structures!.push(ref as StructureModel);
     if (type === 'formation') adresse.formations!.push(ref as FormationModel);
   }
 
-  // Adresses de la structure
-  for (const a of structure.adresses || []) {
-    addAdresse(a, 'structure', structure);
-  }
+  for (const a of structure.adresses || [])
+    addAdresse(a, `${a.latitude}-${a.longitude}-structure`, 'structure', structure);
 
-  // Adresses des formations rattachées à la structure
   for (const f of structure.formations || []) {
-    for (const a of f.adresses || []) {
-      addAdresse(a, 'formation', { ...f, structure });
-    }
+    for (const a of f.adresses || [])
+      addAdresse(a, `${a.latitude}-${a.longitude}-formation`, 'formation', { ...f, structure });
   }
 
   return Array.from(map.values());
 }
 
-/**
- * Renvoie les adresses pour une permanence donnée (slug)
- */
 export async function getAdressesByPermanenceSlug(slug: string): Promise<AdresseModel[]> {
   const permanence = await getPermanenceBySlug(slug);
   const map = new Map<string, AdresseModel>();
 
-  function addAdresse(a: AdresseModel, type: 'permanence' | 'formation', ref: PermanenceModel | FormationModel) {
-    const key = `${a.latitude}-${a.longitude}-${type}`;
+  function addAdresse(a: AdresseModel, key: string, type: string, ref: EntityRef) {
     if (!map.has(key)) map.set(key, cloneAdresse(a));
     const adresse = map.get(key)!;
-
     if (type === 'permanence') adresse.permanences!.push(ref as PermanenceModel);
     if (type === 'formation') adresse.formations!.push(ref as FormationModel);
   }
 
-  // Adresses de la permanence
-  for (const a of permanence.adresses || []) {
-    addAdresse(a, 'permanence', permanence);
-  }
+  for (const a of permanence.adresses || [])
+    addAdresse(a, `${a.latitude}-${a.longitude}-permanence`, 'permanence', permanence);
 
-  // Adresses des formations rattachées à la permanence
   for (const f of permanence.formations || []) {
-    for (const a of f.adresses || []) {
-      addAdresse(a, 'formation', { ...f, permanence });
-    }
+    for (const a of f.adresses || [])
+      addAdresse(a, `${a.latitude}-${a.longitude}-formation`, 'formation', { ...f, permanence });
   }
 
   return Array.from(map.values());
@@ -252,16 +188,10 @@ export async function getAdressesByFormationSlug(slug: string): Promise<AdresseM
   if (!formation) throw new Error(`Formation avec slug ${slug} introuvable`);
 
   const map = new Map<string, AdresseModel>();
-
-  function addAdresse(a: AdresseModel, ref: FormationModel) {
+  for (const a of formation.adresses || []) {
     const key = `${a.latitude}-${a.longitude}-formation`;
     if (!map.has(key)) map.set(key, cloneAdresse(a));
-    const adresse = map.get(key)!;
-    adresse.formations!.push(ref);
-  }
-
-  for (const a of formation.adresses || []) {
-    addAdresse(a, formation);
+    map.get(key)!.formations!.push(formation);
   }
 
   return Array.from(map.values());
@@ -272,29 +202,17 @@ export async function getAdressesByFormationSlug(slug: string): Promise<AdresseM
  */
 export async function getLieux(): Promise<AdresseModel[]> {
   const { permanences } = await fetchAll();
-
   const map = new Map<string, AdresseModel>();
 
   function addLieu(a: AdresseModel, ref: PermanenceModel) {
     const key = `${a.latitude}-${a.longitude}-permanence`;
-    if (!map.has(key)) {
-      map.set(key, {
-        ...a,
-        structures: [],
-        permanences: [],
-        formations: []
-      });
-    }
-    const adresse = map.get(key)!;
-    adresse.permanences!.push(ref);
+    if (!map.has(key)) map.set(key, cloneAdresse(a));
+    map.get(key)!.permanences!.push(ref);
   }
 
   for (const p of permanences) {
     for (const lieu of p.lieux ? [p.lieux] : []) {
-      // on récupère toutes les adresses du lieu
-      for (const adresse of lieu.adressesCoordination || []) {
-        addLieu(adresse, p);
-      }
+      for (const adresse of lieu.adressesCoordination || []) addLieu(adresse, p);
     }
   }
 
@@ -311,15 +229,11 @@ export async function getLieuxByPermanenceSlug(slug: string): Promise<AdresseMod
   function addLieu(a: AdresseModel, ref: PermanenceModel) {
     const key = `${a.latitude}-${a.longitude}-permanence`;
     if (!map.has(key)) map.set(key, cloneAdresse(a));
-    const adresse = map.get(key)!;
-    adresse.permanences!.push(ref);
+    map.get(key)!.permanences!.push(ref);
   }
 
   for (const lieu of permanence.lieux ? [permanence.lieux] : []) {
-    // récupération des adressesCoordination dans le lieu
-    for (const adresse of lieu.adressesCoordination || []) {
-      addLieu(adresse, permanence);
-    }
+    for (const adresse of lieu.adressesCoordination || []) addLieu(adresse, permanence);
   }
 
   return Array.from(map.values());
