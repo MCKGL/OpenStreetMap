@@ -42,30 +42,44 @@ async function handleClick() {
 .btn-telecharger-fiche {
   background-color: var(--vt-c-white);
   color: var(--color-text-label);
-  border-color: var(--color-text-label);
+  border: 1px solid var(--color-text-label);
   display: flex;
-  width: fit-content;
-  height: fit-content;
   align-items: center;
   gap: 20px;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease-in-out;
+  width: fit-content;
+  height: fit-content;
 }
 
-p {
+.btn-telecharger-fiche .btn-text p {
   margin: 0;
+  font-size: 0.9rem;
+  transition: color 0.3s ease-in-out;
 }
 
-.downloadIcon {
+.btn-telecharger-fiche .downloadIcon {
   fill: var(--color-text-label);
   stroke: var(--color-text-label);
+  transition: fill 0.3s ease-in-out, stroke 0.3s ease-in-out;
 }
 
+/* Hover effect */
 .btn-telecharger-fiche:hover {
   background-color: var(--color-text-label);
   color: var(--vt-c-white);
+  border-color: var(--vt-c-white);
+}
 
-  .downloadIcon {
-    fill: var(--vt-c-white);
-    stroke: var(--vt-c-white);
-  }
+.btn-telecharger-fiche:hover .btn-text p {
+  color: var(--vt-c-white);
+}
+
+.btn-telecharger-fiche:hover .downloadIcon {
+  fill: var(--vt-c-white);
+  stroke: var(--vt-c-white);
 }
 </style>
