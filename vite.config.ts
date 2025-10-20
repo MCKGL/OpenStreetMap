@@ -38,6 +38,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      '/glossaire.json': {
+        target: `${CONFIG.JSON_PATH_PREFIX}`,
+        changeOrigin: true,
+        secure: false,
+      },
     }
   }
 })

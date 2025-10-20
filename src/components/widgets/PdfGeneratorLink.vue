@@ -1,21 +1,36 @@
 <script setup lang="ts">
 import {useRoute} from 'vue-router';
-import {useExportOutilPDF} from "@/composables/pdf/exportOutilPDF.ts";
 import DownloadIcon from "@/components/icons/DownloadIcon.vue";
+import {useExportPDF} from "@/composables/pdf/useExportPDF.ts";
+import {ROUTE_TYPE} from "@/types/RouteType.ts";
 
 const route = useRoute();
-const slug = route.params.slug as string;
+const { generate } = useExportPDF();
+const slug = route.params.slug as string | undefined;
 
-const {generatePdf} = useExportOutilPDF();
+const isOutilPDF = route.name === ROUTE_TYPE.PDF_OUTIL_GENERATOR;
+const isGlossairePDF = route.name === ROUTE_TYPE.PDF_GLOSSAIRE_GENERATOR;
 
-function handleClick() {
-  generatePdf(slug);
+const buttonText = isOutilPDF
+  ? "l'outil"
+  : "le glossaire";
+
+async function handleClick() {
+  try {
+    if (isOutilPDF && slug) {
+      await generate("outil", slug);
+    } else if (isGlossairePDF) {
+      await generate("glossaire");
+    }
+  } catch {
+    alert("Erreur lors de la génération du PDF");
+  }
 }
 </script>
 
 <template>
     <a class="btn-telecharger-fiche readon" @click="handleClick">
-      <div class="btn-text"><p>Télécharger la fiche</p>
+      <div class="btn-text"><p>Télécharger {{buttonText}}</p>
         <p>en format pdf</p></div>
       <div class="btn-icon">
         <DownloadIcon class="downloadIcon"/>
