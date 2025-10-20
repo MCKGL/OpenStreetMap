@@ -1,7 +1,7 @@
 import { createApp } from "vue";
 import { getOutilBySlug } from "@/services/Outil.service";
 import type { OutilModel } from "@/models/Outil.model";
-import OutilPdf from "@/components/pdf/outilPdf.vue";
+import OutilPdf from "@/components/pdf/OutilPdf.vue";
 import { addPdfHeaderAndFooterOnHTML } from "@/utils/pdf";
 
 export function useExportOutilPDF() {
@@ -31,9 +31,8 @@ export function useExportOutilPDF() {
       document.body.removeChild(mountEl);
 
     } catch {
-      alert("Impossible de générer le PDF.");
+      alert("Impossible de générer le PDF de l'outil.");
     }
   }
-
   return { generatePdf };
 }

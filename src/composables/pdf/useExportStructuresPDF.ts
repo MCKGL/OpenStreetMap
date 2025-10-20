@@ -50,7 +50,7 @@ function formatObjectifs(structure: StructureModel): string {
 // Main export function
 // -----------------------
 
-export function exportStructuresPDF(structures: StructureModel[], filters: Record<string, unknown>) {
+export function useExportStructuresPDF(structures: StructureModel[], filters: Record<string, unknown>) {
   const { doc, startY } = createBasePDF({
     title: "RESULTATS DE MA RECHERCHE DE STRUCTURE",
     infoLines: [

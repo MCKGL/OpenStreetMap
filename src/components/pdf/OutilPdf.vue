@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import {onMounted, ref} from "vue";
 import type { OutilModel } from "@/models/Outil.model";
 
 const props = defineProps<{
@@ -7,6 +7,19 @@ const props = defineProps<{
 }>();
 
 const pdfContent = ref<HTMLElement | null>(null);
+const resumeContent = ref<HTMLElement | null>(null);
+
+onMounted(() => {
+  if (resumeContent.value) {
+    const images = resumeContent.value.querySelectorAll('img');
+    images.forEach(img => {
+      img.style.maxWidth = '100%';
+      img.style.height = 'auto';
+      img.style.display = 'block';
+      img.style.margin = '10px auto';
+    });
+  }
+});
 </script>
 
 <template>
@@ -20,7 +33,7 @@ const pdfContent = ref<HTMLElement | null>(null);
         <p class="structures-names">{{ props.outil.nomsStructures?.join(", ") }}</p>
       </header>
 
-      <section v-if="props.outil.resume" v-html="props.outil.resume" />
+      <section ref="resumeContent" v-if="props.outil.resume" v-html="props.outil.resume" />
 
       <section v-if="props.outil.thematiques?.length">
         <div class="features"> Caractéristiques de l'outil</div>

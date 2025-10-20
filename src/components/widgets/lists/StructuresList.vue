@@ -9,7 +9,7 @@ import {useOpenDescription} from "@/composables/list/useOpenDescription.ts";
 import ExpandUp from "@/components/icons/ExpandUp.vue";
 import ExpandDown from "@/components/icons/ExpandDown.vue";
 import PrintIcon from "@/components/icons/PrintIcon.vue";
-import {exportStructuresPDF} from "@/composables/pdf/exportStructuresPDF.ts";
+import {useExportStructuresPDF} from "@/composables/pdf/useExportStructuresPDF.ts";
 
 const router = useRouter();
 const route = useRoute();
@@ -99,7 +99,7 @@ watch(
 );
 
 function onExportPDF() {
-  exportStructuresPDF(filteredStructures.value, filters.value);
+  useExportStructuresPDF(filteredStructures.value, filters.value);
 }
 
 </script>
