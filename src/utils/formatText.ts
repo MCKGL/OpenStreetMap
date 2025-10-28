@@ -1,14 +1,27 @@
 /**
- * Formate une date au format français "jour mois année".
+ * Formate une date au format français "jour mois année" version short mois.
  * @param dateStr
  */
-export function formatDate(dateStr: string) {
+export function formatShortDate(dateStr: string) {
   const date = new Date(dateStr);
   return new Intl.DateTimeFormat('fr-FR', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
   }).format(date);
+}
+
+/**
+ * Formate une date au format "jour mois année" version complète.
+ * @param dateStr
+ */
+export function formatFullDate(dateStr: string) {
+  if (!dateStr) return '';
+
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+
+  return new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }).format(date);
 }
 
 /**

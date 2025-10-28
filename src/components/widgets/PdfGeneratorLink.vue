@@ -10,10 +10,15 @@ const slug = route.params.slug as string | undefined;
 
 const isOutilPDF = route.name === ROUTE_TYPE.PDF_OUTIL_GENERATOR;
 const isGlossairePDF = route.name === ROUTE_TYPE.PDF_GLOSSAIRE_GENERATOR;
+const isFichePDF = route.name === ROUTE_TYPE.PDF_FICHE_GENERATOR;
 
 const buttonText = isOutilPDF
   ? "l'outil"
-  : "le glossaire";
+  : isGlossairePDF
+    ? "le glossaire"
+    : isFichePDF
+      ? "la fiche"
+      : "le document";
 
 async function handleClick() {
   try {
@@ -21,6 +26,8 @@ async function handleClick() {
       await generate("outil", slug);
     } else if (isGlossairePDF) {
       await generate("glossaire");
+    } else if (isFichePDF && slug) {
+      await generate("fiche", slug);
     }
   } catch {
     alert("Erreur lors de la génération du PDF");
