@@ -8,7 +8,13 @@ export class OutilModel {
   typeUtilisateur!: string[];
   profilLinguistique!: string[];
   competencesTravaillees!: string[];
+  competencesTravailleesPrecisions!: string;
   niveauVise!: string[];
   typeSupport!: string[];
   accessibiliteOutil!: string[];
+  competencesPrerequises! : string;
+  materiel!: string;
+  atouts! : string;
+  pointsVigilance! : string;
+  commentaires! : string;
 }

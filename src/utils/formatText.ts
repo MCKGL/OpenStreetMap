@@ -1,3 +1,7 @@
+/**
+ * Formate une date au format français "jour mois année".
+ * @param dateStr
+ */
 export function formatDate(dateStr: string) {
   const date = new Date(dateStr);
   return new Intl.DateTimeFormat('fr-FR', {
@@ -7,6 +11,10 @@ export function formatDate(dateStr: string) {
   }).format(date);
 }
 
+/**
+ * Met une majuscule au début d'une chaîne de caractères.
+ * @param str
+ */
 export function capitalize(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
@@ -94,3 +102,15 @@ export function truncateHtmlSimple(html: string, maxLength: number = 270): strin
   return traverse(tempDiv);
 }
 
+/**
+ * Vérifie si une chaîne de caractères (éventuellement HTML) est "remplie",
+ * @param val
+ */
+export function isFilled(val?: string | null): boolean {
+  if (!val) return false;
+  const cleaned = val
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .trim();
+  return cleaned.length > 0;
+}
