@@ -43,6 +43,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      '/fiche-pratique.json': {
+        target: `${CONFIG.JSON_PATH_PREFIX}`,
+        changeOrigin: true,
+        secure: false,
+      },
     }
   }
 })

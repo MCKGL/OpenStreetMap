@@ -1,5 +1,5 @@
 import autoTable from "jspdf-autotable";
-import { formatDate } from "@/utils/formatText";
+import { formatShortDate } from "@/utils/formatText";
 import type { FormationModel } from "@/models/Formation.model";
 import type { AdresseModel } from "@/models/Adresse.model.ts";
 import { addPdfHeaderAndFooterOnTab, createBasePDF } from "@/utils/pdf";
@@ -112,7 +112,7 @@ function formatContactEtCout(f: FormationModel): string {
 function formatFormationInfos(f: FormationModel): string {
   return [
     `Formation :\n${f.nom || "-"}`,
-    `Dates :\n${formatDate(f.dateDebut) || ""} - ${formatDate(f.dateFin) || ""}`,
+    `Dates :\n${formatShortDate(f.dateDebut) || ""} - ${formatShortDate(f.dateFin) || ""}`,
     `Proposée par :\n${f.structure?.nom || ""}`,
   ].join("\n\n");
 }

@@ -7,6 +7,7 @@ export const ROUTE_TYPE = {
   DETAIL_MAP_FORMATION: 'DetailMapFormation',
   PDF_OUTIL_GENERATOR: 'PdfOutilGenerator',
   PDF_GLOSSAIRE_GENERATOR: 'PdfGlossaireGenerator',
+  PDF_FICHE_GENERATOR: 'PdfFicheGenerator',
 } as const;
 
 export type MapRoute = typeof ROUTE_TYPE[keyof typeof ROUTE_TYPE];

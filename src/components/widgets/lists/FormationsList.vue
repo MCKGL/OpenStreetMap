@@ -4,7 +4,7 @@ import {useRoute, useRouter} from "vue-router";
 import {type FormationModel} from "@/models/Formation.model.ts";
 import {useParsedFilters} from "@/composables/filter/useParsedFilters.ts";
 import {formationsFiltered, hasAdvancedFilters} from "@/utils/filters.ts";
-import {formatDate} from "@/utils/formatText.ts";
+import {formatShortDate} from "@/utils/formatText.ts";
 import {useOpenDescription} from "@/composables/list/useOpenDescription.ts";
 import LogoProgramme from "@/components/widgets/LogosProgrammes/LogoProgramme.vue";
 import type {ProgrammeModel} from "@/models/Programme.model.ts";
@@ -218,7 +218,7 @@ function onExportPDF() {
           <div class="forma-descr-section" v-if="formation.dateFin || formation.dateDebut">
             <strong class="descr-section-name">Étendue de la formation : </strong>
             <br>
-            {{formatDate(formation.dateDebut)}} - {{formatDate(formation.dateFin)}}
+            {{ formatShortDate(formation.dateDebut) }} - {{ formatShortDate(formation.dateFin) }}
           </div>
 
         </div>
