@@ -290,7 +290,12 @@ onBeforeUnmount(() => {
             placeholder=""
             :select-label="''"
             :deselect-label="''"
-          />
+            :show-no-options="true"
+          >
+            <template #noOptions>
+              <div class="multiselect__no-options">Aucune option disponible</div>
+            </template>
+          </Multiselect>
         </div>
         <div id="first-section-place" class="global-input">
           <label for="lieux-select" class="label">Ville ou code postal :</label>
@@ -307,7 +312,12 @@ onBeforeUnmount(() => {
             placeholder=""
             :select-label="''"
             :deselect-label="''"
-          />
+            :show-no-options="true"
+          >
+            <template #noOptions>
+              <div class="multiselect__no-options">Aucune option disponible</div>
+            </template>
+          </Multiselect>
         </div>
         <div id="first-section-button">
           <button class="readon" @click="applyFilters">Trouver</button>
@@ -387,7 +397,12 @@ onBeforeUnmount(() => {
                 :taggable="true"
                 :select-label="''"
                 :deselect-label="''"
-              />
+                :show-no-options="true"
+              >
+                <template #noOptions>
+                  <div class="multiselect__no-options">Aucune option disponible</div>
+                </template>
+              </Multiselect>
             </div>
 
             <div id="advanced-section-competences-linguistiques" class="global-input">
@@ -401,7 +416,12 @@ onBeforeUnmount(() => {
                 :taggable="true"
                 :select-label="''"
                 :deselect-label="''"
-              />
+                :show-no-options="true"
+              >
+                <template #noOptions>
+                  <div class="multiselect__no-options">Aucune option disponible</div>
+                </template>
+              </Multiselect>
             </div>
           </div>
 
@@ -417,7 +437,12 @@ onBeforeUnmount(() => {
                 placeholder=""
                 :select-label="''"
                 :deselect-label="''"
-              />
+                :show-no-options="true"
+              >
+                <template #noOptions>
+                  <div class="multiselect__no-options">Aucune option disponible</div>
+                </template>
+              </Multiselect>
             </div>
 
             <div id="advanced-section-objectifs" class="global-input">
@@ -431,7 +456,12 @@ onBeforeUnmount(() => {
                 placeholder=""
                 :select-label="''"
                 :deselect-label="''"
-              />
+                :show-no-options="true"
+              >
+                <template #noOptions>
+                  <div class="multiselect__no-options">Aucune option disponible</div>
+                </template>
+              </Multiselect>
             </div>
           </div>
 
@@ -447,7 +477,12 @@ onBeforeUnmount(() => {
                 :taggable="true"
                 :select-label="''"
                 :deselect-label="''"
-              />
+                :show-no-options="true"
+              >
+                <template #noOptions>
+                  <div class="multiselect__no-options">Aucune option disponible</div>
+                </template>
+              </Multiselect>
             </div>
             <div id="advanced-section-checkbox">
               <label for="checkbox" class="label">
@@ -483,7 +518,12 @@ onBeforeUnmount(() => {
                 placeholder=""
                 :select-label="''"
                 :deselect-label="''"
-              />
+                :show-no-options="true"
+              >
+                <template #noOptions>
+                  <div class="multiselect__no-options">Aucune option disponible</div>
+                </template>
+              </Multiselect>
             </div>
           </div>
         </section>
