@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import DetailMap from "@/components/widgets/map/DetailMap.vue";
 import PageCarto from "@/views/PageCarto.vue";
-import PdfGeneratorLink from "@/components/widgets/PdfGeneratorLink.vue";
+import PdfGeneratorLink from "@/components/widgets/pdf/PdfGeneratorLink.vue";
 import PageErreur from "@/views/PageErreur.vue";
 import { ROUTE_TYPE } from "@/types/RouteType.ts";
 

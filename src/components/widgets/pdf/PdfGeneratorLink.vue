@@ -74,7 +74,6 @@ async function handleClick() {
   transition: fill 0.3s ease-in-out, stroke 0.3s ease-in-out;
 }
 
-/* Hover effect */
 .btn-telecharger-fiche:hover {
   background-color: var(--color-text-label);
   color: var(--vt-c-white);
