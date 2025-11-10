@@ -45,6 +45,10 @@ onMounted(() => {
         <p class="structures-names">{{ props.outil.nomsStructures?.join(", ") }}</p>
       </header>
 
+      <div class="img-detail-billet-container">
+        <img v-if="props.outil.imageUrl" class="img-detail-billet" :src="props.outil.imageUrl" alt="image entête de l'outil">
+      </div>
+
       <section class="resume-section" ref="resumeContent" v-if="props.outil.resume" v-html="props.outil.resume" />
 
       <section>
@@ -91,6 +95,20 @@ onMounted(() => {
   text-align: center;
   font-size: var(--subtext-font-size);
   color: var(--color-text-subtext);
+}
+
+.img-detail-billet-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 100%;
+  padding: 10px;
+}
+
+.img-detail-billet {
+  max-width: 250px;
+  max-height: 200px;
+  object-fit: contain;
 }
 
 .resume-section {

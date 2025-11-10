@@ -20,14 +20,13 @@ function wrapTextNodes(el: HTMLElement) {
       span.style.margin = '0 0 10px 0';
       node.replaceWith(span);
     } else if (node.nodeType === Node.ELEMENT_NODE) {
-      wrapTextNodes(node as HTMLElement); // récursion
+      wrapTextNodes(node as HTMLElement);
     }
   });
 }
 
 onMounted(() => {
   if (content.value) {
-    // Images
     content.value.querySelectorAll('img').forEach(img => {
       (img as HTMLImageElement).style.maxWidth = '100%';
       (img as HTMLImageElement).style.height = 'auto';
@@ -35,7 +34,45 @@ onMounted(() => {
       (img as HTMLImageElement).style.margin = '10px auto';
     });
 
-    // Tout le texte
+    content.value.querySelectorAll("iframe").forEach(iframe => {
+      const rawSrc = iframe.getAttribute("src")?.trim();
+      if (!rawSrc) {
+        iframe.remove();
+        return;
+      }
+
+      let href = rawSrc;
+      if (rawSrc.startsWith("//")) {
+        href = `https:${rawSrc}`;
+      } else if (!rawSrc.startsWith("http://") && !rawSrc.startsWith("https://")) {
+        try {
+          href = new URL(rawSrc, window.location.href).toString();
+        } catch {
+          href = rawSrc;
+        }
+      }
+
+      const link = document.createElement("a");
+      link.href = href;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+
+      try {
+        const u = new URL(href);
+        link.textContent = `Voir la ressource → ${u.hostname}${u.pathname}`;
+      } catch {
+        link.textContent = href;
+      }
+
+      link.style.display = "inline-block";
+      link.style.margin = "10px 0";
+      link.style.wordBreak = "break-word";
+      link.style.color = "#1a73e8";
+      link.style.textDecoration = "underline";
+      link.style.cursor = "pointer";
+
+      iframe.replaceWith(link);
+    });
     wrapTextNodes(content.value);
   }
 });

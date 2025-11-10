@@ -7,7 +7,6 @@ export function useExportGlossairePDF() {
   async function generatePdf() {
     try {
       const glossaire = await getGlossaire();
-      console.log(glossaire)
 
       // Création du composant Vue
       const app = createApp(GlossairePdf, { glossaire });

@@ -17,4 +17,5 @@ export interface OutilModel {
   atouts: string;
   pointsVigilance: string;
   commentaires: string;
+  imageUrl: string;
 }
