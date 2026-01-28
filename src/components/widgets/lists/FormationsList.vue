@@ -25,6 +25,10 @@ const props = defineProps<{
   formations: FormationModel[];
 }>();
 
+const emit = defineEmits<{
+  (e: 'empty', isEmpty: boolean): void;
+}>();
+
 const filteredFormations = computed(() => {
   const filtered = formationsFiltered(props.formations, filters.value);
 
@@ -125,6 +129,15 @@ watch(
         openDescription(query.slug as string);
       });
     }
+  },
+  { immediate: true }
+);
+
+watch(
+  filteredFormations,
+  (newVal) => {
+    console.log(newVal.length)
+    emit('empty', newVal.length === 0);
   },
   { immediate: true }
 );

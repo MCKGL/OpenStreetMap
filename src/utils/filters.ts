@@ -187,7 +187,8 @@ function matchKeyword(obj: { nom: string; description?: string }, filter: Filter
 
 function matchScolarisation(criteres: string[] = [], filter: FilterModel): boolean {
   return (filter.scolarisation?.length ?? 0) === 0 ||
-    criteres.some(c => filter.scolarisation!.includes(c));
+    criteres.some(c => filter.scolarisation!
+      .some(s => s.trim() === c.trim()));
 }
 
 function matchPublics(publicsSpecifiques: publicSpecifiqueModel[] | undefined, filter: FilterModel): boolean {
