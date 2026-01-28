@@ -38,9 +38,16 @@ const formationsEmpty = ref(false);
 const permanencesEmpty = ref(false);
 const structuresEmpty = ref(false);
 
-const nothingToShow = computed(() =>
-  formationsEmpty.value && permanencesEmpty.value && structuresEmpty.value
-);
+const nothingToShow = computed(() => {
+  if (mapRoute === ROUTE_TYPE.SEARCH_FORMATION) {
+    return (
+      formationsEmpty.value &&
+      permanencesEmpty.value &&
+      structuresEmpty.value
+    );
+  }
+  return permanencesEmpty.value;
+});
 
 const mobileClass = computed(() => {
   if (!isMobile.value) return '';
