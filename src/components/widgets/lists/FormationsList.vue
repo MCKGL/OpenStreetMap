@@ -136,7 +136,6 @@ watch(
 watch(
   filteredFormations,
   (newVal) => {
-    console.log(newVal.length)
     emit('empty', newVal.length === 0);
   },
   { immediate: true }
