@@ -22,6 +22,10 @@ const props = defineProps<{
   structures: StructureModel[];
 }>();
 
+const emit = defineEmits<{
+  (e: 'empty', isEmpty: boolean): void;
+}>();
+
 const filteredStructures = computed(() =>
   structuresFiltered(props.structures, filters.value)
     .sort((a, b) => a.nom.localeCompare(b.nom))
@@ -94,6 +98,14 @@ watch(
         openDescription(query.slug as string);
       });
     }
+  },
+  { immediate: true }
+);
+
+watch(
+  filteredStructures,
+  (newVal) => {
+    emit('empty', newVal.length === 0);
   },
   { immediate: true }
 );

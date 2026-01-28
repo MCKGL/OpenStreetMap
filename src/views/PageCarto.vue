@@ -34,6 +34,14 @@ const listContentRef = ref<HTMLElement | null>(null);
 const route = useRoute();
 const mapRoute = route.name as MapRoute;
 
+const formationsEmpty = ref(false);
+const permanencesEmpty = ref(false);
+const structuresEmpty = ref(false);
+
+const nothingToShow = computed(() =>
+  formationsEmpty.value && permanencesEmpty.value && structuresEmpty.value
+);
+
 const mobileClass = computed(() => {
   if (!isMobile.value) return '';
   return mobileView.value === 'list' ? 'mode-list' : 'mode-map';
@@ -43,6 +51,10 @@ const onResize = () => {
   isMobile.value = window.innerWidth <= 810;
   if (!isMobile.value) isOpen.value = true;
 };
+
+function onFormationsEmpty(v: boolean)   { formationsEmpty.value   = v; }
+function onPermanencesEmpty(v: boolean) { permanencesEmpty.value  = v; }
+function onStructuresEmpty(v: boolean)  { structuresEmpty.value   = v; }
 
 function togglePanel() {
   if (!isMobile.value) {
@@ -158,11 +170,15 @@ watch(
             {{ isOpen ? '«' : '»' }}
           </button>
           <div class="list-content" ref="listContentRef">
-            <PermancencesList :permanences="permanences"/>
+            <PermancencesList :permanences="permanences" @empty="onPermanencesEmpty"/>
             <FormationsList v-if="mapRoute === ROUTE_TYPE.SEARCH_FORMATION"
-                            :formations="formations"/>
+                            :formations="formations" @empty="onFormationsEmpty"/>
             <StructuresList v-if="mapRoute === ROUTE_TYPE.SEARCH_FORMATION"
-                            :structures="structures"/>
+                            :structures="structures" @empty="onStructuresEmpty"/>
+
+            <h2 v-if="nothingToShow">
+              La recherche ne retourne aucun résultat
+            </h2>
           </div>
           <ButtonScrollTop v-if="!isMobile || mobileView==='list'" @click="scrollToTop"/>
         </div>

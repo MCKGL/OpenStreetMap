@@ -16,7 +16,7 @@ export const ACTIVITE_FORMATION = {
 export const CRITERES_SCOLARISATION = {
   SCOLARISATION_JAMAIS_OU_PEU : 'Jamais ou peu scolarisé (-3ans)',
   SCOLARISATION_EN_LANGUE_ETRANGERE : 'Scolarisé (3ans et +) en langue étrangère',
-  SCOLARISATION_EN_LANGUE_FRANCAISE : 'Scolarisé (3ans et +) en langue française en France ou à l\'étranger [illettrisme/remise à niveau] ',
+  SCOLARISATION_EN_LANGUE_FRANCAISE : 'Scolarisé (3ans et +) en langue française en France ou à l\'étranger [illettrisme/remise à niveau]',
 }
 
 export const COMPETENCES_LINGUISTIQUES_VISEES = {

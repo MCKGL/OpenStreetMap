@@ -25,6 +25,10 @@ const props = defineProps<{
   permanences: PermanenceModel[];
 }>();
 
+const emit = defineEmits<{
+  (e: 'empty', isEmpty: boolean): void;
+}>();
+
 const filteredPermanences = computed(() =>
   permanencesFiltered(props.permanences, filters.value)
     .sort((a, b) => a.nom.localeCompare(b.nom))
@@ -107,6 +111,14 @@ watch(
     }
   },
   {immediate: true}
+);
+
+watch(
+  filteredPermanences,
+  (newVal) => {
+    emit('empty', newVal.length === 0);
+  },
+  { immediate: true }
 );
 
 </script>
