@@ -51,7 +51,7 @@ export class FormationModel {
   slug!: string;
   nom!: string;
   presentationPublique!: string;
-  activite!: string;
+  activites!: string[];
   gardeEnfants!: boolean;
   objectifsVises!: ObjectifViseModel[];
   competencesLinguistiquesVisees!: string[];

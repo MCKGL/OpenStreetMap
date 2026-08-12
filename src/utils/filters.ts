@@ -142,14 +142,14 @@ export function parseFilters(filters: string[]): FilterModel {
   return result;
 }
 
-function matchActivites(activites: string[] | string, filter: FilterModel): boolean {
+function matchActivites(activites: string[], filter: FilterModel): boolean {
   if (!filter.activites?.length) return true;
+  if (!activites?.length) return false;
 
-  const listeActivites = typeof activites === 'string' ? [activites] : activites ?? [];
-
-  return listeActivites.some(activite =>
+  return activites.some(activite =>
     filter.activites!.some(f =>
-      activite.toLowerCase().includes(f.toLowerCase())
+      activite.trim().toLowerCase().normalize('NFC')
+        .includes(f.trim().toLowerCase().normalize('NFC'))
     )
   );
 }
@@ -331,7 +331,7 @@ export function formationsFiltered(formations: FormationModel[], filter: FilterM
     })
     .filter(f =>
       f !== null &&
-      matchActivites(f.activite, filter) &&
+      matchActivites(f.activites, filter) &&
       matchKeyword(f, filter) &&
       matchScolarisation(f.criteresScolarisation, filter) &&
       matchPublics(f.publicsSpecifiques, filter) &&
