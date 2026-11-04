@@ -142,6 +142,19 @@ export function parseFilters(filters: string[]): FilterModel {
   return result;
 }
 
+/**
+ * Helper pour extraire les périmètres d'une permanence (si ils existent)
+ */
+function getPerimetresFromPermanence(p: PermanenceModel): string[] {
+  if (!p.lieux?.adressesCoordination) return [];
+
+  return p.lieux.adressesCoordination.flatMap(a =>
+    Array.isArray(a.perimetre)
+      ? a.perimetre
+      : Object.values(a.perimetre ?? {}) as string[]
+  );
+}
+
 function matchActivites(activites: string[], filter: FilterModel): boolean {
   if (!filter.activites?.length) return true;
   if (!activites?.length) return false;
@@ -154,28 +167,62 @@ function matchActivites(activites: string[], filter: FilterModel): boolean {
   );
 }
 
+/**
+ * Teste si un tableau de "Ville|CodePostal" matche le filtre lieux
+ */
+function matchPerimetre(perimetres: string[], filter: FilterModel): boolean {
+  if (!filter.lieux?.length) return true;
+
+  const lieuxFiltres = filter.lieux.map(parseLieuFilter);
+
+  return perimetres.some(item => {
+    const [villeRaw, cpRaw] = item.split('|').map(s => s.trim());
+    const ville = villeRaw?.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const cp = cpRaw ?? '';
+
+    return lieuxFiltres.some(({ ville: fVille, codePostaux, departement }) => {
+      if (departement) return cp.slice(0, 2) === departement;
+      return ville === fVille?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        && codePostaux.includes(cp);
+    });
+  });
+}
+
 function matchLieux(adresses: AdresseModel[] = [], filter: FilterModel): AdresseModel[] {
   if (!filter.lieux || filter.lieux.length === 0) return adresses;
 
   const lieuxFiltres = filter.lieux.map(parseLieuFilter);
 
-  return adresses.filter(adresse =>
-    lieuxFiltres.some(({ ville, codePostaux, departement }) => {
-      if (!adresse?.codePostal || !adresse.ville) return false;
+  return adresses.filter(adresse => {
+    if (!adresse?.codePostal || !adresse.ville) return false;
 
-      // Cas département (ex: 95)
+    // Vérification de l'adresse elle-même
+    const adresseMatche = lieuxFiltres.some(({ ville, codePostaux, departement }) => {
       if (departement) {
-        const codeDepAdresse = adresse.codePostal.slice(0, 2);
-        return codeDepAdresse === departement;
+        return adresse.codePostal.slice(0, 2) === departement;
       }
+      return adresse.ville.toLowerCase() === ville.toLowerCase()
+        && codePostaux.includes(adresse.codePostal);
+    });
 
-      // Cas ville + codePostal complet
-      const matchesVille = adresse.ville.toLowerCase() === ville.toLowerCase();
-      const matchesCodePostal = codePostaux.includes(adresse.codePostal);
+    if (adresseMatche) return true;
 
-      return matchesVille && matchesCodePostal;
-    })
-  );
+    // Périmètre uniquement si on est sur la route coordination
+    if (filter.isCoordinationRoute && adresse.perimetre && adresse.perimetre.length > 0) {
+      return adresse.perimetre.some((item: string) => {
+        const [perimetreVille, perimetreCP] = item.split('|').map(s => s.trim());
+        return lieuxFiltres.some(({ville, codePostaux, departement}) => {
+          if (departement && perimetreCP) {
+            return perimetreCP.slice(0, 2) === departement;
+          }
+          return perimetreVille?.toLowerCase() === ville.toLowerCase()
+            && !!perimetreCP && codePostaux.includes(perimetreCP);
+        });
+      });
+    }
+
+    return false;
+  });
 }
 
 function matchKeyword(obj: { nom: string; description?: string }, filter: FilterModel): boolean {
@@ -256,7 +303,10 @@ function matchCompetence(competences: string[] = [], filter: FilterModel): boole
   );
 }
 
-export function permanencesFiltered(permanences: PermanenceModel[], filter: FilterModel): PermanenceModel[] {
+export function permanencesFiltered(
+  permanences: PermanenceModel[],
+  filter: FilterModel
+): PermanenceModel[] {
   if (filter.formationDispo) return [];
   if (!filter.permanencesSeules) {
     if (filter.structuresSeules || filter.formationsSeules) return [];
@@ -266,12 +316,20 @@ export function permanencesFiltered(permanences: PermanenceModel[], filter: Filt
     .map(p => {
       const matchingAdresses = matchLieux(p.adresses, filter);
 
-      if (matchingAdresses.length === 0) return null;
+      // Si l'adresse physique matche
+      if (matchingAdresses.length > 0) {
+        return { ...p, adresses: matchingAdresses };
+      }
 
-      return {
-        ...p,
-        adresses: matchingAdresses,
-      };
+      // Si route coordination ET périmètre matche
+      if (filter.isCoordinationRoute) {
+        const perimetres = getPerimetresFromPermanence(p);
+        if (perimetres.length > 0 && matchPerimetre(perimetres, filter)) {
+          return p;
+        }
+      }
+
+      return null;
     })
     .filter((p): p is PermanenceModel => p !== null && matchKeyword(p, filter));
 }
