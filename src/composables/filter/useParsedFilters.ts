@@ -1,7 +1,7 @@
-import { ref, watch, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { parseFilters } from '@/utils/filters.ts'
-import { FILTER_KEYS, type FilterModel } from '@/types/FilterType.ts'
+import {onMounted, ref, watch} from 'vue'
+import {useRoute, useRouter} from 'vue-router'
+import {parseFilters} from '@/utils/filters.ts'
+import {FILTER_KEYS, type FilterModel} from '@/types/FilterType.ts'
 
 type FilterKey = typeof FILTER_KEYS[number];
 
@@ -25,6 +25,10 @@ export function useParsedFilters() {
         Array.isArray(val) ? `${key}:${val.join(',')}` : `${key}:${val}`
       )
     parsedFilters.value = parseFilters(raw)
+
+    // Détection automatique de la route coordination
+    parsedFilters.value.isCoordinationRoute = route.name === 'les-coordinations-linguistiques-franciliennes' ||
+      route.path.includes('/les-coordinations-linguistiques')
   }
 
   // Met à jour filters + notifie parent si changement utilisateur

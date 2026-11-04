@@ -15,6 +15,7 @@ export class AdresseModel {
   structures?: StructureModel[];
   permanences?: PermanenceModel[];
   formations?: FormationModel[];
+  perimetre?: string[];
 }
 
 /**
