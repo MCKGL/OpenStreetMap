@@ -365,7 +365,10 @@ export function structuresFiltered(structures: StructureModel[], filter: FilterM
     .filter(s =>
       s !== null &&
       matchActivites(s.activitesFormation, filter) &&
-      matchKeyword(s, filter)
+      (
+        matchKeyword(s, filter) ||
+        (s.formations ?? []).some(f => matchKeyword(f, filter))
+      )
     ) as StructureModel[];
 }
 
