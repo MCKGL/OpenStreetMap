@@ -196,32 +196,16 @@ function matchLieux(adresses: AdresseModel[] = [], filter: FilterModel): Adresse
   return adresses.filter(adresse => {
     if (!adresse?.codePostal || !adresse.ville) return false;
 
-    // Vérification de l'adresse elle-même
-    const adresseMatche = lieuxFiltres.some(({ ville, codePostaux, departement }) => {
+    return lieuxFiltres.some(({ ville, codePostaux, departement }) => {
+      // Cas département (ex: 95)
       if (departement) {
         return adresse.codePostal.slice(0, 2) === departement;
       }
+
+      // Cas ville + codePostal complet
       return adresse.ville.toLowerCase() === ville.toLowerCase()
         && codePostaux.includes(adresse.codePostal);
     });
-
-    if (adresseMatche) return true;
-
-    // Périmètre uniquement si on est sur la route coordination
-    if (filter.isCoordinationRoute && adresse.perimetre && adresse.perimetre.length > 0) {
-      return adresse.perimetre.some((item: string) => {
-        const [perimetreVille, perimetreCP] = item.split('|').map(s => s.trim());
-        return lieuxFiltres.some(({ville, codePostaux, departement}) => {
-          if (departement && perimetreCP) {
-            return perimetreCP.slice(0, 2) === departement;
-          }
-          return perimetreVille?.toLowerCase() === ville.toLowerCase()
-            && !!perimetreCP && codePostaux.includes(perimetreCP);
-        });
-      });
-    }
-
-    return false;
   });
 }
 
@@ -321,12 +305,10 @@ export function permanencesFiltered(
         return { ...p, adresses: matchingAdresses };
       }
 
-      // Si route coordination ET périmètre matche
-      if (filter.isCoordinationRoute) {
-        const perimetres = getPerimetresFromPermanence(p);
-        if (perimetres.length > 0 && matchPerimetre(perimetres, filter)) {
-          return p;
-        }
+      // Si périmètre matche
+      const perimetres = getPerimetresFromPermanence(p);
+      if (perimetres.length > 0 && matchPerimetre(perimetres, filter)) {
+        return p;
       }
 
       return null;
@@ -409,10 +391,12 @@ export function formationsFiltered(formations: FormationModel[], filter: FilterM
 export function adressesFiltered(adresses: AdresseModel[], filter: FilterModel): AdresseModel[] {
   return adresses
     .map(adresse => {
-      const matching = matchLieux([adresse], filter);
-      if (matching.length === 0) return null;
+      const permanences = permanencesFiltered(adresse.permanences ?? [], filter);
 
-      const a = matching[0];
+      const matching = matchLieux([adresse], filter);
+      if (matching.length === 0 && permanences.length === 0) return null;
+
+      const a = matching.length > 0 ? matching[0] : adresse;
 
       return {
         ...a,
@@ -421,13 +405,13 @@ export function adressesFiltered(adresses: AdresseModel[], filter: FilterModel):
           ...structure,
           formations: formationsFiltered(structure.formations ?? [], filter),
         })),
-        permanences: permanencesFiltered(a.permanences ?? [], filter),
+        permanences,
       };
     })
     .filter(adresse =>
       adresse &&
       (adresse.formations.length > 0 ||
-        adresse.structures.length > 0 ||
-        adresse.permanences.length > 0)
+        adresse.permanences.length > 0 ||
+        adresse.structures.length > 0)
     ) as AdresseModel[];
 }

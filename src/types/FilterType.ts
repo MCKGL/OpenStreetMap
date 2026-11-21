@@ -25,5 +25,4 @@ export interface FilterModel {
   coursEte?: boolean;
   formationDispo?: boolean;
   keyword?: string;
-  isCoordinationRoute?: boolean;
 }
