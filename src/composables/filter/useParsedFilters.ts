@@ -25,10 +25,6 @@ export function useParsedFilters() {
         Array.isArray(val) ? `${key}:${val.join(',')}` : `${key}:${val}`
       )
     parsedFilters.value = parseFilters(raw)
-
-    // Détection automatique de la route coordination
-    parsedFilters.value.isCoordinationRoute = route.name === 'les-coordinations-linguistiques-franciliennes' ||
-      route.path.includes('/les-coordinations-linguistiques')
   }
 
   // Met à jour filters + notifie parent si changement utilisateur
